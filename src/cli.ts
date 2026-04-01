@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { PLATFORMS } from './constants.js';
+import { listSkills } from './commands/ls.js';
 
 const program = new Command();
 
@@ -40,6 +41,15 @@ Examples:
   skm --install brainstorming@1.0.0 Install specific version
   skm --update --all           Update all installed skills
     `);
+  });
+
+// List skills command
+program
+  .option('-ls, --ls', 'List available skills')
+  .option('--installed', 'Show only installed skills')
+  .option('--updates', 'Check for updates')
+  .action((opts) => {
+    listSkills(opts);
   });
 
 program.parse();
