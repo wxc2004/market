@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { PLATFORMS } from './constants.js';
 import { listSkills } from './commands/ls.js';
 import { showSkillInfo } from './commands/info.js';
+import { installSkill } from './commands/install.js';
 
 const program = new Command();
 
@@ -66,8 +67,13 @@ const installCmd = program.command('install').description('Install a skill');
 installCmd
   .argument('<skill>', 'Skill ID to install (e.g., brainstorming or @scope/name)')
   .option('--all', 'Install all available skills')
-  .action((skill, opts) => {
-    console.log('Install command - skill:', skill, 'opts:', opts);
+  .action(async (skill, opts) => {
+    try {
+      await installSkill(skill);
+    } catch (err) {
+      console.error('Installation failed:', err);
+      process.exit(1);
+    }
   });
 
 // Uninstall command
