@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { PLATFORMS } from './constants.js';
 import { listSkills } from './commands/ls.js';
+import { showSkillInfo } from './commands/info.js';
 
 const program = new Command();
 
@@ -50,6 +51,56 @@ program
   .option('--updates', 'Check for updates')
   .action((opts) => {
     listSkills(opts);
+  });
+
+// Info command
+const infoCmd = program.command('info').description('Display skill information');
+infoCmd
+  .argument('<skill-id>', 'Skill ID to show info')
+  .action((skillId) => {
+    showSkillInfo(skillId);
+  });
+
+// Install command
+const installCmd = program.command('install').description('Install a skill');
+installCmd
+  .argument('<skill>', 'Skill ID to install (e.g., brainstorming or @scope/name)')
+  .option('--all', 'Install all available skills')
+  .action((skill, opts) => {
+    console.log('Install command - skill:', skill, 'opts:', opts);
+  });
+
+// Uninstall command
+const uninstallCmd = program.command('uninstall').description('Remove an installed skill');
+uninstallCmd
+  .argument('<skill>', 'Skill ID to uninstall')
+  .action((skill) => {
+    console.log('Uninstall command - skill:', skill);
+  });
+
+// Update command
+const updateCmd = program.command('update').description('Update installed skills');
+updateCmd
+  .argument('[skill]', 'Skill ID to update (optional, updates all if not specified)')
+  .option('--all', 'Update all skills')
+  .action((skill, opts) => {
+    console.log('Update command - skill:', skill, 'opts:', opts);
+  });
+
+// Sync command
+program
+  .command('sync')
+  .description('Synchronize platform links')
+  .action(() => {
+    console.log('Sync command - not yet implemented');
+  });
+
+// Platform command
+const platformCmd = program.command('platform').description('Set target platform');
+platformCmd
+  .argument('<name>', 'Platform name')
+  .action((name) => {
+    console.log('Platform command - name:', name);
   });
 
 program.parse();

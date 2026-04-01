@@ -5,6 +5,13 @@ interface NpmPackage {
   name: string;
   version: string;
   description?: string;
+  skillmarket?: {
+    id?: string;
+    displayName?: string;
+    description?: string;
+    platforms?: string[];
+    defaultVersion?: string;
+  };
 }
 
 interface NpmRegistryResponse {
@@ -23,7 +30,13 @@ export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryR
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         try {
-          resolve(JSON.parse(data));
+          const parsed = JSON.parse(data);
+          // Check if npm returned an error (404, etc.)
+          if (parsed.error) {
+            resolve(null);
+            return;
+          }
+          resolve(parsed);
         } catch {
           resolve(null);
         }
