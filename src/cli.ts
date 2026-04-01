@@ -3,6 +3,7 @@ import { PLATFORMS } from './constants.js';
 import { listSkills } from './commands/ls.js';
 import { showSkillInfo } from './commands/info.js';
 import { installSkill } from './commands/install.js';
+import { syncPlatformLinks } from './commands/sync.js';
 
 const program = new Command();
 
@@ -97,8 +98,13 @@ updateCmd
 program
   .command('sync')
   .description('Synchronize platform links')
-  .action(() => {
-    console.log('Sync command - not yet implemented');
+  .action(async () => {
+    try {
+      await syncPlatformLinks();
+    } catch (err) {
+      console.error('Sync failed:', err);
+      process.exit(1);
+    }
   });
 
 // Platform command
