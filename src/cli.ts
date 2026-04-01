@@ -4,6 +4,8 @@ import { listSkills } from './commands/ls.js';
 import { showSkillInfo } from './commands/info.js';
 import { installSkill } from './commands/install.js';
 import { syncPlatformLinks } from './commands/sync.js';
+import { updateSkill } from './commands/update.js';
+import { uninstallSkill } from './commands/uninstall.js';
 
 const program = new Command();
 
@@ -81,8 +83,13 @@ installCmd
 const uninstallCmd = program.command('uninstall').description('Remove an installed skill');
 uninstallCmd
   .argument('<skill>', 'Skill ID to uninstall')
-  .action((skill) => {
-    console.log('Uninstall command - skill:', skill);
+  .action(async (skill) => {
+    try {
+      await uninstallSkill(skill);
+    } catch (err) {
+      console.error('Uninstall failed:', err);
+      process.exit(1);
+    }
   });
 
 // Update command
@@ -90,8 +97,17 @@ const updateCmd = program.command('update').description('Update installed skills
 updateCmd
   .argument('[skill]', 'Skill ID to update (optional, updates all if not specified)')
   .option('--all', 'Update all skills')
-  .action((skill, opts) => {
-    console.log('Update command - skill:', skill, 'opts:', opts);
+  .action(async (skill, opts) => {
+    try {
+      if (opts.all || !skill) {
+        await updateSkill();
+      } else {
+        await updateSkill(skill);
+      }
+    } catch (err) {
+      console.error('Update failed:', err);
+      process.exit(1);
+    }
   });
 
 // Sync command
