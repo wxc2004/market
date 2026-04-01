@@ -1,4 +1,5 @@
 import { loadRegistry, getInstalledSkills } from './registry.js';
+import { searchSkillmarketPackages, fetchNpmPackage } from './npm.js';
 
 interface LsOptions {
   installed?: boolean;
@@ -26,9 +27,30 @@ export async function listSkills(options: LsOptions): Promise<void> {
     return;
   }
   
-  // TODO: Query npm registry for available skills
-  console.log('Available Skills (from npm registry):\n');
-  console.log('  Loading...');
+  // Show available skills from npm
+  console.log('Searching npm registry...\n');
   
-  // Placeholder - will be implemented in Task 5
+  try {
+    const packages = await searchSkillmarketPackages();
+    
+    if (packages.length === 0) {
+      console.log('No skills found. Check back later!');
+      return;
+    }
+    
+    console.log(`Found ${packages.length} skill(s):\n`);
+    
+    for (const pkgName of packages) {
+      const info = await fetchNpmPackage(pkgName);
+      if (info) {
+        const latestVersion = info['dist-tags']?.latest;
+        const pkg = info.versions[latestVersion];
+        console.log(`  ${info.name}@${latestVersion}`);
+        console.log(`    ${pkg?.description || 'No description'}`);
+        console.log();
+      }
+    }
+  } catch (error) {
+    console.log(`Error fetching skills: ${error}`);
+  }
 }
