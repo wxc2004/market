@@ -75,36 +75,37 @@ program
  * 显示详细的使用说明和命令示例
  */
 program
-  .option('-h, --help', 'Display help information')
-  .action(() => {
-    console.log(`
+  .hook('preAction', (thisCommand) => {
+    if (thisCommand.opts().help) {
+      console.log(`
 SkillMarket CLI
 
 Usage: skm <command> [options]
 
 Commands:
-  --help, -h          Display this help message
-  --ls [options]      List available skills
-                        --installed    Show only installed skills
-                        --updates      Check for updates
-  --info <skill-id>   Display skill information
-  --install <skill>   Install a skill (e.g., skm --install brainstorming)
-                        @version      Install specific version
-                        --all         Install all available skills
-  --uninstall <skill> Remove an installed skill
-  --update [options]  Update skills
-                        --all          Update all skills
-  --sync              Synchronize platform links
-  --platform <name>   Set target platform (${PLATFORMS.join(', ')})
+  ls [options]         List available skills
+                         --installed    Show only installed skills
+                         --updates      Check for updates
+  info <skill-id>      Display skill information
+  install <skill>      Install a skill (e.g., skm install brainstorming)
+                         @version      Install specific version
+                         --all         Install all available skills
+  uninstall <skill>    Remove an installed skill
+  update [options]     Update skills
+                         --all          Update all skills
+  sync                 Synchronize platform links
+  platform <name>      Set target platform (${PLATFORMS.join(', ')})
 
 Examples:
-  skm --ls                    List all available skills
-  skm --ls --installed        Show installed skills only
-  skm --info brainstorming     View skill details
-  skm --install brainstorming Install a skill
-  skm --install brainstorming@1.0.0 Install specific version
-  skm --update --all           Update all installed skills
-    `);
+  skm ls                     List all available skills
+  skm ls --installed         Show installed skills only
+  skm info brainstorming     View skill details
+  skm install brainstorming  Install a skill
+  skm install brainstorming@1.0.0 Install specific version
+  skm update --all           Update all installed skills
+      `);
+      process.exit(0);
+    }
   });
 
 // -----------------------------------------------------------------------------
@@ -121,8 +122,8 @@ Examples:
  * - skm ls --installed  列出已安装的 skills
  * - skm ls --updates    检查更新
  */
-program
-  .option('-ls, --ls', 'List available skills')
+const lsCmd = program.command('ls').description('List available skills');
+lsCmd
   .option('--installed', 'Show only installed skills')
   .option('--updates', 'Check for updates')
   .action((opts) => {
