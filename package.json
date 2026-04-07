@@ -1,6 +1,6 @@
 {
-  "name": "skillmarket",
-  "version": "1.0.0",
+  "name": "@wanxuchen/skillmarket",
+  "version": "1.0.1",
   "description": "Cross-platform skill manager for AI coding tools",
   "type": "module",
   "bin": {
