@@ -20,14 +20,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug inputs
+        run: |
+          echo "skill_name input: '${{ github.event.inputs.skill_name }}'"
+          echo "version input: '${{ github.event.inputs.version }}'"
+          ls -la skills/
+
       - name: Validate skill exists
         run: |
           SKILL_NAME="${{ github.event.inputs.skill_name }}"
-          if [ ! -d "skills/$SKILL_NAME" ]; then
-            echo "Error: Skill '$SKILL_NAME' not found in skills/ directory"
+          echo "Skill name: $SKILL_NAME"
+          if [ -z "$SKILL_NAME" ]; then
+            echo "Error: skill_name is empty!"
             exit 1
           fi
-          echo "Found skill: $SKILL_NAME"
+          if [ ! -d "skills/$SKILL_NAME" ]; then
+            echo "Error: Skill '$SKILL_NAME' not found in skills/ directory"
+            ls -la skills/
+            exit 1
+          fi
+          echo "Skill directory contents:"
           ls -la "skills/$SKILL_NAME/"
 
       - name: Setup Node
@@ -37,16 +49,13 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        working-directory: skills/${{ github.event.inputs.skill_name }}
-        run: npm install
-
-      - name: Build (if needed)
-        working-directory: skills/${{ github.event.inputs.skill_name }}
-        run: npm run build || echo "No build script, skipping"
+        run: |
+          cd "skills/${{ github.event.inputs.skill_name }}"
+          npm install
 
       - name: Update version
-        working-directory: skills/${{ github.event.inputs.skill_name }}
         run: |
+          cd "skills/${{ github.event.inputs.skill_name }}"
           if [ -n "${{ github.event.inputs.version }}" ]; then
             npm version ${{ github.event.inputs.version }} --no-git-tag-version
           else
@@ -54,7 +63,8 @@ jobs:
           fi
 
       - name: Publish to npm
-        working-directory: skills/${{ github.event.inputs.skill_name }}
-        run: npm publish --access=public
+        run: |
+          cd "skills/${{ github.event.inputs.skill_name }}"
+          npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
