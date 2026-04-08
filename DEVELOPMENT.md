@@ -335,3 +335,42 @@ skm uninstall brainstorming
 - [设计文档](./docs/plans/2026-04-01-skillmarket-design.md)
 - [实现计划](./docs/plans/2026-04-01-skillmarket-implementation.md)
 - [用户文档](./README.md)
+
+---
+
+## 13. Skill 发布流程 (v1.0.1+)
+
+### 13.1 创建新 Skill
+
+在 `skills/` 目录下创建新 skill：
+
+```
+skills/<skill-name>/
+├── package.json      # 包含 skillmarket 元数据
+├── SKILL.md          # 文档
+├── metadata.json    # 额外元数据
+└── index.js          # 主入口（OpenCode 插件）
+```
+
+### 13.2 发布 Skill
+
+**方式一：GitHub Actions（推荐）**
+1. 进入仓库 Actions 页面
+2. 选择 "Publish Skill" 工作流
+3. 点击 "Run workflow"
+4. 输入 skill 名称（如 `test-skill`）
+5. 可选：指定版本号
+
+**方式二：本地发布**
+```bash
+cd skills/<skill-name>
+npm install
+npm publish --access=public
+```
+
+### 13.3 用户安装
+
+```bash
+skm install <skill-name>
+skm info <skill-name>
+```
