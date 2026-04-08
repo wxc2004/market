@@ -207,8 +207,12 @@ export async function searchSkillmarketPackages(): Promise<string[]> {
           
           // 提取所有匹配的包名
           // npm search 返回结构: { objects: [{ package: { name: "..." } }] }
-          for (const item of result.objects || []) {
-            packages.push(item.package.name);
+          if (result.objects) {
+            for (const item of result.objects) {
+              if (item?.package?.name) {
+                packages.push(item.package.name);
+              }
+            }
           }
           
           resolve(packages);

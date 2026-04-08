@@ -47,7 +47,7 @@ export async function updateSkill(skillId?: string): Promise<void> {
   
   if (skillId) {
     // 查询 npm 获取最新版本
-    const pkgInfo = await fetchNpmPackage(`@skillmarket/${skillId}`);
+    const pkgInfo = await fetchNpmPackage(`@wanxuchen/${skillId}`);
     
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;
@@ -81,7 +81,7 @@ export async function updateSkill(skillId?: string): Promise<void> {
   // 遍历每个已安装的 skill
   for (const skill of installed) {
     // 查询 npm 获取最新版本信息
-    const pkgInfo = await fetchNpmPackage(`@skillmarket/${skill.id}`);
+    const pkgInfo = await fetchNpmPackage(`@wanxuchen/${skill.id}`);
     
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;

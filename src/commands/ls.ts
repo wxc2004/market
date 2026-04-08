@@ -117,23 +117,42 @@ export async function listSkills(options: LsOptions): Promise<void> {
     
     // 遍历每个包，获取详细信息并显示
     for (const pkgName of packages) {
-      const info = await fetchNpmPackage(pkgName);
-      
-      if (info) {
+      try {
+        const info = await fetchNpmPackage(pkgName);
+        
+        if (!info) continue;
+        
         // 获取最新版本号
         const latestVersion = info['dist-tags']?.latest;
+        if (!latestVersion) continue;
         
         // 获取该版本的详细信息
-        const pkg = info.versions[latestVersion];
+        const pkg = info.versions?.[latestVersion];
+        
+        // 获取 skillmarket 元数据
+        const skillMeta = pkg?.skillmarket;
         
         // 打印包名和版本
-        console.log(`  ${info.name}@${latestVersion}`);
+        console.log(`📦 ${info.name}@${latestVersion}`);
         
-        // 打印描述（如果有的话）
-        console.log(`    ${pkg?.description || 'No description'}`);
+        // 打印显示名称
+        if (skillMeta?.displayName) {
+          console.log(`   名称: ${skillMeta.displayName}`);
+        }
+        
+        // 打印描述
+        console.log(`   描述: ${pkg?.description || 'N/A'}`);
+        
+        // 打印支持平台
+        if (skillMeta?.platforms) {
+          console.log(`   平台: ${skillMeta.platforms.join(', ')}`);
+        }
         
         // 空行分隔
         console.log();
+      } catch (e) {
+        // 跳过失败的包
+        continue;
       }
     }
   } catch (error) {
