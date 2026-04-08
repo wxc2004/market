@@ -59,7 +59,7 @@ jobs:
           if [ -n "${{ github.event.inputs.version }}" ]; then
             npm version ${{ github.event.inputs.version }} --no-git-tag-version
           else
-            npm version patch --no-git-tag-version
+            npm version minor --no-git-tag-version
           fi
 
       - name: Publish to npm
