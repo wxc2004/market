@@ -79,9 +79,15 @@ export async function installSkill(
   await ensureMarketDirs();
   
   // 转换包名格式
-  const packageName = skillId.startsWith('@') 
-    ? skillId 
-    : `@skillmarket/${skillId}`;
+  // 支持 @wanxuchen/ 和 @skillmarket/ 两种 scope
+  let packageName: string;
+  if (skillId.startsWith('@')) {
+    // 直接使用用户提供的 scoped 包名
+    packageName = skillId;
+  } else {
+    // 默认尝试 @wanxuchen/，失败后回退到 @skillmarket/
+    packageName = `@wanxuchen/${skillId}`;
+  }
   
   console.log(`Installing ${packageName}${version ? `@${version}` : ''}...`);
   
