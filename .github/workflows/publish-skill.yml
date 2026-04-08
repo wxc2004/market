@@ -22,10 +22,13 @@ jobs:
 
       - name: Validate skill exists
         run: |
-          if [ ! -d "skills/${{ github.inputs.skill_name }}" ]; then
-            echo "Error: Skill '${{ github.inputs.skill_name }}' not found in skills/ directory"
+          SKILL_NAME="${{ github.event.inputs.skill_name }}"
+          if [ ! -d "skills/$SKILL_NAME" ]; then
+            echo "Error: Skill '$SKILL_NAME' not found in skills/ directory"
             exit 1
           fi
+          echo "Found skill: $SKILL_NAME"
+          ls -la "skills/$SKILL_NAME/"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -34,32 +37,24 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        working-directory: skills/${{ github.inputs.skill_name }}
+        working-directory: skills/${{ github.event.inputs.skill_name }}
         run: npm install
 
       - name: Build (if needed)
-        working-directory: skills/${{ github.inputs.skill_name }}
+        working-directory: skills/${{ github.event.inputs.skill_name }}
         run: npm run build || echo "No build script, skipping"
 
       - name: Update version
-        working-directory: skills/${{ github.inputs.skill_name }}
+        working-directory: skills/${{ github.event.inputs.skill_name }}
         run: |
-          if [ -n "${{ github.inputs.version }}" ]; then
-            npm version ${{ github.inputs.version }} --no-git-tag-version
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            npm version ${{ github.event.inputs.version }} --no-git-tag-version
           else
             npm version patch --no-git-tag-version
           fi
 
       - name: Publish to npm
-        working-directory: skills/${{ github.inputs.skill_name }}
+        working-directory: skills/${{ github.event.inputs.skill_name }}
         run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Commit version bump
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "chore: publish ${{ github.inputs.skill_name }}" || echo "No changes to commit"
-          git push
