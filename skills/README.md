@@ -33,7 +33,7 @@ npm publish --access=public
 
 ```json
 {
-  "name": "@this-is-skillmarket/<skill-name>",
+  "name": "@thisisskillmarket/<skill-name>",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
