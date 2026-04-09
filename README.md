@@ -5,13 +5,13 @@ Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCod
 ## Installation
 
 ```bash
-npm install -g skillmarket
+npm install -g this-is-skillmarket
 ```
 
 Or use directly:
 
 ```bash
-npx skillmarket --help
+npx this-is-skillmarket --help
 ```
 
 ## Usage

@@ -33,7 +33,7 @@ npm publish --access=public
 
 ```json
 {
-  "name": "@wanxuchen/<skill-name>",
+  "name": "@this-is-skillmarket/<skill-name>",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
@@ -49,4 +49,4 @@ npm publish --access=public
 
 ## Current Skills
 
-- `test-skill` - Test skill for validating the installation flow (@wanxuchen)
+- `test-skill` - Test skill for validating the installation flow
