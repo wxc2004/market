@@ -4,7 +4,7 @@
   "description": "Cross-platform skill manager for AI coding tools",
   "type": "module",
   "bin": {
-    "skm": "./dist/index.js"
+    "skm": "dist/index.js"
   },
   "scripts": {
     "build": "tsup",

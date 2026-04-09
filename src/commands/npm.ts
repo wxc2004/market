@@ -40,6 +40,14 @@ interface NpmPackage {
   /** 包描述信息 */
   description?: string;
   
+  /** npm 链接 */
+  links?: {
+    npm?: string;
+    homepage?: string;
+    repository?: string;
+    bugs?: string;
+  };
+  
   /**
    * SkillMarket 特有的元数据
    * 

@@ -150,10 +150,16 @@ export async function listSkills(options: LsOptions): Promise<void> {
         const platforms = skillMeta?.platforms || [];
         console.log(`   平台: ${platforms.length > 0 ? platforms.join(', ') : 'N/A'}`);
         
+        // 打印 npm 链接
+        console.log('DEBUG: checking links...');
+        const npmLink = pkg?.links?.npm || `https://www.npmjs.com/package/${info.name}`;
+        console.log(`   链接: ${npmLink}`);
+        
         // 空行分隔
         console.log();
       } catch (e) {
         // 错误时仍显示包名
+        console.error('DEBUG catch:', e);
         console.log(`📦 ${pkgName} (获取失败: ${e})`);
         console.log();
       }
