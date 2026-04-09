@@ -12,7 +12,6 @@ on:
 
 jobs:
   publish:
-    id: publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
