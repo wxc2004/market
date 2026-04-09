@@ -120,11 +120,15 @@ export async function listSkills(options: LsOptions): Promise<void> {
       try {
         const info = await fetchNpmPackage(pkgName);
         
-        if (!info) continue;
+        if (!info) {
+          // 如果获取失败，仍然显示包名
+          console.log(`📦 ${pkgName} (信息获取失败)`);
+          console.log();
+          continue;
+        }
         
         // 获取最新版本号
-        const latestVersion = info['dist-tags']?.latest;
-        if (!latestVersion) continue;
+        const latestVersion = info['dist-tags']?.latest || 'unknown';
         
         // 获取该版本的详细信息
         const pkg = info.versions?.[latestVersion];
@@ -136,23 +140,22 @@ export async function listSkills(options: LsOptions): Promise<void> {
         console.log(`📦 ${info.name}@${latestVersion}`);
         
         // 打印显示名称
-        if (skillMeta?.displayName) {
-          console.log(`   名称: ${skillMeta.displayName}`);
-        }
+        const displayName = skillMeta?.displayName || info.name;
+        console.log(`   名称: ${displayName}`);
         
         // 打印描述
         console.log(`   描述: ${pkg?.description || 'N/A'}`);
         
         // 打印支持平台
-        if (skillMeta?.platforms) {
-          console.log(`   平台: ${skillMeta.platforms.join(', ')}`);
-        }
+        const platforms = skillMeta?.platforms || [];
+        console.log(`   平台: ${platforms.length > 0 ? platforms.join(', ') : 'N/A'}`);
         
         // 空行分隔
         console.log();
       } catch (e) {
-        // 跳过失败的包
-        continue;
+        // 错误时仍显示包名
+        console.log(`📦 ${pkgName} (获取失败: ${e})`);
+        console.log();
       }
     }
   } catch (error) {
