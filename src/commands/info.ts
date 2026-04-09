@@ -53,12 +53,12 @@ export async function showSkillInfo(skillId: string): Promise<void> {
    * 转换 skillId 为完整的 npm 包名格式
    * 
    * 支持两种输入格式：
-   * 1. 短格式: "brainstorming" → "@thisisskillmarket/brainstorming"
+   * 1. 短格式: "brainstorming" → "@itismyskillmarket/brainstorming"
    * 2. 完整格式: "@custom/skill" → "@custom/skill"
    */
   const packageName = skillId.startsWith('@') 
     ? skillId                                          // 已经是 scoped 包名
-    : `@thisisskillmarket/${skillId}`;                 // 转换为 scoped 包名
+    : `@itismyskillmarket/${skillId}`;                 // 转换为 scoped 包名
   
   console.log(`Fetching info for: ${packageName}\n`);
   

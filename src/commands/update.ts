@@ -47,7 +47,7 @@ export async function updateSkill(skillId?: string): Promise<void> {
   
   if (skillId) {
     // 查询 npm 获取最新版本
-    const pkgInfo = await fetchNpmPackage(`@thisisskillmarket/${skillId}`);
+    const pkgInfo = await fetchNpmPackage(`@itismyskillmarket/${skillId}`);
     
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;
