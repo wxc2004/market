@@ -4,5 +4,8 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   dts: true,
-  shims: true
+  shims: true,
+  banner: {
+    js: '#!/usr/bin/env node'
+  }
 });
