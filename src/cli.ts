@@ -63,7 +63,7 @@ const program = new Command();
 program
   .name('skm')
   .description('SkillMarket - Cross-platform skill manager for AI coding tools')
-  .version('1.0.0');
+  .version('1.2.0');
 
 // -----------------------------------------------------------------------------
 // 帮助命令 (-h, --help)
@@ -74,10 +74,9 @@ program
  * 
  * 显示详细的使用说明和命令示例
  */
-program
-  .option('-h, --help', 'Display help information')
-  .action(() => {
-    console.log(`
+const helpCmd = program.command('help').description('Display help information');
+helpCmd.action(() => {
+  console.log(`
 SkillMarket CLI
 
 Usage: skm <command> [options]
@@ -104,8 +103,9 @@ Examples:
   skm --install brainstorming Install a skill
   skm --install brainstorming@1.0.0 Install specific version
   skm --update --all           Update all installed skills
+  skm --sync                  Sync platform links
     `);
-  });
+});
 
 // -----------------------------------------------------------------------------
 // 列表命令 (skm ls)
@@ -121,8 +121,8 @@ Examples:
  * - skm ls --installed  列出已安装的 skills
  * - skm ls --updates    检查更新
  */
-program
-  .option('-ls, --ls', 'List available skills')
+const lsCmd = program.command('ls').description('List available skills');
+lsCmd
   .option('--installed', 'Show only installed skills')
   .option('--updates', 'Check for updates')
   .action((opts) => {
