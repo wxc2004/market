@@ -81,13 +81,16 @@ export async function installSkill(
   // 步骤 0: 准备
   // ==========================================================================
   
-  // 确保所有必要的目录都已创建
+// 确保所有必要的目录都已创建
   await ensureMarketDirs();
-  
+
   // 转换包名格式
-  const packageName = skillId.startsWith('@') 
-    ? skillId 
-    : `@skillmarket/${skillId}`;
+  // 用户可以直接指定 @scope/package 或不带前缀的 short name
+  // short name 会被添加 @skillmarket/ 前缀尝试
+  // 如果是 scoped 包 (@scope/name)，直接使用
+  const isScoped = skillId.startsWith('@');
+  const packageName = isScoped ? skillId : `@skillmarket/${skillId}`;
+  const shortName = skillId; // 用于本地目录名
   
   console.log(`Installing ${packageName}${version ? `@${version}` : ''}...`);
   
