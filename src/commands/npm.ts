@@ -118,8 +118,26 @@ interface SearchPackage {
 export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryResponse | null> {
   return new Promise((resolve, reject) => {
     // 构建 npm registry URL
-    // 处理 scoped 包（如 @foo/bar -> foo/bar）
-    const encodedName = packageName.replace('@', '');
+    // scoped 包（如 @foo/bar）需要特殊处理，保留 @ 符号
+    // @foo/bar -> @foo%2Fbar (URL encoded)
+    const isScoped = packageName.startsWith('@');
+    let encodedName: string;
+    
+    if (isScoped) {
+      // 对 scoped 包进行正确编码：@foo/bar -> @foo%2Fbar
+      const scopeAndName = packageName.substring(1); // 去掉 @
+      const slashIndex = scopeAndName.indexOf('/');
+      if (slashIndex > 0) {
+        const scope = scopeAndName.substring(0, slashIndex);
+        const name = scopeAndName.substring(slashIndex + 1);
+        encodedName = `@${encodeURIComponent(scope)}%2F${encodeURIComponent(name)}`;
+      } else {
+        encodedName = packageName; // fallback
+      }
+    } else {
+      encodedName = encodeURIComponent(packageName);
+    }
+    
     const url = new URL(`https://registry.npmjs.org/${encodedName}`);
     
     // 发送 HTTPS GET 请求
@@ -128,7 +146,7 @@ export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryR
       
       // 收集响应数据
       res.on('data', chunk => { data += chunk; });
-      
+
       res.on('end', () => {
         try {
           // 解析 JSON 响应
@@ -140,7 +158,7 @@ export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryR
             resolve(null);
             return;
           }
-          
+
           // 成功解析，返回包信息
           resolve(parsed);
         } catch {
@@ -208,7 +226,9 @@ export async function searchSkillmarketPackages(): Promise<string[]> {
           // 提取所有匹配的包名
           // npm search 返回结构: { objects: [{ package: { name: "..." } }] }
           for (const item of result.objects || []) {
-            packages.push(item.package.name);
+            if (item?.package?.name) {
+              packages.push(item.package.name);
+            }
           }
           
           resolve(packages);

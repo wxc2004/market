@@ -119,12 +119,11 @@ export async function listSkills(options: LsOptions): Promise<void> {
     for (const pkgName of packages) {
       const info = await fetchNpmPackage(pkgName);
       
-      if (info) {
-        // 获取最新版本号
-        const latestVersion = info['dist-tags']?.latest;
+      if (info && info['dist-tags']?.latest) {
+        const latestVersion = info['dist-tags'].latest;
         
         // 获取该版本的详细信息
-        const pkg = info.versions[latestVersion];
+        const pkg = info.versions?.[latestVersion];
         
         // 打印包名和版本
         console.log(`  ${info.name}@${latestVersion}`);
