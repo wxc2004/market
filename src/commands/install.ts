@@ -147,10 +147,10 @@ export async function installSkill(
       const files = await fs.readdir(cacheDir);
       
       // npm pack 生成的文件名格式: <package-name>-<version>.tgz
-      // scoped 包格式: @scope-package-name-<version>.tgz
+      // scoped 包格式: @scope-package-name-<version>.tgz (注意：@ 不在文件名中)
       const tarball = files.find(f => 
         f.endsWith('.tgz') && 
-        f.includes(packageName.replace('/', '-'))
+        f.includes(packageName.replace(/^@/, '').replace('/', '-'))
       );
       
       if (tarball) {
