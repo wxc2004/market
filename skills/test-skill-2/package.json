@@ -1,0 +1,16 @@
+{
+  "name": "@wanxuchen/test-skill-2",
+  "version": "1.0.3",
+  "description": "Test Skill 2 - 用于测试 SkillMarket 卸载和更新流程",
+  "type": "module",
+  "main": "index.js",
+  "keywords": ["skillmarket", "test"],
+  "author": "SkillMarket",
+  "license": "MIT",
+  "skillmarket": {
+    "id": "test-skill-2",
+    "displayName": "测试技能2",
+    "description": "用于测试 SkillMarket 卸载和更新功能",
+    "platforms": ["opencode", "cursor", "vscode", "claude", "codex", "antigravity"]
+  }
+}

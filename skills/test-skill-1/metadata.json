@@ -1,0 +1,9 @@
+{
+  "id": "test-skill-1",
+  "displayName": "测试技能1",
+  "description": "用于测试 SkillMarket 安装和 info 功能",
+  "version": "1.0.3",
+  "author": "SkillMarket",
+  "platforms": ["opencode", "cursor", "vscode", "claude", "codex", "antigravity"],
+  "tags": ["test", "install", "info"]
+}
