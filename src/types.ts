@@ -135,3 +135,38 @@ export interface RegistryData {
    */
   lastUpdated: string;
 }
+
+// -----------------------------------------------------------------------------
+// Platform Adapter 接口
+// -----------------------------------------------------------------------------
+
+/**
+ * Platform adapter interface for cross-platform skill installation
+ * 
+ * @interface PlatformAdapter
+ */
+export interface PlatformAdapter {
+  /** Unique platform identifier */
+  readonly id: string;
+  
+  /** Human-readable platform name */
+  readonly name: string;
+  
+  /** Platform's skill directory path */
+  readonly skillDir: string;
+  
+  /** Check if this platform is available on the current system */
+  isAvailable(): Promise<boolean>;
+  
+  /** Check if a skill is installed on this platform */
+  isInstalled(skillId: string): Promise<boolean>;
+  
+  /** Install a skill to this platform */
+  install(skillId: string, sourceDir: string): Promise<void>;
+  
+  /** Uninstall a skill from this platform */
+  uninstall(skillId: string): Promise<void>;
+  
+  /** List all skills installed on this platform */
+  listInstalled(): Promise<string[]>;
+}

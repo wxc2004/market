@@ -7,9 +7,10 @@
  * 
  * 卸载流程:
  * 1. 检查 skill 是否已安装
- * 2. 删除 skill 主目录（包含所有版本和软链接）
- * 3. 删除各平台的软链接
- * 4. 从注册表中移除记录
+ * 2. 从目标平台卸载
+ * 3. 删除 skill 主目录（包含所有版本和软链接）
+ * 4. 删除各平台的软链接
+ * 5. 从注册表中移除记录
  * 
  * @module commands/uninstall
  */
@@ -23,6 +24,18 @@ import path from 'path';                 // 路径处理
 import { loadRegistry, saveRegistry } from './registry.js';  // 注册表操作
 import { getSkillsDir, getPlatformLinksDir } from '../utils/dirs.js';  // 目录工具
 import { PLATFORMS } from '../constants.js';  // 平台常量
+import { detectPlatforms, getAdapterByPlatform } from '../adapters/index.js';  // 平台适配器
+import type { Platform } from '../constants.js';
+import type { PlatformAdapter } from '../types.js';
+
+// -----------------------------------------------------------------------------
+// 卸载选项接口
+// -----------------------------------------------------------------------------
+
+export interface UninstallOptions {
+  /** 目标平台列表（留空则卸载所有平台） */
+  platforms?: string[];
+}
 
 // -----------------------------------------------------------------------------
 // 卸载函数
@@ -32,13 +45,20 @@ import { PLATFORMS } from '../constants.js';  // 平台常量
  * 卸载指定的 skill
  * 
  * @param {string} skillId - Skill 标识符
+ * @param {UninstallOptions} [options] - 卸载选项
  * @returns {Promise<void>}
  * 
  * @example
  * // 卸载 brainstorming
  * await uninstallSkill('brainstorming');
+ * 
+ * // 从特定平台卸载
+ * await uninstallSkill('brainstorming', { platforms: ['opencode'] });
  */
-export async function uninstallSkill(skillId: string): Promise<void> {
+export async function uninstallSkill(
+  skillId: string,
+  options?: UninstallOptions
+): Promise<void> {
   // ==========================================================================
   // 步骤 1: 检查是否已安装
   // ==========================================================================
@@ -57,7 +77,40 @@ export async function uninstallSkill(skillId: string): Promise<void> {
   console.log(`Uninstalling ${skillId}@${skillInfo.version}...`);
   
   // ==========================================================================
-  // 步骤 2: 删除 skill 主目录
+  // 步骤 2: 从平台卸载 (NEW)
+  // ==========================================================================
+  
+  let targetAdapters: (PlatformAdapter | undefined)[] = [];
+  
+  if (options?.platforms && options.platforms.length > 0) {
+    // 用户指定了平台
+    for (const platformStr of options.platforms) {
+      const platform = platformStr as Platform;
+      targetAdapters.push(getAdapterByPlatform(platform));
+    }
+  } else {
+    // 自动检测可用平台
+    targetAdapters = await detectPlatforms();
+  }
+  
+  // 过滤掉 undefined（无效平台）
+  const validAdapters = targetAdapters.filter((a): a is PlatformAdapter => a !== undefined);
+  
+  if (validAdapters.length > 0) {
+    console.log(`\nUninstalling from ${validAdapters.length} platform(s)...\n`);
+    
+    for (const adapter of validAdapters) {
+      try {
+        await adapter.uninstall(skillId);
+        console.log(`${adapter.name.padEnd(12)} ✅  Uninstalled`);
+      } catch (error) {
+        console.log(`${adapter.name.padEnd(12)} ❌  Failed: ${error}`);
+      }
+    }
+  }
+  
+  // ==========================================================================
+  // 步骤 3: 删除 skill 主目录
   // ==========================================================================
   
   // skill 主目录包含所有版本和 latest 软链接
@@ -68,7 +121,7 @@ export async function uninstallSkill(skillId: string): Promise<void> {
   await fs.remove(skillDir);
   
   // ==========================================================================
-  // 步骤 3: 删除平台软链接
+  // 步骤 4: 删除平台软链接
   // ==========================================================================
   
   const platformLinksDir = getPlatformLinksDir();
@@ -85,7 +138,7 @@ export async function uninstallSkill(skillId: string): Promise<void> {
   }
   
   // ==========================================================================
-  // 步骤 4: 更新注册表
+  // 步骤 5: 更新注册表
   // ==========================================================================
   
   // 从注册表中删除该 skill 的记录

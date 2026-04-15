@@ -14,10 +14,11 @@
  * - skm ls              列出可用的 skills
  * - skm ls --installed  列出已安装的 skills
  * - skm info <skill>    显示 skill 详情
- * - skm install <skill> 安装 skill
- * - skm uninstall <skill> 卸载 skill
+ * - skm install <skill> 安装 skill（支持 --platform）
+ * - skm uninstall <skill> 卸载 skill（支持 --platform）
  * - skm update [skill] 更新 skill(s)
  * - skm sync            同步平台链接
+ * - skm platforms       显示可用平台
  * 
  * @module cli
  */
@@ -37,6 +38,7 @@ import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill } from './commands/uninstall.js'; // 卸载命令
+import { detectPlatforms, getAllAdapters, OpenCodeAdapter, ClaudeAdapter, VSCodeAdapter } from './adapters/index.js'; // 平台适配器
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -87,22 +89,26 @@ Commands:
                          --installed    Show only installed skills
                          --updates      Check for updates
   info <skill-id>      Display skill information
-  install <skill>      Install a skill (e.g., skm install brainstorming)
+  install <skill>      Install a skill
                          @version      Install specific version
-                         --all         Install all available skills
+                         --platform    Target platforms (opencode,claude,vscode)
+                         --force       Overwrite if already installed
   uninstall <skill>    Remove an installed skill
+                         --platform    Target platforms
   update [options]     Update skills
                          --all          Update all skills
   sync                 Synchronize platform links
-  platform <name>      Set target platform (${PLATFORMS.join(', ')})
+  platforms            Show available platforms
 
 Examples:
   skm ls                     List all available skills
   skm ls --installed         Show installed skills only
   skm info brainstorming     View skill details
-  skm install brainstorming  Install a skill
-  skm install brainstorming@1.0.0 Install specific version
-  skm update --all           Update all installed skills
+  skm install brainstorming  Install to all platforms
+  skm install brainstorming --platform opencode  Install to OpenCode only
+  skm install brainstorming --platform claude,vscode  Install to multiple
+  skm uninstall brainstorming
+  skm platforms              Show available platforms
       `);
       process.exit(0);
     }
@@ -158,24 +164,36 @@ infoCmd
 /**
  * 安装命令
  * 
- * 从 npm 安装指定的 skill 到本地
+ * 从 npm 安装指定的 skill 到本地和跨平台目录
  * 
  * 用法:
- * - skm install <skill>         安装最新版本
+ * - skm install <skill>         安装到所有检测到的平台
  * - skm install <skill>@<ver>   安装指定版本
- * - skm install --all            安装所有可用 skills（预留）
+ * - skm install --platform opencode  安装到特定平台
+ * - skm install --platform claude,vscode  安装到多个平台
+ * - skm install --force         强制覆盖
  * 
  * @example
  * skm install brainstorming
  * skm install brainstorming@1.0.0
+ * skm install brainstorming --platform opencode
  */
-const installCmd = program.command('install').description('Install a skill');
+const installCmd = program.command('install').description('Install a skill to local and platform directories');
 installCmd
   .argument('<skill>', 'Skill ID to install (e.g., brainstorming or @scope/name)')
-  .option('--all', 'Install all available skills')
+  .option('-p, --platform <platforms>', 'Target platforms (comma-separated: opencode,claude,vscode)')
+  .option('-f, --force', 'Overwrite if already installed')
+  .option('-v, --version <version>', 'Specific version to install')
   .action(async (skill, opts) => {
     try {
-      await installSkill(skill);
+      const platforms = opts.platform 
+        ? opts.platform.split(',').map((p: string) => p.trim())
+        : undefined;
+      
+      await installSkill(skill, opts.version, {
+        platforms,
+        force: opts.force
+      });
     } catch (err) {
       console.error('Installation failed:', err);
       process.exit(1);
@@ -189,19 +207,27 @@ installCmd
 /**
  * 卸载命令
  * 
- * 移除本地已安装的 skill
+ * 移除本地已安装的 skill 及各平台的文件
  * 
- * 用法: skm uninstall <skill-id>
+ * 用法:
+ * - skm uninstall <skill>    卸载所有平台
+ * - skm uninstall <skill> --platform opencode  卸载特定平台
  * 
  * @example
  * skm uninstall brainstorming
+ * skm uninstall brainstorming --platform claude
  */
-const uninstallCmd = program.command('uninstall').description('Remove an installed skill');
+const uninstallCmd = program.command('uninstall').description('Remove an installed skill from local and platform directories');
 uninstallCmd
   .argument('<skill>', 'Skill ID to uninstall')
-  .action(async (skill) => {
+  .option('-p, --platform <platforms>', 'Target platforms (comma-separated)')
+  .action(async (skill, opts) => {
     try {
-      await uninstallSkill(skill);
+      const platforms = opts.platform 
+        ? opts.platform.split(',').map((p: string) => p.trim())
+        : undefined;
+      
+      await uninstallSkill(skill, { platforms });
     } catch (err) {
       console.error('Uninstall failed:', err);
       process.exit(1);
@@ -268,21 +294,46 @@ program
   });
 
 // -----------------------------------------------------------------------------
-// 平台命令 (skm platform)
+// 平台命令 (skm platforms)
 // -----------------------------------------------------------------------------
 
 /**
- * 平台命令（预留）
+ * 平台命令
  * 
- * 设置默认目标平台
+ * 显示所有支持的平台及其状态
  * 
- * 用法: skm platform <name>
+ * 用法: skm platforms
  */
-const platformCmd = program.command('platform').description('Set target platform');
-platformCmd
-  .argument('<name>', 'Platform name')
-  .action((name) => {
-    console.log('Platform command - name:', name);
+const platformsCmd = program.command('platforms').description('Show available platforms');
+platformsCmd
+  .action(async () => {
+    try {
+      const available = await detectPlatforms();
+      
+      console.log('\n📍 Available Platforms:\n');
+      
+      const allPlatforms = [
+        { name: 'OpenCode', adapter: new OpenCodeAdapter() },
+        { name: 'Claude Code', adapter: new ClaudeAdapter() },
+        { name: 'VSCode', adapter: new VSCodeAdapter() },
+      ];
+      
+      for (const { name, adapter } of allPlatforms) {
+        const isAvailable = available.find(a => a.id === adapter.id);
+        const installed = await adapter.listInstalled();
+        
+        if (isAvailable) {
+          console.log(`${name.padEnd(12)} ✅  Available (${installed.length} skills installed)`);
+        } else {
+          console.log(`${name.padEnd(12)} ❌  Not detected`);
+        }
+      }
+      
+      console.log('');
+    } catch (err) {
+      console.error('Failed to list platforms:', err);
+      process.exit(1);
+    }
   });
 
 // -----------------------------------------------------------------------------

@@ -3,7 +3,7 @@
  * SkillMarket 安装命令模块
  * =============================================================================
  * 
- * 本模块实现 `skm install` 命令，用于安装 skill 到本地。
+ * 本模块实现 `skm install` 命令，用于安装 skill 到本地和跨平台目录。
  * 
  * 安装流程:
  * 1. 确保目录结构存在
@@ -11,7 +11,8 @@
  * 3. 下载包到缓存
  * 4. 解压并复制到 skills 目录
  * 5. 创建 latest 软链接
- * 6. 更新本地注册表
+ * 6. 安装到目标平台（OpenCode/Claude Code/VSCode）
+ * 7. 更新本地注册表
  * 
  * 安装后的目录结构:
  * ~/.skillmarket/
@@ -22,6 +23,11 @@
  * │           ├── SKILL.md
  * │           └── metadata.json
  * └── ...
+ * 
+ * 跨平台安装:
+ * - OpenCode: ~/.config/opencode/skills/<skillId>/SKILL.md
+ * - Claude Code: ~/.claude/skills/<skillId>/SKILL.md
+ * - VSCode: ~/.copilot/skills/<skillId>/SKILL.md
  * 
  * @module commands/install
  */
@@ -39,12 +45,25 @@ import { promisify } from 'util';    // Promise 化工具
 import { fetchNpmPackage } from './npm.js';         // npm 查询
 import { loadRegistry, saveRegistry } from './registry.js';  // 注册表操作
 import { getCacheDir, getSkillsDir, ensureMarketDirs } from '../utils/dirs.js';  // 目录工具
-import { detectPlatform } from '../utils/platform.js';  // 平台检测
+import { detectPlatforms, getAdapterByPlatform } from '../adapters/index.js';  // 平台适配器
 import { LATEST_LINK } from '../constants.js';       // 常量
 import type { InstalledSkill } from '../types.js';    // 类型定义
+import type { Platform } from '../constants.js';
+import type { PlatformAdapter } from '../types.js';
 
 // 将 exec 转为 Promise 形式
 const execAsync = promisify(exec);
+
+// -----------------------------------------------------------------------------
+// 安装选项接口
+// -----------------------------------------------------------------------------
+
+export interface InstallOptions {
+  /** 目标平台列表（留空则安装到所有可用平台） */
+  platforms?: string[];
+  /** 强制覆盖已安装的 skill */
+  force?: boolean;
+}
 
 // -----------------------------------------------------------------------------
 // 安装函数
@@ -55,6 +74,7 @@ const execAsync = promisify(exec);
  * 
  * @param {string} skillId - Skill 标识符（支持短格式或 scoped 格式）
  * @param {string} [version] - 指定版本号（可选，不指定则安装最新版本）
+ * @param {InstallOptions} [options] - 安装选项
  * @returns {Promise<void>}
  * 
  * @example
@@ -64,12 +84,16 @@ const execAsync = promisify(exec);
  * // 安装指定版本
  * await installSkill('brainstorming', '1.0.0');
  * 
- * // 安装 scoped 包
- * await installSkill('@custom/skill');
+ * // 安装到特定平台
+ * await installSkill('brainstorming', undefined, { platforms: ['opencode'] });
+ * 
+ * // 强制覆盖
+ * await installSkill('brainstorming', undefined, { force: true });
  */
 export async function installSkill(
   skillId: string, 
-  version?: string
+  version?: string,
+  options?: InstallOptions
 ): Promise<void> {
   // ==========================================================================
   // 步骤 0: 准备
@@ -211,18 +235,77 @@ export async function installSkill(
   }
   
   // ==========================================================================
-  // 步骤 5: 更新注册表
+  // 步骤 5: 安装到目标平台 (NEW)
+  // ==========================================================================
+  
+  let targetAdapters: PlatformAdapter[] = [];
+  
+  if (options?.platforms && options.platforms.length > 0) {
+    // 用户指定了平台
+    for (const platformStr of options.platforms) {
+      const platform = platformStr as Platform;
+      const adapter = getAdapterByPlatform(platform);
+      if (adapter) {
+        targetAdapters.push(adapter);
+      } else {
+        console.warn(`⚠️  Unknown platform: ${platformStr}`);
+      }
+    }
+  } else {
+    // 自动检测可用平台
+    targetAdapters = await detectPlatforms();
+  }
+  
+  if (targetAdapters.length === 0) {
+    console.log('No target platforms detected.');
+    console.log('Use --platform to specify platforms manually.');
+  } else {
+    console.log(`\nInstalling to ${targetAdapters.length} platform(s)...\n`);
+    
+    // 安装到每个平台
+    const results: { name: string; status: 'installed' | 'skipped' | 'failed'; error?: string }[] = [];
+    
+    for (const adapter of targetAdapters) {
+      try {
+        const isInstalled = await adapter.isInstalled(skillId);
+        
+        if (isInstalled && !options?.force) {
+          console.log(`${adapter.name.padEnd(12)} ⚠️  Already installed (use --force to overwrite)`);
+          results.push({ name: adapter.name, status: 'skipped' });
+          continue;
+        }
+        
+        // 安装 skill 到平台目录
+        await adapter.install(skillId, skillVersionDir);
+        console.log(`${adapter.name.padEnd(12)} ✅  Installed successfully`);
+        results.push({ name: adapter.name, status: 'installed' });
+      } catch (error) {
+        console.log(`${adapter.name.padEnd(12)} ❌  Failed: ${error}`);
+        results.push({ name: adapter.name, status: 'failed', error: String(error) });
+      }
+    }
+    
+    // 显示摘要
+    const installed = results.filter(r => r.status === 'installed').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const failed = results.filter(r => r.status === 'failed').length;
+    
+    console.log(`\n📊 Summary: ${installed} installed, ${skipped} skipped, ${failed} failed`);
+  }
+  
+  // ==========================================================================
+  // 步骤 6: 更新注册表
   // ==========================================================================
   
   const registry = await loadRegistry();
-  const currentPlatform = detectPlatform();
+  const installedPlatforms = targetAdapters.map(a => a.id);
   
   // 添加/更新注册表中的 skill 记录
   registry.skills[skillId] = {
     id: skillId,
     version: targetVersion,
     installedAt: new Date().toISOString(),
-    platforms: [currentPlatform]
+    platforms: installedPlatforms
   } as InstalledSkill;
   
   // 保存注册表
