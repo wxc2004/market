@@ -42,7 +42,7 @@ import { exec } from 'child_process'; // 执行 shell 命令
 import { promisify } from 'util';    // Promise 化工具
 
 // 模块导入
-import { fetchNpmPackage } from './npm.js';         // npm 查询
+import { fetchSkillPackage } from './npm.js';         // npm 查询
 import { loadRegistry, saveRegistry } from './registry.js';  // 注册表操作
 import { getCacheDir, getSkillsDir, ensureMarketDirs } from '../utils/dirs.js';  // 目录工具
 import { detectPlatforms, getAdapterByPlatform } from '../adapters/index.js';  // 平台适配器
@@ -102,28 +102,20 @@ export async function installSkill(
   // 确保所有必要的目录都已创建
   await ensureMarketDirs();
   
-  // 转换包名格式
-  // 支持 @itismyskillmarket/ 和 @skillmarket/ 两种 scope
-  let packageName: string;
-  if (skillId.startsWith('@')) {
-    // 直接使用用户提供的 scoped 包名
-    packageName = skillId;
-  } else {
-    // 默认尝试 @itismyskillmarket/，失败后回退到 @skillmarket/
-    packageName = `@itismyskillmarket/${skillId}`;
-  }
-  
-  console.log(`Installing ${packageName}${version ? `@${version}` : ''}...`);
+  console.log(`Installing ${skillId}${version ? `@${version}` : ''}...`);
   
   // ==========================================================================
   // 步骤 1: 获取包信息
   // ==========================================================================
   
-  // 从 npm 查询包的元信息
-  const pkgInfo = await fetchNpmPackage(packageName);
+  // 从 npm 查询包的元信息（自动尝试多个可能的 scope）
+  const pkgInfo = await fetchSkillPackage(skillId);
   if (!pkgInfo) {
-    throw new Error(`Package ${packageName} not found`);
+    throw new Error(`Package ${skillId} not found`);
   }
+  
+  // 获取实际找到的包名
+  const packageName = pkgInfo.name;
   
   // 确定要安装的版本（用户指定版本 > 最新版本）
   const targetVersion = version || pkgInfo['dist-tags']?.latest;

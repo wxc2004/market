@@ -188,6 +188,58 @@ export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryR
 }
 
 // -----------------------------------------------------------------------------
+// 兼容的 Scope 列表
+// -----------------------------------------------------------------------------
+
+/**
+ * SkillMarket 支持的 npm scope 列表
+ * 按优先级排序，先尝试的 scope 排在前面
+ */
+const SKILL_SCOPES = [
+  '@wanxuchen',       // 原作者 scope
+  '@itismyskillmarket', // 当前包名 scope
+  '@thisisskillmarket', // 曾用 scope
+  '@this-is-skillmarket', // 曾用 scope (带横线)
+  '@skillmarket',     // 通用 scope
+];
+
+/**
+ * 将 skillId 转换为可能的包名列表
+ */
+function getPossiblePackageNames(skillId: string): string[] {
+  if (skillId.startsWith('@')) {
+    // 已经是 scoped 包，直接返回
+    return [skillId];
+  }
+  
+  // 生成所有可能的包名
+  return SKILL_SCOPES.map(scope => `${scope}/${skillId}`);
+}
+
+/**
+ * 尝试获取 npm 包信息，自动尝试多个可能的 scope
+ * 
+ * @param skillId - Skill ID（可以是短格式或完整格式）
+ * @returns 包信息，失败返回 null
+ */
+export async function fetchSkillPackage(skillId: string): Promise<NpmRegistryResponse | null> {
+  const packageNames = getPossiblePackageNames(skillId);
+  
+  for (const packageName of packageNames) {
+    try {
+      const info = await fetchNpmPackage(packageName);
+      if (info) {
+        return info;
+      }
+    } catch {
+      // 继续尝试下一个 scope
+    }
+  }
+  
+  return null;
+}
+
+// -----------------------------------------------------------------------------
 // 搜索包
 // -----------------------------------------------------------------------------
 

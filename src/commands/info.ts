@@ -19,7 +19,7 @@
 // 导入依赖
 // -----------------------------------------------------------------------------
 
-import { fetchNpmPackage } from './npm.js';    // npm registry 查询
+import { fetchSkillPackage } from './npm.js';    // npm registry 查询
 import { 
   isSkillInstalled,       // 检查 skill 是否已安装
   getInstalledSkills       // 获取已安装 skills 列表
@@ -49,25 +49,14 @@ export async function showSkillInfo(skillId: string): Promise<void> {
   // 处理包名格式
   // -------------------------------------------------------------------------
   
-  /**
-   * 转换 skillId 为完整的 npm 包名格式
-   * 
-   * 支持两种输入格式：
-   * 1. 短格式: "brainstorming" → "@itismyskillmarket/brainstorming"
-   * 2. 完整格式: "@custom/skill" → "@custom/skill"
-   */
-  const packageName = skillId.startsWith('@') 
-    ? skillId                                          // 已经是 scoped 包名
-    : `@itismyskillmarket/${skillId}`;                 // 转换为 scoped 包名
-  
-  console.log(`Fetching info for: ${packageName}\n`);
+  console.log(`Fetching info for: ${skillId}\n`);
   
   try {
     // -------------------------------------------------------------------------
-    // 从 npm 获取包信息
+    // 从 npm 获取包信息（自动尝试多个可能的 scope）
     // -------------------------------------------------------------------------
     
-    const info = await fetchNpmPackage(packageName);
+    const info = await fetchSkillPackage(skillId);
     
     // 包不存在
     if (!info) {
