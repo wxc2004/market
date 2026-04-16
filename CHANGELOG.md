@@ -1,3 +1,87 @@
+# SkillMarket v1.2.6 更新日志
+
+**日期**: 2026-04-16
+**版本**: 1.2.6
+
+---
+
+## 🎉 新功能：skm ls 分页支持
+
+### 功能说明
+
+当 skill 数量较多时，现在支持分页浏览。
+
+### 新增选项
+
+```bash
+# 默认每页 20 个
+skm ls
+
+# 指定页码
+skm ls --page 2
+
+# 指定每页数量
+skm ls --limit 10
+
+# 组合使用
+skm ls --page 2 --limit 10
+
+# 已安装的 skills 也支持分页
+skm ls --installed --page 2
+```
+
+### 输出示例
+
+```
+Found 85 skill(s):
+
+📦 @skillmarket/brainstorming@1.2.0
+   名称: Brainstorming
+   描述: Feature brainstorming skill
+   平台: opencode, cursor, vscode, claude
+   链接: https://www.npmjs.com/package/@skillmarket/brainstorming
+
+Page 1/5 (20 per page) | Use --page N to navigate
+```
+
+### 实现细节
+
+- npm search API 使用 `from` 和 `size` 参数实现服务端分页
+- 本地已安装 skills 使用数组 slice 实现客户端分页
+- 默认每页 20 个，可自定义
+
+---
+
+## 🔧 改进
+
+1. **文档更新**
+   - 更新 README.md 添加分页使用示例
+   - 更新 SKILLMARKET-GUIDE.md 修复安装命令
+   - 更新 skills/README.md 添加 test-skill-1/2
+
+2. **版本管理优化**
+   - 版本号现在从 `package.json` 动态读取
+   - 不再需要手动同步版本号
+
+---
+
+## 📦 完整版本历史
+
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.2.6 | 2026-04-16 | 修复版本号动态读取 |
+| 1.2.5 | 2026-04-16 | 文档更新 |
+| 1.2.4 | 2026-04-16 | 修复版本号硬编码问题 |
+| 1.2.3 | 2026-04-15 | 跨平台 Skill 安装支持 |
+
+---
+
+## 贡献者
+
+- wxc2004 (wanxuchen)
+
+---
+
 # SkillMarket v1.2.3 发布总结
 
 **日期**: 2026-04-15
