@@ -65,7 +65,7 @@ const program = new Command();
 program
   .name('skm')
   .description('SkillMarket - Cross-platform skill manager for AI coding tools')
-  .version('1.0.0');
+  .version('1.2.4');
 
 // -----------------------------------------------------------------------------
 // 帮助命令 (-h, --help)
