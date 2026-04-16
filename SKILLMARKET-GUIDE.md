@@ -207,14 +207,24 @@ jobs:
 ### 安装 SkillMarket CLI
 
 ```bash
-npm install -g @wanxuchen/skillmarket
+npm install -g itismyskillmarket
+```
+
+或使用 npx（无需安装）：
+
+```bash
+npx itismyskillmarket --help
 ```
 
 ### 基本命令
 
 ```bash
-# 列出可用 skills
+# 列出可用 skills（支持分页）
 skm ls
+
+# 分页浏览
+skm ls --page 2           # 第 2 页
+skm ls --limit 10         # 每页 10 个
 
 # 查看 skill 详情
 skm info <skill-name>
@@ -222,11 +232,13 @@ skm info <skill-name>
 # 安装 skill
 skm install <skill-name>
 
-# 查看已安装
+# 查看已安装（支持分页）
 skm ls --installed
+skm ls --installed --page 2
 
 # 更新 skill
 skm update <skill-name>
+skm update --all           # 更新所有
 
 # 卸载 skill
 skm uninstall <skill-name>
@@ -266,9 +278,8 @@ skm ls
 | 版本 | 日期 | 描述 |
 |------|------|------|
 | 1.0.0 | 2026-04-01 | 初始版本 |
-| 1.0.1 | 2026-04-08 | 修复 GitHub Actions |
-| 1.0.2 | 2026-04-08 | 添加发布工作流 |
-| 1.0.3 | 2026-04-08 | 改进 ls 显示 |
+| 1.2.0 | 2026-04-15 | 添加跨平台支持 |
+| 1.2.4 | 2026-04-16 | 添加 `skm ls` 分页功能 |
 
 ---
 

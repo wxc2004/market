@@ -17,11 +17,14 @@ npx itismyskillmarket --help
 ## Usage
 
 ```bash
-# List available skills
+# List available skills (with pagination)
 skm ls
+skm ls --page 2           # Go to page 2
+skm ls --limit 10         # Show 10 items per page
 
-# Show installed skills
+# Show installed skills (with pagination)
 skm ls --installed
+skm ls --installed --page 2
 
 # View skill information
 skm info brainstorming

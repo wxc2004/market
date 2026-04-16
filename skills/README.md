@@ -8,10 +8,10 @@ This directory contains the skill packages that can be published to npm.
 2. Add the required files:
    - `package.json` - Package configuration with `skillmarket` metadata
    - `SKILL.md` - Skill documentation
-   - `metadata.json` - Skill metadata
+   - `metadata.json` - Skill metadata (optional)
    - `index.js` - Main entry point (OpenCode plugin)
 
-3. Update the GitHub Actions workflow to include your skill (if using dropdown options)
+3. Publish via GitHub Actions or manually
 
 ## Publishing a Skill
 
@@ -42,7 +42,7 @@ npm publish --access=public
     "id": "<skill-name>",
     "displayName": "Display Name",
     "description": "Description",
-    "platforms": ["opencode", "cursor", "vscode"]
+    "platforms": ["opencode", "cursor", "vscode", "claude", "codex", "antigravity"]
   }
 }
 ```
@@ -50,3 +50,5 @@ npm publish --access=public
 ## Current Skills
 
 - `test-skill` - Test skill for validating the installation flow
+- `test-skill-1` - Test skill for validating uninstall and update flows
+- `test-skill-2` - Test skill for validating multi-platform installation
