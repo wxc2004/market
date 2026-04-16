@@ -250,17 +250,25 @@ export async function fetchSkillPackage(skillId: string): Promise<NpmRegistryRes
  * 
  * API 端点: GET https://registry.npmjs.org/-/v1/search
  * 
- * @returns {Promise<string[]>} 匹配的包名数组
+ * @param options - 搜索选项
+ * @param options.from - 起始位置（分页用）
+ * @param options.size - 返回结果数量
+ * @returns {Promise<{packages: string[], total: number}>} 匹配的包名数组和总数
  * 
  * @example
- * const packages = await searchSkillmarketPackages();
- * console.log(`找到 ${packages.length} 个 skill 包`);
+ * const { packages, total } = await searchSkillmarketPackages();
+ * console.log(`找到 ${total} 个 skill 包`);
  * packages.forEach(name => {
  *   console.log(`- ${name}`);
  * });
  */
-export async function searchSkillmarketPackages(): Promise<string[]> {
+export async function searchSkillmarketPackages(options: {
+  from?: number;
+  size?: number;
+} = {}): Promise<{ packages: string[]; total: number }> {
+  const { from = 0, size = 100 } = options;
   const packages: string[] = [];
+  let total = 0;
   
   return new Promise((resolve, reject) => {
     // 构建 search API URL
@@ -269,8 +277,10 @@ export async function searchSkillmarketPackages(): Promise<string[]> {
     // 设置搜索参数
     // text: 搜索关键字
     // size: 返回结果数量上限
+    // from: 起始位置（分页用）
     url.searchParams.set('text', 'keywords:skillmarket');
-    url.searchParams.set('size', '100');
+    url.searchParams.set('size', String(size));
+    url.searchParams.set('from', String(from));
     
     const req = https.get(url.toString(), { timeout: 10000 }, (res) => {
       let data = '';
@@ -283,6 +293,9 @@ export async function searchSkillmarketPackages(): Promise<string[]> {
           // 解析搜索结果
           const result = JSON.parse(data);
           
+          // 获取总数
+          total = result.total || 0;
+          
           // 提取所有匹配的包名
           // npm search 返回结构: { objects: [{ package: { name: "..." } }] }
           if (result.objects) {
@@ -293,10 +306,10 @@ export async function searchSkillmarketPackages(): Promise<string[]> {
             }
           }
           
-          resolve(packages);
+          resolve({ packages, total });
         } catch {
           // 解析失败返回空数组
-          resolve([]);
+          resolve({ packages: [], total: 0 });
         }
       });
     });

@@ -37,6 +37,12 @@ interface LsOptions {
   
   /** 检查更新（预留功能） */
   updates?: boolean;
+  
+  /** 页码（从 1 开始） */
+  page?: number;
+  
+  /** 每页数量 */
+  limit?: number;
 }
 
 // -----------------------------------------------------------------------------
@@ -60,25 +66,33 @@ interface LsOptions {
  * await listSkills({ installed: true });
  */
 export async function listSkills(options: LsOptions): Promise<void> {
-  const { installed, updates } = options;
+  const { installed, updates, page = 1, limit = 20 } = options;
   
   // -------------------------------------------------------------------------
   // 模式1: 显示已安装的 skills
   // -------------------------------------------------------------------------
   if (installed) {
     const skills = await getInstalledSkills();
+    const total = skills.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const currentPage = Math.min(Math.max(1, page), totalPages);
     
     // 无已安装 skills 时给出提示
     if (skills.length === 0) {
-      console.log('No skills installed yet. Run "skm --ls" to see available skills.');
+      console.log('No skills installed yet. Run "skm ls" to see available skills.');
       return;
     }
     
+    // 计算分页范围
+    const start = (currentPage - 1) * limit;
+    const end = Math.min(start + limit, total);
+    const pageSkills = skills.slice(start, end);
+    
     // 打印表头
-    console.log('Installed Skills:\n');
+    console.log(`Installed Skills (${total}):\n`);
     
     // 遍历并打印每个 skill 的详细信息
-    for (const skill of skills) {
+    for (const skill of pageSkills) {
       // skill 名称和版本
       console.log(`  ${skill.id}@${skill.version}`);
       
@@ -92,6 +106,9 @@ export async function listSkills(options: LsOptions): Promise<void> {
       console.log();
     }
     
+    // 打印分页信息
+    console.log(`Page ${currentPage}/${totalPages} (${limit} per page) | Use --page N to navigate`);
+    
     return;
   }
   
@@ -103,8 +120,17 @@ export async function listSkills(options: LsOptions): Promise<void> {
   console.log('Searching npm registry...\n');
   
   try {
+    // 计算分页偏移量
+    const offset = (page - 1) * limit;
+    
     // 调用 npm search API 搜索 skillmarket 相关包
-    const packages = await searchSkillmarketPackages();
+    const { packages, total } = await searchSkillmarketPackages({
+      from: offset,
+      size: limit
+    });
+    
+    const totalPages = Math.ceil(total / limit) || 1;
+    const currentPage = Math.min(Math.max(1, page), totalPages);
     
     // 无搜索结果时
     if (packages.length === 0) {
@@ -113,7 +139,7 @@ export async function listSkills(options: LsOptions): Promise<void> {
     }
     
     // 打印找到的包数量
-    console.log(`Found ${packages.length} skill(s):\n`);
+    console.log(`Found ${total} skill(s):\n`);
     
     // 遍历每个包，获取详细信息并显示
     for (const pkgName of packages) {
@@ -162,6 +188,9 @@ export async function listSkills(options: LsOptions): Promise<void> {
         console.log();
       }
     }
+    
+    // 打印分页信息
+    console.log(`Page ${currentPage}/${totalPages} (${limit} per page) | Use --page N to navigate`);
   } catch (error) {
     // 网络错误处理
     console.log(`Error fetching skills: ${error}`);

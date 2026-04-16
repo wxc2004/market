@@ -79,30 +79,35 @@ program
 program
   .hook('preAction', (thisCommand) => {
     if (thisCommand.opts().help) {
-      console.log(`
+  console.log(`
 SkillMarket CLI
 
 Usage: skm <command> [options]
 
 Commands:
   ls [options]         List available skills
-                         --installed    Show only installed skills
-                         --updates      Check for updates
+                          --installed    Show only installed skills
+                          --updates      Check for updates
+                          --page <n>     Page number (default: 1)
+                          --limit <n>    Items per page (default: 20)
   info <skill-id>      Display skill information
   install <skill>      Install a skill
-                         @version      Install specific version
-                         --platform    Target platforms (opencode,claude,vscode)
-                         --force       Overwrite if already installed
+                          @version      Install specific version
+                          --platform    Target platforms (opencode,claude,vscode)
+                          --force       Overwrite if already installed
   uninstall <skill>    Remove an installed skill
-                         --platform    Target platforms
+                          --platform    Target platforms
   update [options]     Update skills
-                         --all          Update all skills
+                          --all          Update all skills
   sync                 Synchronize platform links
   platforms            Show available platforms
 
 Examples:
-  skm ls                     List all available skills
+  skm ls                     List all available skills (page 1)
+  skm ls --page 2            Go to page 2
+  skm ls --limit 10          Show 10 items per page
   skm ls --installed         Show installed skills only
+  skm ls --installed --page 2
   skm info brainstorming     View skill details
   skm install brainstorming  Install to all platforms
   skm install brainstorming --platform opencode  Install to OpenCode only
@@ -132,8 +137,16 @@ const lsCmd = program.command('ls').description('List available skills');
 lsCmd
   .option('--installed', 'Show only installed skills')
   .option('--updates', 'Check for updates')
+  .option('-p, --page <number>', 'Page number (default: 1)', parseInt)
+  .option('-l, --limit <number>', 'Items per page (default: 20)', parseInt)
   .action((opts) => {
-    listSkills(opts);
+    // Ensure numeric options have default values if not provided
+    const options = {
+      ...opts,
+      page: opts.page ?? 1,
+      limit: opts.limit ?? 20
+    };
+    listSkills(options);
   });
 
 // -----------------------------------------------------------------------------
