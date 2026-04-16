@@ -29,6 +29,15 @@
 
 // Commander.js - 轻量级的命令行界面框架
 import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// 获取 package.json 中的版本号
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
+const VERSION = packageJson.version;
 
 // 内部模块导入
 import { PLATFORMS } from './constants.js';        // 平台常量
@@ -65,7 +74,7 @@ const program = new Command();
 program
   .name('skm')
   .description('SkillMarket - Cross-platform skill manager for AI coding tools')
-  .version('1.2.4');
+  .version(VERSION);
 
 // -----------------------------------------------------------------------------
 // 帮助命令 (-h, --help)
