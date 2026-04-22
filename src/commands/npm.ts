@@ -276,19 +276,10 @@ export async function searchSkillmarketPackages(options: {
     const url = new URL('https://registry.npmjs.org/-/v1/search');
     
     // 设置搜索参数
-    // text: 搜索关键字
-    // size: 返回结果数量上限
-    // from: 起始位置（分页用）
-    // 如果有关键字，组合搜索条件
-    if (keyword) {
-      // 组合搜索：keywords:skillmarket AND 关键字
-      // 注意：npm search 不直接支持 AND，这里用多个 text 参数
-      // 或者直接在 text 中组合
-      url.searchParams.set('text', `${keyword} keywords:skillmarket`);
-    } else {
-      url.searchParams.set('text', 'keywords:skillmarket');
-    }
-    url.searchParams.set('size', String(size));
+    // 始终搜索 skillmarket 关键字的包
+    // 然后在本地进行精确过滤
+    url.searchParams.set('text', 'keywords:skillmarket');
+    url.searchParams.set('size', String(Math.max(size, 100))); // 获取更多结果用于本地过滤
     url.searchParams.set('from', String(from));
     
     const req = https.get(url.toString(), { timeout: 10000 }, (res) => {
@@ -302,18 +293,45 @@ export async function searchSkillmarketPackages(options: {
           // 解析搜索结果
           const result = JSON.parse(data);
           
-          // 获取总数
-          total = result.total || 0;
+          // 获取总数（基于过滤后的结果）
+          let filteredTotal = 0;
           
-          // 提取所有匹配的包名
-          // npm search 返回结构: { objects: [{ package: { name: "..." } }] }
+          // 提取所有匹配的包名，并进行本地精确过滤
+          // npm search 返回结构: { objects: [{ package: { name: "...", description: "..." } }] }
           if (result.objects) {
             for (const item of result.objects) {
               if (item?.package?.name) {
-                packages.push(item.package.name);
+                const pkgName = item.package.name;
+                const pkgDesc = item.package.description || '';
+                
+                // 本地精确过滤：如果有关键字，检查包名或描述是否包含
+                if (keyword) {
+                  const lowerKeyword = keyword.toLowerCase();
+                  // 检查包名（处理 scoped 包名）
+                  const shortName = pkgName.includes('/') 
+                    ? pkgName.split('/')[1] 
+                    : pkgName;
+                  
+                  const nameMatch = shortName.toLowerCase().includes(lowerKeyword) ||
+                                   pkgName.toLowerCase().includes(lowerKeyword);
+                  const descMatch = pkgDesc.toLowerCase().includes(lowerKeyword);
+                  
+                  // 关键词匹配：包名或描述中包含搜索词
+                  if (nameMatch || descMatch) {
+                    packages.push(pkgName);
+                    filteredTotal++;
+                  }
+                } else {
+                  // 无关键字，返回所有
+                  packages.push(pkgName);
+                  filteredTotal++;
+                }
               }
             }
           }
+          
+          // 使用过滤后的总数
+          total = filteredTotal;
           
           resolve({ packages, total });
         } catch {
