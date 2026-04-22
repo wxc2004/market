@@ -99,6 +99,7 @@ Commands:
                           --updates      Check for updates
                           --page <n>     Page number (default: 1)
                           --limit <n>    Items per page (default: 20)
+                          -s, --search   Search by keyword
   info <skill-id>      Display skill information
   install <skill>      Install a skill
                           @version      Install specific version
@@ -148,12 +149,14 @@ lsCmd
   .option('--updates', 'Check for updates')
   .option('-p, --page <number>', 'Page number (default: 1)', parseInt)
   .option('-l, --limit <number>', 'Items per page (default: 20)', parseInt)
+  .option('-s, --search <keyword>', 'Search by keyword (id, displayName, description)')
   .action((opts) => {
     // Ensure numeric options have default values if not provided
     const options = {
       ...opts,
       page: opts.page ?? 1,
-      limit: opts.limit ?? 20
+      limit: opts.limit ?? 20,
+      search: opts.search
     };
     listSkills(options);
   });

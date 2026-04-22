@@ -43,6 +43,9 @@ interface LsOptions {
   
   /** 每页数量 */
   limit?: number;
+  
+  /** 搜索关键字（支持 id, displayName, description） */
+  search?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -65,31 +68,71 @@ interface LsOptions {
  * // 列出已安装的 skills
  * await listSkills({ installed: true });
  */
+// -----------------------------------------------------------------------------
+// 搜索过滤函数
+// -----------------------------------------------------------------------------
+
+/**
+ * 过滤已安装的 skills（按关键字）
+ * 
+ * 匹配 id, displayName, description 字段
+ * 
+ * @param skills - 已安装的 skills 列表
+ * @param keyword - 搜索关键字
+ * @returns 过滤后的 skills 列表
+ */
+function filterInstalledSkills(skills: any[], keyword: string): any[] {
+  const lower = keyword.toLowerCase();
+  return skills.filter(s => 
+    s.id.toLowerCase().includes(lower) ||
+    (s.displayName && s.displayName.toLowerCase().includes(lower)) ||
+    (s.description && s.description.toLowerCase().includes(lower))
+  );
+}
+
+// -----------------------------------------------------------------------------
+// 命令实现
+// -----------------------------------------------------------------------------
+
 export async function listSkills(options: LsOptions): Promise<void> {
-  const { installed, updates, page = 1, limit = 20 } = options;
+  const { installed, updates, page = 1, limit = 20, search } = options;
   
   // -------------------------------------------------------------------------
   // 模式1: 显示已安装的 skills
   // -------------------------------------------------------------------------
   if (installed) {
-    const skills = await getInstalledSkills();
+    let skills = await getInstalledSkills();
+    
+    // 搜索关键字过滤（仅本地）
+    if (search) {
+      skills = filterInstalledSkills(skills, search);
+    }
+    
     const total = skills.length;
     const totalPages = Math.ceil(total / limit) || 1;
     const currentPage = Math.min(Math.max(1, page), totalPages);
     
     // 无已安装 skills 时给出提示
     if (skills.length === 0) {
-      console.log('No skills installed yet. Run "skm ls" to see available skills.');
+      if (search) {
+        console.log(`No skills found matching "${search}".`);
+      } else {
+        console.log('No skills installed yet. Run "skm ls" to see available skills.');
+      }
       return;
+    }
+    
+    // 搜索结果提示
+    if (search) {
+      console.log(`Found ${total} match(es) for "${search}":\n`);
+    } else {
+      console.log(`Installed Skills (${total}):\n`);
     }
     
     // 计算分页范围
     const start = (currentPage - 1) * limit;
     const end = Math.min(start + limit, total);
     const pageSkills = skills.slice(start, end);
-    
-    // 打印表头
-    console.log(`Installed Skills (${total}):\n`);
     
     // 遍历并打印每个 skill 的详细信息
     for (const skill of pageSkills) {
@@ -117,7 +160,11 @@ export async function listSkills(options: LsOptions): Promise<void> {
   // -------------------------------------------------------------------------
   
   // 提示用户正在搜索
-  console.log('Searching npm registry...\n');
+  if (search) {
+    console.log(`Searching npm for "${search}"...\n`);
+  } else {
+    console.log('Searching npm registry...\n');
+  }
   
   try {
     // 计算分页偏移量
@@ -126,7 +173,8 @@ export async function listSkills(options: LsOptions): Promise<void> {
     // 调用 npm search API 搜索 skillmarket 相关包
     const { packages, total } = await searchSkillmarketPackages({
       from: offset,
-      size: limit
+      size: limit,
+      keyword: search
     });
     
     const totalPages = Math.ceil(total / limit) || 1;
@@ -134,12 +182,20 @@ export async function listSkills(options: LsOptions): Promise<void> {
     
     // 无搜索结果时
     if (packages.length === 0) {
-      console.log('No skills found. Check back later!');
+      if (search) {
+        console.log(`No skills found matching "${search}".`);
+      } else {
+        console.log('No skills found. Check back later!');
+      }
       return;
     }
     
     // 打印找到的包数量
-    console.log(`Found ${total} skill(s):\n`);
+    if (search) {
+      console.log(`Found ${total} match(es) for "${search}":\n`);
+    } else {
+      console.log(`Found ${total} skill(s):\n`);
+    }
     
     // 遍历每个包，获取详细信息并显示
     for (const pkgName of packages) {

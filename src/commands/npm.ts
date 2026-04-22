@@ -265,8 +265,9 @@ export async function fetchSkillPackage(skillId: string): Promise<NpmRegistryRes
 export async function searchSkillmarketPackages(options: {
   from?: number;
   size?: number;
+  keyword?: string;
 } = {}): Promise<{ packages: string[]; total: number }> {
-  const { from = 0, size = 100 } = options;
+  const { from = 0, size = 100, keyword } = options;
   const packages: string[] = [];
   let total = 0;
   
@@ -278,7 +279,15 @@ export async function searchSkillmarketPackages(options: {
     // text: 搜索关键字
     // size: 返回结果数量上限
     // from: 起始位置（分页用）
-    url.searchParams.set('text', 'keywords:skillmarket');
+    // 如果有关键字，组合搜索条件
+    if (keyword) {
+      // 组合搜索：keywords:skillmarket AND 关键字
+      // 注意：npm search 不直接支持 AND，这里用多个 text 参数
+      // 或者直接在 text 中组合
+      url.searchParams.set('text', `${keyword} keywords:skillmarket`);
+    } else {
+      url.searchParams.set('text', 'keywords:skillmarket');
+    }
     url.searchParams.set('size', String(size));
     url.searchParams.set('from', String(from));
     
