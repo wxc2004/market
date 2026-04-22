@@ -1,7 +1,35 @@
 # SkillMarket v1.2.6 更新日志
 
-**日期**: 2026-04-16
+**日期**: 2026-04-22
 **版本**: 1.2.6
+
+---
+
+## 🔍 新功能：skm ls 搜索支持
+
+### 功能说明
+
+新增搜索功能，可以通过关键字搜索 skills。
+
+### 新增选项
+
+```bash
+# 搜索 npm 上的 skills
+skm ls --search brain
+skm ls -s brain
+
+# 搜索已安装的 skills
+skm ls --installed --search test
+
+# 组合分页和搜索
+skm ls --search brain --page 1 --limit 10
+```
+
+### 搜索字段
+
+- skill ID
+- displayName（显示名称）
+- description（描述）
 
 ---
 
