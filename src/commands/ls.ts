@@ -94,6 +94,59 @@ function filterInstalledSkills(skills: any[], keyword: string): any[] {
 // 命令实现
 // -----------------------------------------------------------------------------
 
+/**
+ * 独立搜索 skills（不依赖 ls 命令选项）
+ * 
+ * @param keyword - 搜索关键字
+ * @param limit - 返回结果数量限制
+ * @returns 搜索结果列表
+ */
+export async function searchSkills(keyword: string, limit: number = 20): Promise<void> {
+  console.log(`Searching npm for "${keyword}"...\n`);
+  
+  try {
+    const { packages, total } = await searchSkillmarketPackages({
+      from: 0,
+      size: limit,
+      keyword
+    });
+    
+    if (packages.length === 0) {
+      console.log(`No skills found matching "${keyword}".`);
+      return;
+    }
+    
+    console.log(`Found ${total} match(es) for "${keyword}":\n`);
+    
+    for (const pkgName of packages) {
+      try {
+        const info = await fetchNpmPackage(pkgName);
+        
+        if (!info) {
+          console.log(`📦 ${pkgName} (信息获取失败)`);
+          console.log();
+          continue;
+        }
+        
+        const latestVersion = info['dist-tags']?.latest || 'unknown';
+        const pkg = info.versions?.[latestVersion];
+        const skillMeta = pkg?.skillmarket;
+        
+        console.log(`📦 ${info.name}@${latestVersion}`);
+        console.log(`   名称: ${skillMeta?.displayName || info.name}`);
+        console.log(`   描述: ${pkg?.description || 'N/A'}`);
+        console.log(`   平台: ${(skillMeta?.platforms || []).join(', ') || 'N/A'}`);
+        console.log();
+      } catch (e) {
+        console.log(`📦 ${pkgName} (获取失败: ${e})`);
+        console.log();
+      }
+    }
+  } catch (error) {
+    console.log(`Error searching skills: ${error}`);
+  }
+}
+
 export async function listSkills(options: LsOptions): Promise<void> {
   const { installed, updates, page = 1, limit = 20, search } = options;
   

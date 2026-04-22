@@ -41,7 +41,7 @@ const VERSION = packageJson.version;
 
 // 内部模块导入
 import { PLATFORMS } from './constants.js';        // 平台常量
-import { listSkills } from './commands/ls.js';          // 列表命令
+import { listSkills, searchSkills } from './commands/ls.js';          // 列表命令
 import { showSkillInfo } from './commands/info.js';     // 信息命令
 import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
@@ -162,6 +162,29 @@ lsCmd
       search: opts.search
     };
     listSkills(options);
+  });
+
+// -----------------------------------------------------------------------------
+// 搜索命令 (skm search)
+// -----------------------------------------------------------------------------
+
+/**
+ * 搜索命令
+ * 
+ * 独立搜索 npm 上的 skills
+ * 
+ * 用法: skm search <keyword>
+ * 
+ * @example
+ * skm search brain
+ */
+const searchCmd = program.command('search').description('Search skills from npm registry');
+searchCmd
+  .argument('<keyword>', 'Keyword to search')
+  .option('-l, --limit <number>', 'Max results to show (default: 20)', parseInt)
+  .action(async (keyword, opts) => {
+    const limit = opts.limit ?? 20;
+    await searchSkills(keyword, limit);
   });
 
 // -----------------------------------------------------------------------------
