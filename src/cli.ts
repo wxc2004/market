@@ -116,7 +116,10 @@ Examples:
   skm ls                     List all available skills (page 1)
   skm ls --page 2            Go to page 2
   skm ls --limit 10          Show 10 items per page
+  skm ls --search brain      Search skills by keyword
+  skm ls -s brain           Search with short form
   skm ls --installed         Show installed skills only
+  skm ls --installed --search test  Search installed skills
   skm ls --installed --page 2
   skm info brainstorming     View skill details
   skm install brainstorming  Install to all platforms
