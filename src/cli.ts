@@ -37,11 +37,12 @@ import { dirname, resolve } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
-const VERSION = packageJson.version;
+const VERSION = packageJson.version || '1.3.1';
 
 // 内部模块导入
 import { PLATFORMS } from './constants.js';        // 平台常量
-import { listSkills, searchSkills } from './commands/ls.js';          // 列表命令
+import { listSkills } from './commands/ls.js';          // 列表命令
+import { searchSkills } from './commands/search.js';   // 搜索命令
 import { showSkillInfo } from './commands/info.js';     // 信息命令
 import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
