@@ -37,6 +37,7 @@ import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill } from './commands/uninstall.js'; // 卸载命令
+import { searchSkills } from './commands/search.js';   // 搜索命令
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -63,7 +64,7 @@ const program = new Command();
 program
   .name('skm')
   .description('SkillMarket - Cross-platform skill manager for AI coding tools')
-  .version('1.2.0');
+  .version('1.2.10');
 
 // -----------------------------------------------------------------------------
 // 帮助命令 (-h, --help)
@@ -283,6 +284,33 @@ platformCmd
   .argument('<name>', 'Platform name')
   .action((name) => {
     console.log('Platform command - name:', name);
+  });
+
+// -----------------------------------------------------------------------------
+// 搜索命令 (skm search)
+// -----------------------------------------------------------------------------
+
+/**
+ * 搜索命令
+ * 
+ * 在 npm registry 上搜索匹配的 skills
+ * 只返回包名包含关键词的 skill
+ * 
+ * 用法: skm search <keyword>
+ * 
+ * @example
+ * skm search test
+ */
+const searchCmd = program.command('search').description('Search skills from npm registry');
+searchCmd
+  .argument('<keyword>', 'Keyword to search')
+  .action(async (keyword) => {
+    try {
+      await searchSkills(keyword);
+    } catch (err) {
+      console.error('Search failed:', err);
+      process.exit(1);
+    }
   });
 
 // -----------------------------------------------------------------------------
