@@ -47,7 +47,7 @@ import { showSkillInfo } from './commands/info.js';     // 信息命令
 import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
-import { uninstallSkill } from './commands/uninstall.js'; // 卸载命令
+import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸载命令
 import { detectPlatforms, getAllAdapters, OpenCodeAdapter, ClaudeAdapter, VSCodeAdapter } from './adapters/index.js'; // 平台适配器
 
 // -----------------------------------------------------------------------------
@@ -108,6 +108,9 @@ Commands:
                           --force       Overwrite if already installed
   uninstall <skill>    Remove an installed skill
                           --platform    Target platforms
+                          --all          Uninstall ALL installed skills
+                          --dry-run     Preview without deleting
+                          -y, --yes     Skip confirmation
   update [options]     Update skills
                           --all          Update all skills
   sync                 Synchronize platform links
@@ -127,8 +130,11 @@ Examples:
   skm install brainstorming --platform opencode  Install to OpenCode only
   skm install brainstorming --platform claude,vscode  Install to multiple
   skm uninstall brainstorming
+  skm uninstall --all        Uninstall all skills (with confirmation)
+  skm uninstall --all --yes  Force uninstall all without confirmation
+  skm uninstall brainstorming --dry-run  Preview uninstall
   skm platforms              Show available platforms
-      `);
+       `);
       process.exit(0);
     }
   });
@@ -264,22 +270,55 @@ installCmd
  * 用法:
  * - skm uninstall <skill>    卸载所有平台
  * - skm uninstall <skill> --platform opencode  卸载特定平台
+ * - skm uninstall --all      卸载所有已安装的 skills
+ * - skm uninstall --dry-run  预览删除内容
+ * 
+ * 新增 (v1.4.0):
+ * --all: 卸载所有已安装的 skills（需要确认）
+ * --dry-run: 预览模式，不实际删除
+ * -y, --yes: 跳过确认提示
  * 
  * @example
  * skm uninstall brainstorming
  * skm uninstall brainstorming --platform claude
+ * skm uninstall --all
+ * skm uninstall --all --yes
+ * skm uninstall brainstorming --dry-run
  */
 const uninstallCmd = program.command('uninstall').description('Remove an installed skill from local and platform directories');
 uninstallCmd
-  .argument('<skill>', 'Skill ID to uninstall')
+  .argument('[skill]', 'Skill ID to uninstall (required unless using --all)')
   .option('-p, --platform <platforms>', 'Target platforms (comma-separated)')
+  .option('-a, --all', 'Uninstall ALL installed skills (requires confirmation)')
+  .option('-d, --dry-run', 'Preview what would be uninstalled without actually deleting')
+  .option('-y, --yes', 'Skip confirmation prompts')
   .action(async (skill, opts) => {
     try {
       const platforms = opts.platform 
         ? opts.platform.split(',').map((p: string) => p.trim())
         : undefined;
       
-      await uninstallSkill(skill, { platforms });
+      // 处理 --all 选项
+      if (opts.all) {
+        await uninstallAll({
+          platforms,
+          dryRun: opts.dryRun,
+          yes: opts.yes
+        });
+        return;
+      }
+      
+      // skill 参数是必需的（除非使用 --all）
+      if (!skill) {
+        console.error('Error: Skill ID is required (or use --all to uninstall all)');
+        process.exit(1);
+      }
+      
+      await uninstallSkill(skill, {
+        platforms,
+        dryRun: opts.dryRun,
+        yes: opts.yes
+      });
     } catch (err) {
       console.error('Uninstall failed:', err);
       process.exit(1);

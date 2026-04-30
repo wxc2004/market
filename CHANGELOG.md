@@ -1,3 +1,158 @@
+# SkillMarket v1.4.0 更新日志
+
+**日期**: 2026-04-30
+**版本**: 1.4.0
+
+---
+
+## 🎉 新功能：增强卸载命令
+
+### 1. 卸载所有 Skills (`--all`)
+
+现在可以一键卸载所有已安装的 skills：
+
+```bash
+# 卸载所有 skills（需要确认）
+skm uninstall --all
+
+# 强制卸载所有，跳过确认
+skm uninstall --all --yes
+```
+
+**确认提示示例**：
+```
+Found 5 installed skill(s):
+  - brainstorming@1.2.0
+  - test-skill-1@1.1.0
+  - test-skill-2@1.0.0
+  - weather-time@1.0.0
+  - chinese-almanac@1.0.0
+
+⚠️  Are you sure you want to uninstall ALL 5 skill(s)? This action cannot be undone. (y/N): _
+```
+
+### 2. 预览模式 (`--dry-run`)
+
+新增 `--dry-run` 标志，可以预览将要删除的内容，而不实际执行删除：
+
+```bash
+# 预览卸载单个 skill
+skm uninstall brainstorming --dry-run
+
+# 预览卸载所有 skills
+skm uninstall --all --dry-run
+```
+
+**预览输出示例**：
+```
+📋 Uninstall Preview for "brainstorming":
+
+   Version: 1.2.0
+   Installed: 2026-04-15T10:30:00Z
+   Platforms (from registry): OpenCode, Claude Code, VSCode
+
+   Local files to remove:
+   - ~/.skillmarket/skills/brainstorming
+
+   Platform links to remove:
+   - ~/.skillmarket/platform-links/opencode/skills/brainstorming
+   - ~/.skillmarket/platform-links/claude/skills/brainstorming
+   - ~/.skillmarket/platform-links/vscode/skills/brainstorming
+
+⚠️  This was a dry-run. No files were actually deleted.
+```
+
+### 3. 跳过确认 (`-y, --yes`)
+
+新增 `-y` 或 `--yes` 选项，跳过所有确认提示：
+
+```bash
+# 强制卸载，不提示确认
+skm uninstall brainstorming --yes
+
+# 强制卸载所有，不提示确认
+skm uninstall --all --yes
+```
+
+### 4. 改进错误处理
+
+- 当平台卸载失败时，会询问用户是否继续清理本地文件
+- 避免误删本地文件导致无法恢复
+
+**错误处理示例**：
+```
+Uninstalling from 3 platform(s)...
+
+OpenCode     ✅  Uninstalled
+Claude Code  ❌  Failed: EPERM: operation not permitted
+VSCode       ✅  Uninstalled
+
+⚠️  1 platform(s) failed to uninstall. Continue with local cleanup? (y/N): _
+```
+
+### 5. 更新帮助文档
+
+`skm --help` 现在包含卸载命令的完整说明：
+
+```bash
+skm uninstall --help
+```
+
+---
+
+## 🔧 技术实现
+
+### 新增函数
+
+| 函数名 | 功能 |
+|--------|------|
+| `uninstallAll()` | 卸载所有已安装的 skills |
+| `askConfirmation()` | 请求用户确认（内部工具函数） |
+| `getUninstallPreview()` | 收集卸载预览信息（内部工具函数） |
+
+### 更新接口
+
+**UninstallOptions** 新增字段：
+```typescript
+export interface UninstallOptions {
+  platforms?: string[];  // 目标平台列表
+  all?: boolean;          // 卸载所有 skills
+  dryRun?: boolean;       // 预览模式
+  yes?: boolean;          // 跳过确认
+}
+```
+
+### CLI 参数更新
+
+| 参数 | 说明 |
+|------|------|
+| `-a, --all` | 卸载所有已安装的 skills |
+| `-d, --dry-run` | 预览模式，不实际删除 |
+| `-y, --yes` | 跳过确认提示 |
+
+---
+
+## 📦 完整版本历史
+
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.4.0 | 2026-04-30 | 增强卸载命令：--all, --dry-run, --yes |
+| 1.3.1 | 2026-04-29 | Bug 修复，workflow 改进 |
+| 1.3.0 | 2026-04-23 | 独立搜索命令，改进分页逻辑 |
+| 1.2.6 | 2026-04-22 | 添加搜索功能（--search） |
+| 1.2.5 | 2026-04-16 | 文档更新 |
+| 1.2.4 | 2026-04-16 | 修复版本号硬编码问题 |
+| 1.2.3 | 2026-04-15 | 跨平台 Skill 安装支持 |
+
+---
+
+## 贡献者
+
+- wxc2004 (wanxuchen)
+- Sisyphus Agent
+
+---
+
 # SkillMarket v1.2.6 更新日志
 
 **日期**: 2026-04-22
