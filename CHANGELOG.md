@@ -90,25 +90,112 @@ VSCode       ✅  Uninstalled
 ⚠️  1 platform(s) failed to uninstall. Continue with local cleanup? (y/N): _
 ```
 
-### 5. 更新帮助文档
+---
 
-`skm --help` 现在包含卸载命令的完整说明：
+## 🚀 新功能：GitHub 第三方库支持 (Beta)
+
+### 1. 支持 GitHub URL 和简写格式
+
+现在可以直接从 GitHub 仓库安装 skills：
 
 ```bash
-skm uninstall --help
+# GitHub URL 格式
+skm install https://github.com/owner/repo
+skm install https://github.com/owner/repo/tree/main/skills/my-skill
+
+# 简写格式
+skm install owner/repo
+skm install owner/repo#branch
+skm install owner/repo@commit-hash
 ```
+
+### 2. 自动检测 Skill 本体
+
+安装时会自动检测仓库中的 skill 文件：
+
+- ✅ `SKILL.md` - skill 定义文件（必须）
+- ✅ `package.json` - 包配置文件（可选）
+- ✅ `metadata.json` - 元数据文件（可选）
+- ✅ 平台目录（`opencode/`, `cursor/`, `vscode/`, `claude/` 等）
+
+**检测输出示例**：
+```
+Detecting skill...
+  SKILL.md: ✅
+  package.json: ✅
+  Detected platforms: opencode, vscode
+```
+
+### 3. 平台判断和格式转换
+
+- 自动判断 skill 支持的平台
+- 如果某些平台文件缺失，会自动生成适配文件
+- 支持的平台：OpenCode, Cursor, VSCode, Claude Code, Codex, Antigravity
+
+```bash
+# 安装到指定平台（自动生成缺失的平台文件）
+skm install owner/repo --platform opencode,claude
+
+# 指定分支
+skm install owner/repo#dev --platform vscode
+```
+
+### 4. 版本控制
+
+支持指定分支、tag 或 commit：
+
+```bash
+# 指定分支
+skm install owner/repo#main
+skm install owner/repo -b develop
+
+# 指定 commit
+skm install owner/repo@abc1234
+
+# 指定 tag（通过分支名）
+skm install owner/repo#v1.0.0
+```
+
+### 5. 技术实现
+
+**新增模块**：`src/commands/github-install.ts`
+
+| 函数名 | 功能 |
+|--------|------|
+| `parseGitHubUrl()` | 解析 GitHub URL 和简写格式 |
+| `detectSkillFromGitHub()` | 从 GitHub API 检测 skill |
+| `installFromGitHub()` | 从 GitHub 安装 skill |
+| `generatePlatformAdapters()` | 为缺失平台生成适配文件 |
+
+**支持的 URL 格式**：
+| 格式 | 示例 |
+|------|------|
+| 完整 URL | `https://github.com/owner/repo` |
+| 完整 URL + 路径 | `https://github.com/owner/repo/tree/main/path` |
+| 简写 | `owner/repo` |
+| 简写 + 分支 | `owner/repo#branch` |
+| 简写 + commit | `owner/repo@commit` |
 
 ---
 
 ## 🔧 技术实现
 
-### 新增函数
+### 卸载命令新增函数
 
 | 函数名 | 功能 |
 |--------|------|
 | `uninstallAll()` | 卸载所有已安装的 skills |
 | `askConfirmation()` | 请求用户确认（内部工具函数） |
 | `getUninstallPreview()` | 收集卸载预览信息（内部工具函数） |
+
+### GitHub 安装新增函数
+
+| 函数名 | 功能 |
+|--------|------|
+| `parseGitHubUrl()` | 解析 GitHub URL |
+| `detectSkillFromGitHub()` | 检测 skill 本体 |
+| `installFromGitHub()` | 主安装函数 |
+| `generatePlatformAdapters()` | 格式转换 |
 
 ### 更新接口
 
@@ -122,13 +209,25 @@ export interface UninstallOptions {
 }
 ```
 
+**GitHubInstallOptions** 新增接口：
+```typescript
+export interface GitHubInstallOptions {
+  platforms?: string[];  // 目标平台
+  force?: boolean;       // 强制覆盖
+  branch?: string;       // 指定分支
+  commit?: string;       // 指定 commit
+}
+```
+
 ### CLI 参数更新
 
-| 参数 | 说明 |
-|------|------|
-| `-a, --all` | 卸载所有已安装的 skills |
-| `-d, --dry-run` | 预览模式，不实际删除 |
-| `-y, --yes` | 跳过确认提示 |
+| 命令 | 参数 | 说明 |
+|------|------|------|
+| `skm uninstall` | `-a, --all` | 卸载所有已安装的 skills |
+| `skm uninstall` | `-d, --dry-run` | 预览模式，不实际删除 |
+| `skm uninstall` | `-y, --yes` | 跳过确认提示 |
+| `skm install` | `-b, --branch` | GitHub 分支 |
+| `skm install` | `-c, --commit` | GitHub commit hash |
 
 ---
 
@@ -136,7 +235,7 @@ export interface UninstallOptions {
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
-| 1.3.2 | 2026-04-30 | 增强卸载命令：--all, --dry-run, --yes |
+| 1.3.2 | 2026-04-30 | 增强卸载命令 + GitHub 第三方库支持 |
 | 1.3.1 | 2026-04-29 | Bug 修复，workflow 改进 |
 | 1.3.0 | 2026-04-23 | 独立搜索命令，改进分页逻辑 |
 | 1.2.6 | 2026-04-22 | 添加搜索功能（--search） |

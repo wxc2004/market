@@ -48,6 +48,7 @@ import { installSkill } from './commands/install.js';   // 安装命令
 import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸载命令
+import { installFromGitHub, parseGitHubUrl } from './commands/github-install.js'; // GitHub 安装
 import { detectPlatforms, getAllAdapters, OpenCodeAdapter, ClaudeAdapter, VSCodeAdapter } from './adapters/index.js'; // 平台适配器
 
 // -----------------------------------------------------------------------------
@@ -236,22 +237,38 @@ infoCmd
  * skm install brainstorming@1.0.0
  * skm install brainstorming --platform opencode
  */
-const installCmd = program.command('install').description('Install a skill to local and platform directories');
+const installCmd = program.command('install').description('Install a skill from npm or GitHub');
 installCmd
-  .argument('<skill>', 'Skill ID to install (e.g., brainstorming or @scope/name)')
+  .argument('<skill>', 'Skill ID, npm package, or GitHub URL (owner/repo, https://github.com/owner/repo)')
   .option('-p, --platform <platforms>', 'Target platforms (comma-separated: opencode,claude,vscode)')
   .option('-f, --force', 'Overwrite if already installed')
-  .option('-v, --version <version>', 'Specific version to install')
+  .option('-v, --version <version>', 'Specific version to install (npm only)')
+  .option('-b, --branch <branch>', 'GitHub branch to install from')
+  .option('-c, --commit <commit>', 'GitHub commit hash to install from')
   .action(async (skill, opts) => {
     try {
       const platforms = opts.platform 
         ? opts.platform.split(',').map((p: string) => p.trim())
         : undefined;
       
-      await installSkill(skill, opts.version, {
-        platforms,
-        force: opts.force
-      });
+      // 检测是否为 GitHub URL 或 owner/repo 格式
+      const githubSource = parseGitHubUrl(skill);
+      
+      if (githubSource) {
+        // GitHub 安装
+        await installFromGitHub(skill, {
+          platforms,
+          force: opts.force,
+          branch: opts.branch,
+          commit: opts.commit
+        });
+      } else {
+        // npm 安装
+        await installSkill(skill, opts.version, {
+          platforms,
+          force: opts.force
+        });
+      }
     } catch (err) {
       console.error('Installation failed:', err);
       process.exit(1);
