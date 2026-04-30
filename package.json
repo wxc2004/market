@@ -1,6 +1,6 @@
 {
   "name": "itismyskillmarket",
-  "version": "1.4.0",
+  "version": "1.3.2",
   "description": "Cross-platform skill manager for AI coding tools",
   "type": "module",
   "bin": {
