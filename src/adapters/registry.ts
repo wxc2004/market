@@ -10,6 +10,8 @@
 import { OpenCodeAdapter } from './opencode.js';
 import { ClaudeAdapter } from './claude.js';
 import { VSCodeAdapter } from './vscode.js';
+import { OpenClawAdapter } from './openclaw.js';
+import { HermesAdapter } from './hermes.js';
 import type { PlatformAdapter } from '../types.js';
 import type { Platform } from '../constants.js';
 
@@ -22,10 +24,14 @@ function registerAdapters(): void {
   const opencode = new OpenCodeAdapter();
   const claude = new ClaudeAdapter();
   const vscode = new VSCodeAdapter();
+  const openclaw = new OpenClawAdapter();
+  const hermes = new HermesAdapter();
   
   adapters.set(opencode.id, opencode);
   adapters.set(claude.id, claude);
   adapters.set(vscode.id, vscode);
+  adapters.set(openclaw.id, openclaw);
+  adapters.set(hermes.id, hermes);
 }
 
 // Register adapters on module load
@@ -71,6 +77,8 @@ export function getAdapterByPlatform(platform: Platform): PlatformAdapter | unde
     cursor: 'opencode',  // Cursor uses OpenCode-compatible structure
     codex: 'opencode',  // Codex uses OpenCode-compatible structure
     antigravity: 'opencode',  // Antigravity uses OpenCode-compatible structure
+    openclaw: 'openclaw',
+    hermes: 'hermes',
   };
   
   return adapters.get(idMap[platform]);
