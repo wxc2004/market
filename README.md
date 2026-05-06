@@ -1,6 +1,6 @@
 # SkillMarket
 
-Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity).
+Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
 
 ## Installation
 
@@ -104,6 +104,8 @@ $ skm platforms
 OpenCode     ✅  Available (2 skills installed)
 Claude Code  ✅  Available (1 skills installed)
 VSCode       ✅  Available (0 skills installed)
+OpenClaw     ✅  Available
+Hermes Agent ✅  Available
 ```
 
 ## Development
