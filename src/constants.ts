@@ -81,7 +81,9 @@ export const PLATFORMS = [
   'codex',       // OpenAI Codex - OpenAI 代码生成模型
   'opencode',    // OpenCode - 开源 AI 编程工具
   'claude',      // Claude Code - Anthropic CLI 工具
-  'antigravity'  // Antigravity - AI 编程助手
+  'antigravity',  // Antigravity - AI 编程助手
+  'openclaw',    // OpenClaw - AgentSkills compatible agent
+  'hermes',      // Hermes Agent - NousResearch agent framework
 ] as const;
 
 /**
