@@ -465,9 +465,45 @@ program
   .action(async (port) => {
     try {
       const portNum = port ? parseInt(port) : 18770;
+      const { createServer, IncomingMessage, ServerResponse } = await import('http');
+      const { readFileSync, existsSync } = await import('fs');
+      const { join, extname } = await import('path');
       
-      const { startGui } = await import('./commands/ui.js');
-      await startGui(portNum);
+      // GUI 目录：从 cli.ts 位置推算（dist/cli.js → ../gui/）
+      // 使用 process.cwd() 获取项目根目录
+      const path = await import('path');
+      const guiDir = path.join(process.cwd(), 'gui');
+      
+      const server = createServer((req: any, res: any) => {
+        const url = req.url || '/';
+        
+        // API: 列出 npm skills
+        if (url.startsWith('/api/skills') && req.method === 'GET') {
+          // 简化版：直接返回空数组
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end('[]');
+          return;
+        }
+        
+        // 静态文件
+        let filePath = join(guiDir, url === '/' ? 'index.html' : url);
+        if (existsSync(filePath) && filePath.includes(guiDir)) {
+          const content = readFileSync(filePath);
+          const ext = extname(filePath);
+          const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css' }[ext] || 'text/plain';
+          res.writeHead(200, { 'Content-Type': mime });
+          res.end(content);
+        } else {
+          res.writeHead(404);
+          res.end('Not Found');
+        }
+      });
+      
+      server.listen(portNum, () => {
+        console.log(`\n🚀 SkillMarket GUI started!`);
+        console.log(`   Local: http://localhost:${portNum}`);
+        console.log(`\nPress Ctrl+C to stop\n`);
+      });
     } catch (err) {
       console.error('Failed to start GUI:', err);
       process.exit(1);
