@@ -465,14 +465,16 @@ program
   .action(async (port) => {
     try {
       const portNum = port ? parseInt(port) : 18770;
-      const { createServer, IncomingMessage, ServerResponse } = await import('http');
+      const { createServer } = await import('http');
       const { readFileSync, existsSync } = await import('fs');
-      const { join, extname } = await import('path');
+      const { join, extname, dirname } = await import('path');
+      const { fileURLToPath } = await import('url');
       
       // GUI 目录：从 cli.ts 位置推算（dist/cli.js → ../gui/）
-      // 使用 process.cwd() 获取项目根目录
-      const path = await import('path');
-      const guiDir = path.join(process.cwd(), 'gui');
+      // 使用 import.meta.url 获取当前模块位置（ESM 方式）
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const guiDir = join(__dirname, '..', 'gui');
       
       const server = createServer((req: any, res: any) => {
         const url = req.url || '/';
