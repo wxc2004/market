@@ -49,7 +49,7 @@ import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸载命令
 import { installFromGitHub, parseGitHubUrl } from './commands/github-install.js'; // GitHub 安装
-import { detectPlatforms, getAllAdapters, OpenCodeAdapter, ClaudeAdapter, VSCodeAdapter } from './adapters/index.js'; // 平台适配器
+import { detectPlatforms, getAllAdapters } from './adapters/index.js'; // 平台适配器
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -417,23 +417,18 @@ platformsCmd
   .action(async () => {
     try {
       const available = await detectPlatforms();
+      const allAdapters = getAllAdapters();
       
       console.log('\n📍 Available Platforms:\n');
       
-      const allPlatforms = [
-        { name: 'OpenCode', adapter: new OpenCodeAdapter() },
-        { name: 'Claude Code', adapter: new ClaudeAdapter() },
-        { name: 'VSCode', adapter: new VSCodeAdapter() },
-      ];
-      
-      for (const { name, adapter } of allPlatforms) {
+      for (const adapter of allAdapters) {
         const isAvailable = available.find(a => a.id === adapter.id);
         const installed = await adapter.listInstalled();
         
         if (isAvailable) {
-          console.log(`${name.padEnd(12)} ✅  Available (${installed.length} skills installed)`);
+          console.log(`${adapter.name.padEnd(15)} ✅  Available (${installed.length} skills installed)`);
         } else {
-          console.log(`${name.padEnd(12)} ❌  Not detected`);
+          console.log(`${adapter.name.padEnd(15)} ❌  Not detected`);
         }
       }
       
