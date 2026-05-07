@@ -50,6 +50,7 @@ import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸载命令
 import { installFromGitHub, parseGitHubUrl } from './commands/github-install.js'; // GitHub 安装
 import { detectPlatforms, getAllAdapters } from './adapters/index.js'; // 平台适配器
+import { publishSkill } from './commands/publish.js'; // 发布命令
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -508,6 +509,30 @@ program
       });
     } catch (err) {
       console.error('Failed to start GUI:', err);
+      process.exit(1);
+    }
+  });
+
+// -----------------------------------------------------------------------------
+// Publish 命令 (skm publish)
+// -----------------------------------------------------------------------------
+
+/**
+ * Publish 命令
+ * 
+ * 发布指定的 skill 到 npm
+ * 
+ * 用法: skm publish <skill-name> [--version <version>]
+ */
+program
+  .command('publish <skill>')
+  .description('Publish a skill to npm')
+  .option('-v, --version <version>', 'Specify version (optional, auto-increment patch if not specified)')
+  .action(async (skill, options) => {
+    try {
+      await publishSkill(skill, options.version ? { version: options.version } : undefined);
+    } catch (err) {
+      console.error('Publish failed:', err);
       process.exit(1);
     }
   });
