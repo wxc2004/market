@@ -56,6 +56,9 @@ skm platforms
 # Sync platform links
 skm sync
 
+# Sync skill to latest version (install to all platforms)
+skm sync brainstorming
+
 # Uninstall a skill (from all platforms)
 skm uninstall brainstorming
 
@@ -101,11 +104,11 @@ $ skm platforms
 
 📍 Available Platforms:
 
-OpenCode     ✅  Available (2 skills installed)
-Claude Code  ✅  Available (1 skills installed)
-VSCode       ✅  Available (0 skills installed)
-OpenClaw     ✅  Available
-Hermes Agent ✅  Available
+OpenCode        ✅  Available (2 skills installed)
+Claude Code     ✅  Available (1 skills installed)
+VSCode          ✅  Available (0 skills installed)
+OpenClaw        ✅  Available (0 skills installed)
+Hermes Agent    ✅  Available (0 skills installed)
 ```
 
 ## Development
@@ -152,6 +155,8 @@ Skills are installed to `~/.skillmarket/` with the following structure:
 - OpenCode
 - Claude Code
 - Antigravity
+- OpenClaw
+- Hermes Agent
 
 ## License
 

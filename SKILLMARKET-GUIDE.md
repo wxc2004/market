@@ -217,11 +217,9 @@ npx itismyskillmarket --help
 ```
 
 ### 基本命令
-
 ```bash
 # 列出可用 skills（支持分页）
 skm ls
-
 # 分页浏览
 skm ls --page 2           # 第 2 页
 skm ls --limit 10         # 每页 10 个
@@ -231,6 +229,10 @@ skm info <skill-name>
 
 # 安装 skill
 skm install <skill-name>
+# 安装到指定平台
+skm install <skill-name> --platform opencode,claude
+# 强制覆盖安装
+skm install <skill-name> --force
 
 # 查看已安装（支持分页）
 skm ls --installed
@@ -239,6 +241,15 @@ skm ls --installed --page 2
 # 更新 skill
 skm update <skill-name>
 skm update --all           # 更新所有
+
+# 同步 skill 到最新版本（安装到所有检测到的平台）
+skm sync <skill-name>
+
+# 同步平台软链接
+skm sync
+
+# 查看可用平台
+skm platforms
 
 # 卸载 skill
 skm uninstall <skill-name>
@@ -277,9 +288,14 @@ skm ls
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
+| 1.3.6 | 2026-05-07 | `skm sync <skill-name>` + 修复平台显示 |
+| 1.3.4 | 2026-05-06 | OpenClaw/Hermes 适配器支持 |
+| 1.3.3 | 2026-04-30 | GitHub 第三方库支持 |
+| 1.3.2 | 2026-04-30 | 增强卸载命令 |
+| 1.3.0 | 2026-04-23 | 独立搜索命令 |
+| 1.2.6 | 2026-04-22 | 添加搜索功能 |
+| 1.2.3 | 2026-04-15 | 跨平台 Skill 安装支持 |
 | 1.0.0 | 2026-04-01 | 初始版本 |
-| 1.2.0 | 2026-04-15 | 添加跨平台支持 |
-| 1.2.4 | 2026-04-16 | 添加 `skm ls` 分页功能 |
 
 ---
 
