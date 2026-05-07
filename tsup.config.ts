@@ -14,9 +14,16 @@ export default defineConfig({
     js: '#!/usr/bin/env node'
   },
   /**
-   * 禁用 shims 以避免潜在的兼容性问题
-   * shims 会自动为某些 Node.js 模块提供垫片，
-   * 但可能与我们的场景不兼容
-   */
-  shims: false
+    * 禁用 shims 以避免潜在的兼容性问题
+    * shims 会自动为某些 Node.js 模块提供垫片，
+    * 但可能与我们的场景不兼容
+    */
+  shims: false,
+  /**
+    * 将 express 标记为外部依赖，不打包进 bundle
+    * 运行时从 node_modules 中 require
+    */
+  esbuildOptions(options) {
+    options.external = ['express', 'http', 'fs', 'path', 'url'];
+  }
 });

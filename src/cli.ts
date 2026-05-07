@@ -449,6 +449,32 @@ platformsCmd
   });
 
 // -----------------------------------------------------------------------------
+// GUI 命令 (skm gui)
+// -----------------------------------------------------------------------------
+
+/**
+ * GUI 命令
+ * 
+ * 启动本地 Web 服务器，提供图形化界面管理 skills
+ * 
+ * 用法: skm gui [port]
+ */
+program
+  .command('gui [port]')
+  .description('Start SkillMarket GUI (web interface)')
+  .action(async (port) => {
+    try {
+      const portNum = port ? parseInt(port) : 18770;
+      
+      const { startGui } = await import('./commands/ui.js');
+      await startGui(portNum);
+    } catch (err) {
+      console.error('Failed to start GUI:', err);
+      process.exit(1);
+    }
+  });
+
+// -----------------------------------------------------------------------------
 // 解析命令行参数
 // -----------------------------------------------------------------------------
 
