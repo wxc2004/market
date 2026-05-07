@@ -1,3 +1,93 @@
+# SkillMarket v1.3.6 更新日志
+
+**日期**: 2026-05-07
+**版本**: 1.3.6
+
+---
+
+## 🎉 新功能：skm sync <skill-name> 同步 Skill 到最新版本
+
+### 功能说明
+
+新增 `skm sync <skill-name>` 命令，一键将指定 skill 同步到 npm 最新版本，并强制安装到所有已检测平台。
+
+### 使用方法
+
+```bash
+# 同步 brainstorming 到最新版本（安装到所有平台）
+skm sync brainstorming
+```
+
+### 执行流程
+
+1. 从 npm 获取最新版本信息
+2. 强制安装到所有已检测平台（`--force` 模式）
+3. 更新注册表记录
+
+### 输出示例
+
+```
+Syncing brainstorming to latest version...
+Latest version: 1.2.0
+Installing to 3 platform(s)...
+
+OpenCode     ✅  Installed successfully
+Claude Code  ✅  Installed successfully
+VSCode       ✅  Installed successfully
+
+📊 Summary: 3 installed, 0 skipped, 0 failed
+
+✅ brainstorming synced to v1.2.0
+```
+
+---
+
+## 🐛 Bug 修复：skm platforms 显示所有平台
+
+### 问题
+
+`skm platforms` 命令只显示 OpenCode、Claude Code、VSCode，不显示 OpenClaw 和 Hermes Agent。
+
+### 原因
+
+`src/cli.ts` 中 `platforms` 命令使用硬编码平台列表，未使用已注册的适配器系统。
+
+### 修复
+
+改用 `getAllAdapters()` 动态获取所有已注册平台，新增平台无需修改 cli.ts。
+
+### 修复后输出
+
+```
+📍 Available Platforms:
+
+OpenCode        ✅  Available (1 skills installed)
+Claude Code     ✅  Available (0 skills installed)
+VSCode          ✅  Available (0 skills installed)
+OpenClaw        ✅  Available (0 skills installed)
+Hermes Agent    ✅  Available (0 skills installed)
+```
+
+---
+
+## 📦 完整版本历史
+
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.3.6 | 2026-05-07 | skm sync <skill-name> + platforms bug fix |
+| 1.3.5 | 2026-05-07 | Fix platforms display |
+| 1.3.4 | 2026-05-06 | OpenClaw/Hermes adapter support |
+| 1.3.3 | 2026-04-30 | GitHub 第三方库支持 |
+
+---
+
+## 贡献者
+
+- wxc2004 (wanxuchen)
+- Sisyphus Agent
+
+---
+
 # SkillMarket v1.3.3 更新日志
 
 **日期**: 2026-04-30
