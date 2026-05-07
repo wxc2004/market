@@ -3,11 +3,17 @@
  * SkillMarket 同步命令模块
  * =============================================================================
  * 
- * 本模块实现 `skm sync` 命令，用于同步平台软链接。
+ * 本模块实现 `skm sync` 命令，用于：
+ * - `skm sync`：同步平台软链接
+ * - `skm sync <skill-name>`：同步指定 skill 到最新版本
  * 
- * 同步流程:
+ * 同步流程 (skm sync):
  * 1. 遍历所有支持的平台
  * 2. 对每个已安装的 skill，创建平台特定的软链接
+ * 
+ * 同步流程 (skm sync <skill-name>):
+ * 1. 从 npm 获取最新版本
+ * 2. 强制安装到所有已检测平台
  * 
  * 软链接结构:
  * ~/.skillmarket/
@@ -42,11 +48,13 @@ import {
 } from '../utils/dirs.js';
 
 import { loadRegistry } from './registry.js';
+import { installSkill } from './install.js';
+import { fetchSkillPackage } from './npm.js';
 
 import { PLATFORMS, LATEST_LINK } from '../constants.js';
 
 // -----------------------------------------------------------------------------
-// 同步函数
+// 同步平台链接函数
 // -----------------------------------------------------------------------------
 
 /**
@@ -134,4 +142,55 @@ export async function syncPlatformLinks(): Promise<void> {
   // ==========================================================================
   
   console.log('\n✅ Sync complete!');
+}
+
+// -----------------------------------------------------------------------------
+// 同步 Skill 到最新版本
+// -----------------------------------------------------------------------------
+
+/**
+ * 同步指定 skill 到最新版本
+ * 
+ * 从 npm 获取最新版本，并强制安装到所有已检测平台。
+ * 确保 skill 在所有平台都是最新版本。
+ * 
+ * @param {string} skillId - Skill 标识符
+ * @returns {Promise<void>}
+ * 
+ * @example
+ * // 同步 brainstorming 到最新版本
+ * await syncSkill('brainstorming');
+ */
+export async function syncSkill(skillId: string): Promise<void> {
+  // ==========================================================================
+  // 步骤 1: 获取 npm 最新版本信息
+  // ==========================================================================
+  
+  console.log(`Syncing ${skillId} to latest version...`);
+  
+  const pkgInfo = await fetchSkillPackage(skillId);
+  if (!pkgInfo) {
+    throw new Error(`Package ${skillId} not found on npm`);
+  }
+  
+  const latestVersion = pkgInfo['dist-tags']?.latest;
+  if (!latestVersion) {
+    throw new Error(`No latest version found for ${skillId}`);
+  }
+  
+  // ==========================================================================
+  // 步骤 2: 强制安装到所有已检测平台
+  // ==========================================================================
+  
+  console.log(`Latest version: ${latestVersion}`);
+  console.log('Installing to all detected platforms...\n');
+  
+  // 使用 force: true 确保安装到所有平台（即使已安装）
+  await installSkill(skillId, latestVersion, { force: true });
+  
+  // ==========================================================================
+  // 完成
+  // ==========================================================================
+  
+  console.log(`\n✅ ${skillId} synced to v${latestVersion}`);
 }

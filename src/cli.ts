@@ -45,7 +45,7 @@ import { listSkills } from './commands/ls.js';          // 列表命令
 import { searchSkills } from './commands/search.js';   // 搜索命令
 import { showSkillInfo } from './commands/info.js';     // 信息命令
 import { installSkill } from './commands/install.js';   // 安装命令
-import { syncPlatformLinks } from './commands/sync.js';  // 同步命令
+import { syncPlatformLinks, syncSkill } from './commands/sync.js';  // 同步命令
 import { updateSkill } from './commands/update.js';     // 更新命令
 import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸载命令
 import { installFromGitHub, parseGitHubUrl } from './commands/github-install.js'; // GitHub 安装
@@ -379,22 +379,31 @@ updateCmd
   });
 
 // -----------------------------------------------------------------------------
-// 同步命令 (skm sync)
+// 同步命令 (skm sync [skill-name])
 // -----------------------------------------------------------------------------
 
 /**
  * 同步命令
  * 
- * 同步各平台的软链接，使 skills 可以被不同平台访问
+ * - skm sync: 同步各平台的软链接
+ * - skm sync <skill-name>: 同步指定 skill 到最新版本
  * 
- * 用法: skm sync
+ * 用法: 
+ * skm sync
+ * skm sync brainstorming
  */
 program
-  .command('sync')
-  .description('Synchronize platform links')
-  .action(async () => {
+  .command('sync [skill]')
+  .description('Synchronize platform links or sync skill to latest version')
+  .action(async (skill) => {
     try {
-      await syncPlatformLinks();
+      if (skill) {
+        // 同步指定 skill 到最新版本
+        await syncSkill(skill);
+      } else {
+        // 同步平台软链接
+        await syncPlatformLinks();
+      }
     } catch (err) {
       console.error('Sync failed:', err);
       process.exit(1);
