@@ -109,6 +109,7 @@ nav {
 .main-content {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;   /* flex 子项必须显式允许收缩 */
   padding: 30px;
 }
 
@@ -118,6 +119,8 @@ nav {
 
 .view.active {
   display: block;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .view-header {
