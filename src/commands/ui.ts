@@ -48,6 +48,40 @@ const __dirname = dirname(__filename);
 const guiDir = join(__dirname, '..', 'gui');
 
 // -----------------------------------------------------------------------------
+// 缓存 & 限流
+// -----------------------------------------------------------------------------
+
+/** 简单内存缓存 */
+const cache = new Map<string, { data: unknown; expiry: number }>();
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) { cache.delete(key); return null; }
+  return entry.data as T;
+}
+function setCache(key: string, data: unknown, ttlMs = 60_000): void {
+  cache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+/** 限制并发数的 map helper（每个 npm 请求间隔至少 200ms） */
+async function throttledMap<T, R>(
+  items: T[],
+  fn: (item: T, index: number) => Promise<R>,
+  concurrency = 3,
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map((item, idx) => fn(item, i + idx)));
+    results.push(...batchResults);
+    if (i + concurrency < items.length) {
+      await new Promise(r => setTimeout(r, 200)); // 批次间延迟
+    }
+  }
+  return results;
+}
+
+// -----------------------------------------------------------------------------
 // MIME 类型映射
 // -----------------------------------------------------------------------------
 
@@ -105,40 +139,53 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20')));
     const search = url.searchParams.get('search') || '';
-    const offset = (page - 1) * limit;
 
-    const { packages, total } = await searchSkillmarketPackages({
-      from: offset,
-      size: limit,
-      keyword: search || undefined,
-    });
+    const cacheKey = `search:${search}:limit:${limit}`;
 
-    // 并发获取每个包的详细信息
-    const skills = (await Promise.all(
-      packages.map(async (pkgName) => {
-        try {
-          const info = await fetchNpmPackage(pkgName);
-          if (!info) return null;
-          const latestVersion = info['dist-tags']?.latest || 'unknown';
-          const pkg = info.versions?.[latestVersion];
-          const meta = pkg?.skillmarket;
-          return {
-            id: meta?.id || info.name.replace(/^@[^/]+\//, ''),
-            name: info.name,
-            displayName: meta?.displayName || info.name,
-            version: latestVersion,
-            description: pkg?.description || '',
-            platforms: meta?.platforms || [],
-            author: info.author?.name || pkg?.author?.name || '',
-            homepage: pkg?.homepage || '',
-            repository: pkg?.repository?.url || '',
-          };
-        } catch {
-          return null;
+    // 先从缓存获取搜索结果
+    let searchResult = getCached<{ packages: string[]; total: number }>(cacheKey);
+    if (!searchResult) {
+      searchResult = await searchSkillmarketPackages({
+        from: 0,
+        size: 100, // 一次拉取更多，避免分页
+        keyword: search || undefined,
+      });
+      // 缓存 30 秒减少 registry 压力
+      setCache(cacheKey, searchResult, 30_000);
+    }
+
+    const { packages, total } = searchResult;
+
+    // 逐个获取详情（限流，避免 npm 限流）
+    const skillDetails = await throttledMap(packages, async (pkgName) => {
+      try {
+        const pkgCacheKey = `pkg:${pkgName}`;
+        let info = getCached<any>(pkgCacheKey);
+        if (!info) {
+          info = await fetchNpmPackage(pkgName);
+          if (info) setCache(pkgCacheKey, info, 30_000);
         }
-      })
-    )).filter(Boolean);
+        if (!info) return null;
+        const latestVersion = info['dist-tags']?.latest || 'unknown';
+        const pkg = info.versions?.[latestVersion];
+        const meta = pkg?.skillmarket;
+        return {
+          id: meta?.id || info.name.replace(/^@[^/]+\//, ''),
+          name: info.name,
+          displayName: meta?.displayName || info.name,
+          version: latestVersion,
+          description: pkg?.description || '',
+          platforms: meta?.platforms || [],
+          author: info.author?.name || pkg?.author?.name || '',
+          homepage: pkg?.homepage || '',
+          repository: pkg?.repository?.url || '',
+        };
+      } catch {
+        return null;
+      }
+    }, 3);
 
+    const skills = skillDetails.filter(Boolean);
     const totalPages = Math.ceil(total / limit) || 1;
 
     jsonResponse(res, 200, { skills, page, totalPages, total });
@@ -206,7 +253,12 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
       return;
     }
 
-    const info = await fetchNpmPackage(skillName);
+    const cacheKey = `skill-info:${skillName}`;
+    let info = getCached<any>(cacheKey);
+    if (!info) {
+      info = await fetchNpmPackage(skillName);
+      if (info) setCache(cacheKey, info, 30_000);
+    }
     if (!info) {
       jsonResponse(res, 404, { error: `Skill "${skillName}" not found` });
       return;
