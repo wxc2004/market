@@ -51,6 +51,8 @@ import { uninstallSkill, uninstallAll } from './commands/uninstall.js'; // 卸�
 import { installFromGitHub, parseGitHubUrl } from './commands/github-install.js'; // GitHub 安装
 import { detectPlatforms, getAllAdapters } from './adapters/index.js'; // 平台适配器
 import { publishSkill } from './commands/publish.js'; // 发布命令
+import { verifySkill } from './commands/verify.js'; // 验证命令
+import { startGuiServer } from './commands/ui.js'; // GUI 服务器
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -464,53 +466,8 @@ program
   .command('gui [port]')
   .description('Start SkillMarket GUI (web interface)')
   .action(async (port) => {
-    try {
-      const portNum = port ? parseInt(port) : 18770;
-      const { createServer } = await import('http');
-      const { readFileSync, existsSync } = await import('fs');
-      const { join, extname, dirname } = await import('path');
-      const { fileURLToPath } = await import('url');
-      
-      // GUI 目录：从 cli.ts 位置推算（dist/cli.js → ../gui/）
-      // 使用 import.meta.url 获取当前模块位置（ESM 方式）
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = dirname(__filename);
-      const guiDir = join(__dirname, '..', 'gui');
-      
-      const server = createServer((req: any, res: any) => {
-        const url = req.url || '/';
-        
-        // API: 列出 npm skills
-        if (url.startsWith('/api/skills') && req.method === 'GET') {
-          // 简化版：直接返回空数组
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end('[]');
-          return;
-        }
-        
-        // 静态文件
-        let filePath = join(guiDir, url === '/' ? 'index.html' : url);
-        if (existsSync(filePath) && filePath.includes(guiDir)) {
-          const content = readFileSync(filePath);
-          const ext = extname(filePath);
-          const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css' }[ext] || 'text/plain';
-          res.writeHead(200, { 'Content-Type': mime });
-          res.end(content);
-        } else {
-          res.writeHead(404);
-          res.end('Not Found');
-        }
-      });
-      
-      server.listen(portNum, () => {
-        console.log(`\n🚀 SkillMarket GUI started!`);
-        console.log(`   Local: http://localhost:${portNum}`);
-        console.log(`\nPress Ctrl+C to stop\n`);
-      });
-    } catch (err) {
-      console.error('Failed to start GUI:', err);
-      process.exit(1);
-    }
+    const portNum = port ? parseInt(port) : 18770;
+    startGuiServer(portNum);
   });
 
 // -----------------------------------------------------------------------------
@@ -533,6 +490,29 @@ program
       await publishSkill(skill, options.version ? { version: options.version } : undefined);
     } catch (err) {
       console.error('Publish failed:', err);
+      process.exit(1);
+    }
+  });
+
+// -----------------------------------------------------------------------------
+// Verify 命令 (skm verify)
+// -----------------------------------------------------------------------------
+
+/**
+ * Verify 命令
+ * 
+ * 验证 skill 的完整性和正确性
+ * 
+ * 用法: skm verify <skill-name>
+ */
+program
+  .command('verify <skill>')
+  .description('Verify skill integrity and format')
+  .action(async (skill) => {
+    try {
+      await verifySkill(skill);
+    } catch (err) {
+      console.error('Verify failed:', err);
       process.exit(1);
     }
   });

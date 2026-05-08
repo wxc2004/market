@@ -1,3 +1,78 @@
+# SkillMarket v1.3.7 更新日志
+
+**日期**: 2026-05-08
+**版本**: 1.3.7
+
+---
+
+## 🎉 新功能：GUI 图形界面 + API 完善
+
+### 功能说明
+
+新增 `skm gui` 命令启动本地 Web 图形界面，提供可视化的 skill 管理体验。
+
+### 使用方法
+
+```bash
+# 启动 GUI（默认端口 18770）
+skm gui
+
+# 指定端口
+skm gui 18771
+```
+
+### API 端点
+
+GUI 后端提供完整的 REST API：
+
+| 端点 | 功能 |
+|------|------|
+| `GET /api/skills` | 列出 npm skills（支持分页和搜索） |
+| `GET /api/installed` | 列出已安装 skills |
+| `GET /api/platforms` | 列出可用平台及状态 |
+| `GET /api/skill-info` | 获取 skill 详情 |
+| `POST /api/install` | 安装 skill |
+| `POST /api/uninstall` | 卸载 skill |
+| `POST /api/update` | 更新 skill(s) |
+
+### 界面功能
+
+- **Skills 视图**: 浏览 npm 上的可用 skills，支持搜索和分页
+- **Installed 视图**: 查看已安装 skills，支持一键更新
+- **Platforms 视图**: 查看各平台检测状态和已安装数量
+
+---
+
+## 🎉 新功能：skm verify <skill-name> 验证 Skill 完整性
+
+### 功能说明
+
+新增 `skm verify <skill-name>` 命令，验证已安装 skill 的完整性。
+
+### 验证项目
+
+- SKILL.md 是否存在且非空
+- package.json 是否存在且包含必要字段（name, version, description）
+- registry.json 中是否注册
+
+### 使用方法
+
+```bash
+# 验证已安装的 skill
+skm verify brainstorming
+```
+
+---
+
+## 🔧 技术改进
+
+- GUI 服务器从 `cli.ts` 内联代码重构为独立模块 `src/commands/ui.ts`
+- 使用原生 `http` 模块（零额外依赖）
+- 完整的 REST API 对接真实 SkillMarket 命令
+- 路径计算适配 tsup 打包输出结构
+
+---
+
 # SkillMarket v1.3.6 更新日志
 
 **日期**: 2026-05-07
