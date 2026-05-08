@@ -1,3 +1,22 @@
+# SkillMarket v1.3.9 更新日志
+
+**日期**: 2026-05-08
+**版本**: 1.3.9
+
+---
+
+## 🐛 修复：GUI 内容无法滚动
+
+### 问题
+可用技能列表只显示顶部第一个 card，页面无法向下滑动。
+
+### 修复
+- flexbox 子项缺少 `min-height: 0`，导致 `overflow-y: auto` 不生效
+- 在 `.main-content` 和 `.view.active` 添加 `min-height: 0`
+- 现在内容超出视口时可正常滚动
+
+---
+
 # SkillMarket v1.3.8 更新日志
 
 **日期**: 2026-05-08
