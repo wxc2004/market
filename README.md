@@ -44,6 +44,10 @@ skm install brainstorming@1.0.0
 # Force overwrite if already installed
 skm install brainstorming --force
 
+# Install from GitHub
+skm install owner/repo
+skm install https://github.com/owner/repo
+
 # Update a specific skill
 skm update brainstorming
 
@@ -64,6 +68,46 @@ skm uninstall brainstorming
 
 # Uninstall from specific platform
 skm uninstall brainstorming --platform opencode
+
+# Uninstall all skills
+skm uninstall --all
+
+# Publish a skill to npm
+skm publish <skill-name>
+skm publish <skill-name> --version 1.0.1
+
+# Verify a skill
+skm verify <skill-name>
+
+# Start GUI (web interface)
+skm gui
+skm gui 18790              # Custom port
+
+# Admin: manage published skills
+skm admin ls               # List all published skills
+skm admin info <skill>     # View skill details
+skm admin search <keyword> # Search published skills
+skm admin stats            # Publishing statistics
+skm admin verify <skill>   # Verify published skill
+```
+
+## Environment Variables
+
+SkillMarket reads configuration from environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SKM_NPM_SCOPE` | `@itismyskillmarket` | Primary npm scope for publishing/lookup |
+| `SKM_NPM_SCOPE_FALLBACK` | `@wanxuchen` | Fallback scope (backward compatibility) |
+| `SKM_NPM_SCOPES` | (5 scopes) | Comma-separated list of scopes to search |
+| `SKM_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry URL |
+| `SKM_URL` | `https://www.npmjs.com/package/@itismyskillmarket` | Personal link prefix for `skm publish` output |
+
+Example:
+```bash
+export SKM_NPM_SCOPE=@mycompany
+export SKM_URL=https://my-registry.example.com
+skm publish my-skill   # → View at: https://my-registry.example.com/my-skill
 ```
 
 ## Cross-Platform Installation

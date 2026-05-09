@@ -6,8 +6,11 @@
 2. [创建自定义 Skill](#创建自定义-skill)
 3. [发布 Skill 到 npm](#发布-skill-到-npm)
 4. [通过 GitHub Actions 发布](#通过-github-actions-发布)
-5. [用户安装使用](#用户安装使用)
-6. [常见问题](#常见问题)
+5. [管理员命令](#管理员命令-skm-admin)
+6. [环境变量配置](#环境变量配置)
+7. [GUI 图形界面](#gui-图形界面)
+8. [用户安装使用](#用户安装使用)
+9. [常见问题](#常见问题)
 
 ---
 
@@ -202,6 +205,98 @@ jobs:
 
 ---
 
+## 管理员命令 (`skm admin`)
+
+管理员命令用于管理云端已发布的 skills。所有命令直接查询 npm registry。
+
+```bash
+# 列出所有已发布的 skills
+skm admin ls
+
+# 查看 skill 完整信息（版本历史、dist-tags、元数据）
+skm admin info <skill>
+
+# 搜索已发布的 skills
+skm admin search <keyword>
+
+# 发布统计
+skm admin stats
+
+# 验证已发布 skill 的结构和元数据
+skm admin verify <skill>
+```
+
+### 输出示例
+
+```bash
+$ skm admin stats
+
+📊 SkillMarket Publishing Statistics
+
+📦 Total published skills: 3
+📝 Total versions: 10
+📋 Skills with skillmarket metadata: 3/3
+🔧 Platforms covered: 6 (opencode, cursor, vscode, claude, codex, antigravity)
+🏆 Most versions: @scope/test-skill-1 (4)
+🔗 Registry: https://registry.npmjs.org
+```
+
+---
+
+## 环境变量配置
+
+从 v1.3.11 开始，个人相关配置可通过环境变量覆盖。
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `SKM_NPM_SCOPE` | `@itismyskillmarket` | 主要 npm scope，用于发布/查找 skill |
+| `SKM_NPM_SCOPE_FALLBACK` | `@wanxuchen` | 回退 scope（兼容旧安装） |
+| `SKM_NPM_SCOPES` | `@itismyskillmarket,@wanxuchen,...` | 搜索时尝试的 scope 列表（逗号分隔） |
+| `SKM_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry 地址 |
+| `SKM_URL` | `https://www.npmjs.com/package/@itismyskillmarket` | 个人链接前缀（publish 输出用） |
+
+### 使用示例
+
+```bash
+# 使用自己的 npm scope
+export SKM_NPM_SCOPE=@mycompany
+export SKM_URL=https://my-registry.example.com/my-skills
+
+# 发布后链接自动使用配置的值
+skm publish my-skill
+# → View at: https://my-registry.example.com/my-skills/my-skill
+
+# admin 命令自动读取 scope
+skm admin ls    # 搜索 @mycompany scope 下的包
+```
+
+---
+
+## GUI 图形界面
+
+SkillMarket 提供 Web GUI 界面：
+
+```bash
+# 启动 GUI（默认端口 18770）
+skm gui
+
+# 指定端口
+skm gui 18790
+```
+
+GUI 包含以下视图：
+
+| 视图 | 功能 |
+|------|------|
+| **Skills** | 浏览可用 skills，搜索、安装 |
+| **Installed** | 管理已安装 skills，更新/卸载 |
+| **Platforms** | 查看各平台状态 |
+| **Help** | Action 使用说明、环境变量文档、命令速查 |
+
+GUI 中 Help 视图显示当前生效的环境变量值和完整的操作文档。
+
+---
+
 ## 用户安装使用
 
 ### 安装 SkillMarket CLI
@@ -261,11 +356,21 @@ skm uninstall <skill-name>
 
 ### Q: 包名必须以 @wanxuchen/ 开头吗？
 
-是的，这是当前配置的默认作用域。你可以在 `src/commands/install.ts` 中修改默认作用域。
+默认 scope 是 `@itismyskillmarket`（回退 `@wanxuchen`），可以通过环境变量修改：
+
+```bash
+export SKM_NPM_SCOPE=@mycompany
+```
+
+之后 `skm update`、`skm publish`、`skm admin` 等命令都会使用新的 scope。
 
 ### Q: 如何发布到 @skillmarket/ 组织？
 
-需要先加入 npm "skillmarket" 组织，然后修改包名为 `@skillmarket/<skill-name>`。
+需要先加入 npm "skillmarket" 组织，然后修改包名为 `@skillmarket/<skill-name>`，或通过环境变量添加 scope：
+
+```bash
+export SKM_NPM_SCOPES=@skillmarket,@itismyskillmarket
+```
 
 ### Q: 发布时遇到 403 错误？
 
@@ -288,6 +393,12 @@ skm ls
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
+| 1.3.12 | 2026-05-09 | `skm admin` 管理员命令组 |
+| 1.3.11 | 2026-05-09 | 环境变量配置 + GUI Help 视图 |
+| 1.3.10 | 2026-05-09 | GUI 修复：Cache-Control + npm retry |
+| 1.3.9 | 2026-05-08 | GUI 滚动修复 |
+| 1.3.8 | 2026-05-08 | npm 缓存 + 限流 |
+| 1.3.7 | 2026-05-08 | GUI API 后端 + `skm verify` |
 | 1.3.6 | 2026-05-07 | `skm sync <skill-name>` + 修复平台显示 |
 | 1.3.4 | 2026-05-06 | OpenClaw/Hermes 适配器支持 |
 | 1.3.3 | 2026-04-30 | GitHub 第三方库支持 |
