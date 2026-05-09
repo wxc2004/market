@@ -123,24 +123,38 @@ interface SearchPackage {
  * // 获取 scoped 包
  * const scoped = await fetchNpmPackage('@skillmarket/brainstorming');
  */
-export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryResponse | null> {
+export async function fetchNpmPackage(packageName: string, retries = 1): Promise<NpmRegistryResponse | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await fetchNpmPackageOnce(packageName);
+      if (result !== null) return result;
+    } catch {
+      // 最后一次尝试失败才返回 null
+      if (attempt === retries) return null;
+    }
+    // 重试前等待 500ms
+    if (attempt < retries) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  return null;
+}
+
+/** 单次 npm 包 fetch 请求 */
+async function fetchNpmPackageOnce(packageName: string): Promise<NpmRegistryResponse | null> {
   return new Promise((resolve, reject) => {
-    // 构建 npm registry URL
-    // scoped 包（如 @foo/bar）需要特殊处理，保留 @ 符号
-    // @foo/bar -> @foo%2Fbar (URL encoded)
     const isScoped = packageName.startsWith('@');
     let encodedName: string;
     
     if (isScoped) {
-      // 对 scoped 包进行正确编码：@foo/bar -> @foo%2Fbar
-      const scopeAndName = packageName.substring(1); // 去掉 @
+      const scopeAndName = packageName.substring(1);
       const slashIndex = scopeAndName.indexOf('/');
       if (slashIndex > 0) {
         const scope = scopeAndName.substring(0, slashIndex);
         const name = scopeAndName.substring(slashIndex + 1);
         encodedName = `@${encodeURIComponent(scope)}%2F${encodeURIComponent(name)}`;
       } else {
-        encodedName = packageName; // fallback
+        encodedName = packageName;
       }
     } else {
       encodedName = encodeURIComponent(packageName);
@@ -148,38 +162,35 @@ export async function fetchNpmPackage(packageName: string): Promise<NpmRegistryR
     
     const url = new URL(`https://registry.npmjs.org/${encodedName}`);
     
-    // 发送 HTTPS GET 请求
     const req = https.get(url.toString(), { timeout: 10000 }, (res) => {
       let data = '';
       
-      // 收集响应数据
+      // 检查 HTTP 状态码 — npm 限流返回 429，服务错误返回 5xx
+      if (res.statusCode && res.statusCode >= 400) {
+        // 非 2xx 状态码也算失败
+        res.resume(); // 消耗响应数据以释放内存
+        resolve(null);
+        return;
+      }
+      
       res.on('data', chunk => { data += chunk; });
       
       res.on('end', () => {
         try {
-          // 解析 JSON 响应
           const parsed = JSON.parse(data);
-          
-          // 检查 npm 返回的错误
-          // npm 对于不存在的包也返回 200，但 body 中有 error 字段
           if (parsed.error) {
             resolve(null);
             return;
           }
-          
-          // 成功解析，返回包信息
           resolve(parsed);
         } catch {
-          // JSON 解析失败，返回 null
           resolve(null);
         }
       });
     });
     
-    // 处理网络错误
     req.on('error', reject);
     
-    // 处理请求超时（10秒）
     req.on('timeout', () => {
       req.destroy();
       reject(new Error('Request timeout'));

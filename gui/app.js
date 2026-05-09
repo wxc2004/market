@@ -135,6 +135,7 @@ async function loadSkills() {
     
     renderSkills(data.skills || data, container);
     renderPagination(data.page, data.totalPages || 1);
+    renderFetchWarning(data.fetchErrors);
   } catch (err) {
     container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
   }
@@ -189,6 +190,23 @@ function createSkillCard(skill, isInstalled) {
       </div>
     </div>
   `;
+}
+
+// -----------------------------------------------------------------------------
+// 网络错误提示
+// -----------------------------------------------------------------------------
+
+function renderFetchWarning(fetchErrors) {
+  const existing = document.getElementById('fetch-warning');
+  if (existing) existing.remove();
+
+  if (!fetchErrors || fetchErrors === 0) return;
+
+  const warning = document.createElement('div');
+  warning.id = 'fetch-warning';
+  warning.style.cssText = 'background: #664400; color: #ffcc00; padding: 8px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem;';
+  warning.textContent = `⚠ ${fetchErrors} skill(s) failed to load details from npm registry. Refresh to retry.`;
+  document.querySelector('.view-header').after(warning);
 }
 
 // -----------------------------------------------------------------------------

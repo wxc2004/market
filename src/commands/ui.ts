@@ -157,6 +157,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const { packages, total } = searchResult;
 
     // 逐个获取详情（限流，避免 npm 限流）
+    let fetchErrors = 0;
     const skillDetails = await throttledMap(packages, async (pkgName) => {
       try {
         const pkgCacheKey = `pkg:${pkgName}`;
@@ -165,7 +166,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
           info = await fetchNpmPackage(pkgName);
           if (info) setCache(pkgCacheKey, info, 30_000);
         }
-        if (!info) return null;
+        if (!info) { fetchErrors++; return null; }
         const latestVersion = info['dist-tags']?.latest || 'unknown';
         const pkg = info.versions?.[latestVersion];
         const meta = pkg?.skillmarket;
@@ -181,6 +182,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
           repository: pkg?.repository?.url || '',
         };
       } catch {
+        fetchErrors++;
         return null;
       }
     }, 3);
@@ -188,7 +190,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const skills = skillDetails.filter(Boolean);
     const totalPages = Math.ceil(total / limit) || 1;
 
-    jsonResponse(res, 200, { skills, page, totalPages, total });
+    jsonResponse(res, 200, { skills, page, totalPages, total, fetchErrors });
   } catch (err) {
     jsonResponse(res, 500, {
       error: String(err),
@@ -370,7 +372,13 @@ function serveStaticFile(res: ServerResponse, filePath: string): void {
   const content = readFileSync(filePath);
   const ext = extname(filePath);
   const mime = MIME_TYPES[ext] || 'application/octet-stream';
-  res.writeHead(200, { 'Content-Type': mime });
+  // 禁用缓存，确保浏览器总是加载最新版本的前端文件
+  res.writeHead(200, {
+    'Content-Type': mime,
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  });
   res.end(content);
 }
 

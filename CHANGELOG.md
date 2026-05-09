@@ -1,19 +1,28 @@
-# SkillMarket v1.3.9 更新日志
+# SkillMarket v1.3.10 更新日志
 
-**日期**: 2026-05-08
-**版本**: 1.3.9
+**日期**: 2026-05-09
+**版本**: 1.3.10
 
 ---
 
-## 🐛 修复：GUI 内容无法滚动
+## 🐛 修复：GUI 可用技能只显示 1 个 card
 
 ### 问题
-可用技能列表只显示顶部第一个 card，页面无法向下滑动。
+进入 GUI 后 Available Skills 只显示 "test-skill-1" 一个 card，其余 skill 不显示。
+
+### 诊断
+- npm search API 正常返回 3 个包
+- 所有包均可独立 fetch
+- 前端 `.map().join('')` 渲染逻辑正确
+
+### 根因
+1. **npm fetch 静默丢弃**: `fetchNpmPackage` 失败时 `catch { return null }`，失败的 skill 被 `filter(Boolean)` 静默丢弃，前端不知情
+2. **无 Cache-Control**: 浏览器缓存旧版 `app.js`，更新后用户仍在跑旧代码
 
 ### 修复
-- flexbox 子项缺少 `min-height: 0`，导致 `overflow-y: auto` 不生效
-- 在 `.main-content` 和 `.view.active` 添加 `min-height: 0`
-- 现在内容超出视口时可正常滚动
+- `fetchNpmPackage` 添加 1 次自动重试（500ms 间隔），增加 HTTP 状态码检查（429/5xx）
+- API 返回新增 `fetchErrors` 字段，前端显示黄色警告条
+- 静态文件添加 `Cache-Control: no-cache, no-store, must-revalidate`
 
 ---
 
