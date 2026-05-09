@@ -53,6 +53,13 @@ import { detectPlatforms, getAllAdapters } from './adapters/index.js'; // 平台
 import { publishSkill } from './commands/publish.js'; // 发布命令
 import { verifySkill } from './commands/verify.js'; // 验证命令
 import { startGuiServer } from './commands/ui.js'; // GUI 服务器
+import {
+  adminList,
+  adminInfo,
+  adminSearch,
+  adminStats,
+  adminVerify,
+} from './commands/admin.js'; // 管理员命令
 
 // -----------------------------------------------------------------------------
 // 创建命令程序实例
@@ -513,6 +520,73 @@ program
       await verifySkill(skill);
     } catch (err) {
       console.error('Verify failed:', err);
+      process.exit(1);
+    }
+  });
+
+// -----------------------------------------------------------------------------
+// Admin 命令组 (skm admin)
+// -----------------------------------------------------------------------------
+
+const admin = program.command('admin').description('Admin: manage published skills (cloud)');
+
+admin
+  .command('ls')
+  .description('List all published skills')
+  .action(async () => {
+    try {
+      await adminList();
+    } catch (err) {
+      console.error('Admin ls failed:', err);
+      process.exit(1);
+    }
+  });
+
+admin
+  .command('info <skill>')
+  .description('Show detailed info for a published skill')
+  .action(async (skill) => {
+    try {
+      await adminInfo(skill);
+    } catch (err) {
+      console.error('Admin info failed:', err);
+      process.exit(1);
+    }
+  });
+
+admin
+  .command('search <keyword>')
+  .description('Search across published skills')
+  .option('-l, --limit <number>', 'Max results (default: 20)', parseInt)
+  .action(async (keyword, opts) => {
+    try {
+      await adminSearch(keyword, opts.limit ?? 20);
+    } catch (err) {
+      console.error('Admin search failed:', err);
+      process.exit(1);
+    }
+  });
+
+admin
+  .command('stats')
+  .description('Show publishing statistics')
+  .action(async () => {
+    try {
+      await adminStats();
+    } catch (err) {
+      console.error('Admin stats failed:', err);
+      process.exit(1);
+    }
+  });
+
+admin
+  .command('verify <skill>')
+  .description('Verify a published skill structure and metadata')
+  .action(async (skill) => {
+    try {
+      await adminVerify(skill);
+    } catch (err) {
+      console.error('Admin verify failed:', err);
       process.exit(1);
     }
   });

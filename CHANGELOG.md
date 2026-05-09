@@ -1,3 +1,30 @@
+# SkillMarket v1.3.12 更新日志
+
+**日期**: 2026-05-09
+**版本**: 1.3.12
+
+---
+
+## ✨ 新功能：skm admin 管理员命令组
+
+新增 `skm admin` 子命令组，用于管理云端已发布的 skill：
+
+| 命令 | 说明 |
+|------|------|
+| `skm admin ls` | 列出所有已发布的 skills |
+| `skm admin info <skill>` | 查看 skill 完整信息（版本历史、dist-tags、元数据） |
+| `skm admin search <keyword>` | 搜索已发布的 skills |
+| `skm admin stats` | 发布统计 |
+| `skm admin verify <skill>` | 验证已发布 skill 的结构和元数据 |
+
+### 新增文件
+- `src/commands/admin.ts` — 管理员命令模块（5 个子命令）
+
+### 变更
+- `src/cli.ts` — 注册 `skm admin` 子命令组
+
+---
+
 # SkillMarket v1.3.11 更新日志
 
 **日期**: 2026-05-09
