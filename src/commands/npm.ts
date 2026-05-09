@@ -20,6 +20,7 @@
 
 import https from 'https';  // Node.js 原生 HTTPS 模块，用于发送 HTTP 请求
 import { URL } from 'url';   // URL 解析和构建工具
+import { SKILL_SCOPES } from '../config.js';
 
 // -----------------------------------------------------------------------------
 // 类型定义
@@ -201,18 +202,6 @@ async function fetchNpmPackageOnce(packageName: string): Promise<NpmRegistryResp
 // -----------------------------------------------------------------------------
 // 兼容的 Scope 列表
 // -----------------------------------------------------------------------------
-
-/**
- * SkillMarket 支持的 npm scope 列表
- * 按优先级排序，先尝试的 scope 排在前面
- */
-const SKILL_SCOPES = [
-  '@wanxuchen',       // 原作者 scope
-  '@itismyskillmarket', // 当前包名 scope
-  '@thisisskillmarket', // 曾用 scope
-  '@this-is-skillmarket', // 曾用 scope (带横线)
-  '@skillmarket',     // 通用 scope
-];
 
 /**
  * 将 skillId 转换为可能的包名列表

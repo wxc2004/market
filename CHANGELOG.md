@@ -1,3 +1,33 @@
+# SkillMarket v1.3.11 更新日志
+
+**日期**: 2026-05-09
+**版本**: 1.3.11
+
+---
+
+## ✨ 新功能：环境变量配置 + GUI Help 视图
+
+### 新增
+- `src/config.ts` — 统一配置模块，个人相关链接从环境变量读取
+- GUI 新增 **Help** 视图：Action 使用说明、环境变量文档、当前配置
+- API 新增 `GET /api/config` 端点
+
+### 支持的环境变量
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `SKM_NPM_SCOPE` | `@itismyskillmarket` | 主要 npm scope |
+| `SKM_NPM_SCOPE_FALLBACK` | `@wanxuchen` | 回退 scope |
+| `SKM_NPM_SCOPES` | (5 个 scope) | 搜索 scope 列表 |
+| `SKM_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry |
+| `SKM_URL` | `https://www.npmjs.com/package/@itismyskillmarket` | 个人链接前缀 |
+
+### 变更
+- `npm.ts` — `SKILL_SCOPES` 改为从 config 导入
+- `publish.ts` — 硬编码 URL 改为 `${SKM_URL}/${skillName}`
+- `update.ts` — 硬编码 scope 改为 `${NPM_SCOPE}/${NPM_SCOPE_FALLBACK}`
+
+---
+
 # SkillMarket v1.3.10 更新日志
 
 **日期**: 2026-05-09

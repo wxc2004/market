@@ -26,6 +26,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+import { SKM_URL } from '../config.js';
 
 // -----------------------------------------------------------------------------
 // 发布函数
@@ -121,5 +122,5 @@ export async function publishSkill(
   // ==========================================================================
   
   console.log(`\n✅ ${skillName} published successfully!`);
-  console.log(`   View at: https://www.npmjs.com/package/@itismyskillmarket/${skillName}`);
+  console.log(`   View at: ${SKM_URL}/${skillName}`);
 }

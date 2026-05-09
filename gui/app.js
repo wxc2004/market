@@ -68,6 +68,9 @@ function switchView(view) {
     case 'platforms':
       loadPlatforms();
       break;
+    case 'help':
+      loadHelp();
+      break;
   }
 }
 
@@ -284,8 +287,100 @@ function renderPlatforms(platforms, container) {
 }
 
 // -----------------------------------------------------------------------------
-// 操作函数
+// Help 视图
 // -----------------------------------------------------------------------------
+
+async function loadHelp() {
+  const container = document.getElementById('help-content');
+  container.innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    const response = await fetch('/api/config');
+    const config = await response.json();
+    renderHelp(config, container);
+  } catch (err) {
+    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+  }
+}
+
+function renderHelp(config, container) {
+  const envVars = [
+    { var: 'SKM_NPM_SCOPE', default: config.npmScope, desc: '主要 npm scope，用于发布/查找 skill' },
+    { var: 'SKM_NPM_SCOPE_FALLBACK', default: config.npmScopeFallback, desc: '回退 scope（兼容旧安装）' },
+    { var: 'SKM_NPM_SCOPES', default: config.skillScopes.join(', '), desc: '搜索时尝试的 scope 列表（逗号分隔）' },
+    { var: 'SKM_NPM_REGISTRY', default: config.npmRegistry, desc: 'npm registry 地址' },
+    { var: 'SKM_URL', default: config.skmUrl, desc: '个人链接前缀（publish 输出用）' },
+  ];
+
+  container.innerHTML = `
+    <div class="help-section">
+      <h3>📖 GitHub Actions — Publish Skill</h3>
+      <p>在 GitHub 仓库页面操作：</p>
+      <div class="help-steps">
+        <div class="help-step">
+          <strong>发布主包（SkillMarket CLI）</strong>
+          <ol>
+            <li>GitHub → <strong>Releases</strong> → Create a new release</li>
+            <li>输入 Tag (如 v1.3.11)，点击 Publish release</li>
+            <li>Action <code>Publish to npm</code> 自动触发 → 构建 → npm publish</li>
+          </ol>
+        </div>
+        <div class="help-step">
+          <strong>发布独立 Skill</strong>
+          <ol>
+            <li>GitHub → <strong>Actions</strong> → Publish Skill → Run workflow</li>
+            <li>输入 <code>skill_name</code>（skills/ 下的目录名）和可选 <code>version</code></li>
+            <li>自动执行：npm install → npm version → npm publish</li>
+          </ol>
+          <p class="help-note">⚠ 需要 GitHub Secrets 中配置 <code>NPM_TOKEN</code></p>
+        </div>
+        <div class="help-step">
+          <strong>本地发布</strong>
+          <pre>skm publish &lt;skill-name&gt;
+skm publish &lt;skill-name&gt; --version 1.0.1</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>⚙️ 环境变量配置</h3>
+      <p>设置以下环境变量可覆盖默认配置：</p>
+      <table class="help-table">
+        <thead>
+          <tr><th>变量</th><th>当前值</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          ${envVars.map(v => `
+            <tr>
+              <td><code>${v.var}</code></td>
+              <td><code>${v.default}</code></td>
+              <td>${v.desc}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="help-section">
+      <h3>🔧 常用命令</h3>
+      <table class="help-table">
+        <thead><tr><th>命令</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>skm ls</code></td><td>列出可用 skills</td></tr>
+          <tr><td><code>skm ls --installed</code></td><td>列出已安装 skills</td></tr>
+          <tr><td><code>skm install &lt;skill&gt;</code></td><td>安装 skill 到所有平台</td></tr>
+          <tr><td><code>skm install &lt;skill&gt; --platform opencode</code></td><td>安装到指定平台</td></tr>
+          <tr><td><code>skm uninstall &lt;skill&gt;</code></td><td>卸载 skill</td></tr>
+          <tr><td><code>skm update &lt;skill&gt;</code></td><td>更新 skill</td></tr>
+          <tr><td><code>skm update --all</code></td><td>更新所有 skills</td></tr>
+          <tr><td><code>skm platforms</code></td><td>查看可用平台</td></tr>
+          <tr><td><code>skm gui</code></td><td>启动图形界面</td></tr>
+          <tr><td><code>skm gui 18790</code></td><td>指定端口启动 GUI</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 
 async function installSkill(skillId) {
   try {

@@ -22,6 +22,7 @@
 import { installSkill } from './install.js';    // 安装函数（复用）
 import { getInstalledSkills } from './registry.js';  // 注册表操作
 import { fetchNpmPackage } from './npm.js';    // npm 查询
+import { NPM_SCOPE, NPM_SCOPE_FALLBACK } from '../config.js';
 
 // -----------------------------------------------------------------------------
 // 更新函数
@@ -47,16 +48,16 @@ export async function updateSkill(skillId?: string): Promise<void> {
   
   if (skillId) {
     // 查询 npm 获取最新版本
-    const pkgInfo = await fetchNpmPackage(`@itismyskillmarket/${skillId}`);
-    
+    const pkgInfo = await fetchNpmPackage(`${NPM_SCOPE}/${skillId}`);
+
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;
       console.log(`Updating ${skillId} to ${latestVersion}...`);
-      
+
       // 复用 installSkill 安装最新版本
       await installSkill(skillId, latestVersion);
     }
-    
+
     return;
   }
   
@@ -81,7 +82,7 @@ export async function updateSkill(skillId?: string): Promise<void> {
   // 遍历每个已安装的 skill
   for (const skill of installed) {
     // 查询 npm 获取最新版本信息
-    const pkgInfo = await fetchNpmPackage(`@wanxuchen/${skill.id}`);
+    const pkgInfo = await fetchNpmPackage(`${NPM_SCOPE_FALLBACK}/${skill.id}`);
     
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;

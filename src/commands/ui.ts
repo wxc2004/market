@@ -35,6 +35,13 @@ import { detectPlatforms, getAllAdapters } from '../adapters/index.js';
 import { installSkill } from './install.js';
 import { uninstallSkill } from './uninstall.js';
 import { updateSkill } from './update.js';
+import {
+  NPM_SCOPE,
+  NPM_SCOPE_FALLBACK,
+  SKILL_SCOPES,
+  NPM_REGISTRY,
+  SKM_URL,
+} from '../config.js';
 
 // -----------------------------------------------------------------------------
 // 路径常量
@@ -289,6 +296,18 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
   } catch (err) {
     jsonResponse(res, 500, { error: String(err) });
   }
+};
+
+// ---- GET /api/config ----
+
+API_ROUTES.GET['/api/config'] = async (_req, res, _url) => {
+  jsonResponse(res, 200, {
+    npmScope: NPM_SCOPE,
+    npmScopeFallback: NPM_SCOPE_FALLBACK,
+    npmRegistry: NPM_REGISTRY,
+    skmUrl: SKM_URL,
+    skillScopes: SKILL_SCOPES,
+  });
 };
 
 // ---- POST /api/install ----
