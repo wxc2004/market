@@ -1,3 +1,59 @@
+# SkillMarket v1.3.13 更新日志
+
+**日期**: 2026-05-11
+**版本**: 1.3.13
+
+---
+
+## 🎉 新功能：skm-admin 云端 Skill 管理系统
+
+### 1. CLI 管理命令
+
+在已有只读查询命令基础上，新增 **7 个写操作管理命令**，通过 npm CLI 直接操作云端 skill：
+
+| 命令 | 说明 |
+|------|------|
+| `skm admin deprecate <skill>` | 弃用 skill（--version 指定版本，--message 自定义消息） |
+| `skm admin unpublish <skill>` | 取消发布（--version 指定版本，--force 强制全部） |
+| `skm admin tag set <skill> <tag> <ver>` | 设置 dist-tag |
+| `skm admin tag rm <skill> <tag>` | 移除 dist-tag |
+| `skm admin tag ls <skill>` | 列出所有 dist-tags |
+| `skm admin owner add <skill> <user>` | 添加包维护者 |
+| `skm admin owner rm <skill> <user>` | 移除包维护者 |
+| `skm admin access <skill> <level>` | 设置访问权限（public\|restricted） |
+
+### 2. GUI Admin Dashboard
+
+新增 **Admin 视图**，提供可视化的云端管理界面：
+
+- **统计卡片**: 发布技能数、总版本数、平均版本数、元数据覆盖、总大小、平台覆盖数
+- **技能管理列表**: 所有已发布技能行，每行有 Deprecate / Unpublish / Tags / Owners / Access 操作按钮
+- **操作模态框**: 每个管理操作都有对应的确认对话框
+
+### 3. GUI API 端点
+
+| 端点 | 功能 |
+|------|------|
+| `GET /api/admin/stats` | 发布统计 |
+| `POST /api/admin/deprecate` | 弃用 skill |
+| `POST /api/admin/unpublish` | 取消发布 |
+| `POST /api/admin/tag` | dist-tag 管理（set/rm/ls） |
+| `POST /api/admin/owner` | 维护者管理（add/rm） |
+| `POST /api/admin/access` | 访问权限设置 |
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/admin.ts` | 新增 8 个管理函数 + 3 个辅助函数 |
+| `src/cli.ts` | 注册 admin tag/owner 子命令组 + 3 个新命令 |
+| `src/commands/ui.ts` | 新增 6 个 Admin API 端点 |
+| `gui/index.html` | 新增 Admin 导航按钮和视图 |
+| `gui/app.js` | 新增 Admin Dashboard 逻辑 + 5 个操作模态框 |
+| `gui/style.css` | 新增 Admin 统计卡片、管理列表、模态框样式 |
+
+---
+
 # SkillMarket v1.3.12 更新日志
 
 **日期**: 2026-05-09
