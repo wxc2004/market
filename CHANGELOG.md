@@ -1,3 +1,20 @@
+# SkillMarket v1.3.14 更新日志
+
+**日期**: 2026-05-11
+**版本**: 1.3.14
+
+---
+
+## 🔧 优化：GUI 侧边栏导航分组
+
+### 变更
+- GUI 侧边栏按功能分组：**Browse**（Skills/Installed/Platforms）、**Manage**（Admin）、**Support**（Help）
+- 每组添加大写灰色分组标签，提升导航效率
+- `gui/index.html` — 导航结构调整
+- `gui/style.css` — 新增 `.nav-section` 样式
+
+---
+
 # SkillMarket v1.3.13 更新日志
 
 **日期**: 2026-05-11
