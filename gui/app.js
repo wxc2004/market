@@ -21,8 +21,22 @@ const state = {
 document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
   initializeControls();
+  initializeCollapsibleSections();
   loadSkills();
 });
+
+// -----------------------------------------------------------------------------
+// 可折叠侧边栏分组
+// -----------------------------------------------------------------------------
+
+function initializeCollapsibleSections() {
+  // 默认全部展开
+}
+
+function toggleSection(header) {
+  const group = header.parentElement;
+  group.classList.toggle('collapsed');
+}
 
 // -----------------------------------------------------------------------------
 // 导航切换

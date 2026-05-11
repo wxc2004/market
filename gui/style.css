@@ -43,13 +43,13 @@ body {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 12px 0;
 }
 
 .logo {
-  padding: 0 20px 20px;
+  padding: 0 16px 12px;
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 .logo h1 {
@@ -62,17 +62,57 @@ nav {
   padding: 0 10px;
 }
 
+.nav-group {
+  margin-bottom: 2px;
+}
+
+.nav-group + .nav-group {
+  margin-top: 4px;
+}
+
+.nav-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.nav-section:hover {
+  color: var(--text-secondary);
+}
+
+.nav-arrow {
+  font-size: 0.55rem;
+  transition: transform 0.2s;
+}
+
+.nav-group.collapsed .nav-arrow {
+  transform: rotate(-90deg);
+}
+
+.nav-group.collapsed .nav-items {
+  display: none;
+}
+
 .nav-btn {
   width: 100%;
-  padding: 12px 16px;
-  margin-bottom: 8px;
+  padding: 10px 14px;
+  margin-bottom: 2px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -89,16 +129,7 @@ nav {
 }
 
 .nav-btn .icon {
-  font-size: 1.2rem;
-}
-
-.nav-section {
-  padding: 16px 20px 6px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 1.1rem;
 }
 
 .sidebar-footer {
@@ -119,7 +150,7 @@ nav {
   flex: 1;
   overflow-y: auto;
   min-height: 0;   /* flex 子项必须显式允许收缩 */
-  padding: 30px;
+  padding: 20px 28px;
 }
 
 .view {
@@ -136,11 +167,11 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .view-header h2 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: var(--text-secondary);
 }
 

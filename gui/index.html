@@ -14,26 +14,47 @@
         <h1>📦 SkillMarket</h1>
       </div>
       <nav>
-        <div class="nav-section">Browse</div>
-        <button class="nav-btn active" data-view="skills">
-          <span class="icon">📋</span> Skills
-        </button>
-        <button class="nav-btn" data-view="installed">
-          <span class="icon">✅</span> Installed
-        </button>
-        <button class="nav-btn" data-view="platforms">
-          <span class="icon">💻</span> Platforms
-        </button>
+        <div class="nav-group">
+          <div class="nav-section" onclick="toggleSection(this)">
+            <span>Browse</span>
+            <span class="nav-arrow">▼</span>
+          </div>
+          <div class="nav-items">
+            <button class="nav-btn active" data-view="skills">
+              <span class="icon">📋</span> Skills
+            </button>
+            <button class="nav-btn" data-view="installed">
+              <span class="icon">✅</span> Installed
+            </button>
+            <button class="nav-btn" data-view="platforms">
+              <span class="icon">💻</span> Platforms
+            </button>
+          </div>
+        </div>
 
-        <div class="nav-section">Manage</div>
-        <button class="nav-btn" data-view="admin">
-          <span class="icon">⚙️</span> Admin
-        </button>
+        <div class="nav-group">
+          <div class="nav-section" onclick="toggleSection(this)">
+            <span>Manage</span>
+            <span class="nav-arrow">▼</span>
+          </div>
+          <div class="nav-items">
+            <button class="nav-btn" data-view="admin">
+              <span class="icon">⚙️</span> Admin
+            </button>
+          </div>
+        </div>
 
-        <div class="nav-section">Support</div>
-        <button class="nav-btn" data-view="help">
-          <span class="icon">📖</span> Help
-        </button>
+        <div class="nav-group">
+          <div class="nav-section" onclick="toggleSection(this)">
+            <span>Support</span>
+            <span class="nav-arrow">▼</span>
+          </div>
+          <div class="nav-items">
+            <button class="nav-btn" data-view="help">
+              <span class="icon">📖</span> Help
+            </button>
+          </div>
+        </div>
       </nav>
       <div class="sidebar-footer">
         <span class="version" id="gui-version">v1.3.14</span>
