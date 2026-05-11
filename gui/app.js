@@ -71,6 +71,9 @@ function switchView(view) {
     case 'help':
       loadHelp();
       break;
+    case 'admin':
+      loadAdminDashboard();
+      break;
   }
 }
 
@@ -102,6 +105,8 @@ function initializeControls() {
   // 刷新按钮
   document.getElementById('refresh-skills').addEventListener('click', () => loadSkills());
   document.getElementById('update-all').addEventListener('click', updateAllSkills);
+  const refreshAdmin = document.getElementById('refresh-admin');
+  if (refreshAdmin) refreshAdmin.addEventListener('click', () => loadAdminDashboard());
   
   // 模态框关闭
   document.querySelector('.modal-close').addEventListener('click', closeModal);
@@ -525,4 +530,451 @@ function showToast(message, type = 'info') {
   setTimeout(() => {
     toast.classList.add('hidden');
   }, 3000);
+}
+
+// -----------------------------------------------------------------------------
+// Admin Dashboard
+// -----------------------------------------------------------------------------
+
+async function loadAdminDashboard() {
+  await Promise.all([loadAdminStats(), loadAdminSkills()]);
+}
+
+async function loadAdminStats() {
+  const container = document.getElementById('admin-stats');
+  container.innerHTML = '<div class="loading">Loading stats...</div>';
+
+  try {
+    const response = await fetch('/api/admin/stats');
+    const data = await response.json();
+
+    if (data.error) {
+      container.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      return;
+    }
+
+    const cards = [
+      { value: data.totalSkills, label: 'Published Skills' },
+      { value: data.totalVersions, label: 'Total Versions' },
+      { value: data.averageVersions, label: 'Avg Versions/Skill' },
+      { value: data.withMetadata, label: 'With Metadata' },
+      { value: `${data.totalSizeMB} MB`, label: 'Total Size' },
+      { value: data.platformCount, label: 'Platforms Covered' },
+    ];
+
+    container.innerHTML = cards.map(c => `
+      <div class="admin-stat-card">
+        <div class="admin-stat-value">${c.value}</div>
+        <div class="admin-stat-label">${c.label}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+  }
+}
+
+async function loadAdminSkills() {
+  const container = document.getElementById('admin-skills-list');
+  container.innerHTML = '<div class="loading">Loading published skills...</div>';
+
+  try {
+    const params = new URLSearchParams({ limit: '100' });
+    const response = await fetch(`/api/skills?${params}`);
+    const data = await response.json();
+
+    if (data.error) {
+      container.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      return;
+    }
+
+    const skills = data.skills || [];
+    renderAdminSkills(skills, container);
+  } catch (err) {
+    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+  }
+}
+
+function renderAdminSkills(skills, container) {
+  if (!skills || skills.length === 0) {
+    container.innerHTML = '<div class="loading">No published skills found</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <h3 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 1rem;">Published Skills (${skills.length})</h3>
+    ${skills.map(skill => {
+      const id = skill.id || skill.name;
+      const desc = (skill.description || '').slice(0, 80);
+      return `
+        <div class="admin-skill-row">
+          <div class="admin-skill-info">
+            <h4>${skill.displayName || id}</h4>
+            <div class="admin-skill-meta">${id}@${skill.version || 'latest'} ${skill.platforms && skill.platforms.length ? '— ' + skill.platforms.join(', ') : ''}</div>
+            ${desc ? `<div class="admin-skill-desc">${desc}</div>` : ''}
+          </div>
+          <div class="admin-actions">
+            <button class="admin-btn admin-btn-deprecate" onclick="showAdminDeprecateModal('${id}')">Deprecate</button>
+            <button class="admin-btn admin-btn-unpublish" onclick="showAdminUnpublishModal('${id}')">Unpublish</button>
+            <button class="admin-btn admin-btn-tag" onclick="showAdminTagModal('${id}')">Tags</button>
+            <button class="admin-btn admin-btn-owner" onclick="showAdminOwnerModal('${id}')">Owners</button>
+            <button class="admin-btn admin-btn-access" onclick="showAdminAccessModal('${id}')">Access</button>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// Admin Action Modals
+// -----------------------------------------------------------------------------
+
+function showAdminDeprecateModal(skillId) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+
+  modalBody.innerHTML = `
+    <h2>Deprecate: ${skillId}</h2>
+    <div class="admin-modal-section">
+      <div class="admin-input-group">
+        <label>Version</label>
+        <input type="text" id="deprecate-version" placeholder="(leave empty for all versions)">
+      </div>
+      <div class="admin-input-group">
+        <label>Message</label>
+        <input type="text" id="deprecate-msg" value="This skill is deprecated. Please use an alternative.">
+      </div>
+      <p class="admin-warning-text">⚠ Deprecating will mark this skill as deprecated in the npm registry.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-danger" onclick="execAdminDeprecate('${skillId}')">Confirm Deprecate</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+async function execAdminDeprecate(skillId) {
+  const version = document.getElementById('deprecate-version').value;
+  const message = document.getElementById('deprecate-msg').value;
+
+  try {
+    showToast(`Deprecating ${skillId}...`, 'info');
+    const response = await fetch('/api/admin/deprecate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, version, message }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      closeModal();
+      loadAdminDashboard();
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+function showAdminUnpublishModal(skillId) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+
+  modalBody.innerHTML = `
+    <h2>Unpublish: ${skillId}</h2>
+    <div class="admin-modal-section">
+      <div class="admin-input-group">
+        <label>Version</label>
+        <input type="text" id="unpublish-version" placeholder="(leave empty for entire package)">
+      </div>
+      <div class="admin-checkbox-group">
+        <input type="checkbox" id="unpublish-force">
+        <label for="unpublish-force">Force unpublish entire package (required if no version specified)</label>
+      </div>
+      <p class="admin-danger-text">⚠ This action cannot be undone! Packages can be restored within 72 hours.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-danger" onclick="execAdminUnpublish('${skillId}')">Confirm Unpublish</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+async function execAdminUnpublish(skillId) {
+  const version = document.getElementById('unpublish-version').value;
+  const force = document.getElementById('unpublish-force').checked;
+
+  try {
+    showToast(`Unpublishing ${skillId}...`, 'info');
+    const response = await fetch('/api/admin/unpublish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, version, force }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      closeModal();
+      loadAdminDashboard();
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+function showAdminTagModal(skillId) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+
+  modalBody.innerHTML = `
+    <h2>Tags: ${skillId}</h2>
+    <div id="admin-tag-current">
+      <div class="loading">Loading current tags...</div>
+    </div>
+    <div class="admin-modal-section" style="margin-top: 16px;">
+      <h3>Set Tag</h3>
+      <div class="admin-input-group">
+        <label>Tag</label>
+        <input type="text" id="tag-set-name" placeholder="e.g. beta, latest">
+      </div>
+      <div class="admin-input-group">
+        <label>Version</label>
+        <input type="text" id="tag-set-version" placeholder="e.g. 1.0.1">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="execAdminTagSet('${skillId}')">Set Tag</button>
+    </div>
+    <div class="admin-modal-section">
+      <h3>Remove Tag</h3>
+      <div class="admin-input-group">
+        <label>Tag</label>
+        <input type="text" id="tag-rm-name" placeholder="e.g. beta">
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="execAdminTagRemove('${skillId}')">Remove Tag</button>
+    </div>
+    <div class="actions" style="margin-top: 16px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  // Load current tags
+  loadAdminTags(skillId);
+}
+
+async function loadAdminTags(skillId) {
+  const container = document.getElementById('admin-tag-current');
+  try {
+    const response = await fetch('/api/admin/tag', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, action: 'ls' }),
+    });
+    const result = await response.json();
+    if (result.success && result.tags) {
+      const entries = Object.entries(result.tags);
+      if (entries.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No dist-tags found.</p>';
+      } else {
+        container.innerHTML = `
+          <h3>Current Tags</h3>
+          <div class="admin-tag-list">
+            ${entries.map(([tag, ver]) => `
+              <span class="admin-tag-item">
+                ${tag} <span class="tag-version">→ ${ver}</span>
+                ${tag === 'latest' ? '<span style="color: var(--accent); font-size: 0.75rem;"> (default)</span>' : ''}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
+    } else {
+      container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Could not load tags.</p>';
+    }
+  } catch (err) {
+    container.innerHTML = `<p style="color: #ff6666; font-size: 0.85rem;">Error: ${err.message}</p>`;
+  }
+}
+
+async function execAdminTagSet(skillId) {
+  const tag = document.getElementById('tag-set-name').value;
+  const version = document.getElementById('tag-set-version').value;
+
+  if (!tag || !version) {
+    showToast('Tag and version are required', 'error');
+    return;
+  }
+
+  try {
+    showToast(`Setting tag ${tag}...`, 'info');
+    const response = await fetch('/api/admin/tag', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, action: 'set', tag, version }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      loadAdminTags(skillId);
+      document.getElementById('tag-set-name').value = '';
+      document.getElementById('tag-set-version').value = '';
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function execAdminTagRemove(skillId) {
+  const tag = document.getElementById('tag-rm-name').value;
+
+  if (!tag) {
+    showToast('Tag name is required', 'error');
+    return;
+  }
+
+  try {
+    showToast(`Removing tag ${tag}...`, 'info');
+    const response = await fetch('/api/admin/tag', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, action: 'rm', tag }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      loadAdminTags(skillId);
+      document.getElementById('tag-rm-name').value = '';
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+function showAdminOwnerModal(skillId) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+
+  modalBody.innerHTML = `
+    <h2>Owners: ${skillId}</h2>
+    <div class="admin-modal-section">
+      <h3>Add Owner</h3>
+      <div class="admin-input-group">
+        <label>npm User</label>
+        <input type="text" id="owner-add-name" placeholder="npm username">
+      </div>
+      <button class="btn btn-success btn-sm" onclick="execAdminOwnerAdd('${skillId}')">Add Owner</button>
+    </div>
+    <div class="admin-modal-section">
+      <h3>Remove Owner</h3>
+      <div class="admin-input-group">
+        <label>npm User</label>
+        <input type="text" id="owner-rm-name" placeholder="npm username">
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="execAdminOwnerRemove('${skillId}')">Remove Owner</button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+async function execAdminOwnerAdd(skillId) {
+  const user = document.getElementById('owner-add-name').value;
+  if (!user) { showToast('Username is required', 'error'); return; }
+
+  try {
+    showToast(`Adding owner ${user}...`, 'info');
+    const response = await fetch('/api/admin/owner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, action: 'add', user }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      document.getElementById('owner-add-name').value = '';
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function execAdminOwnerRemove(skillId) {
+  const user = document.getElementById('owner-rm-name').value;
+  if (!user) { showToast('Username is required', 'error'); return; }
+
+  try {
+    showToast(`Removing owner ${user}...`, 'info');
+    const response = await fetch('/api/admin/owner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, action: 'rm', user }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      document.getElementById('owner-rm-name').value = '';
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+function showAdminAccessModal(skillId) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+
+  modalBody.innerHTML = `
+    <h2>Access: ${skillId}</h2>
+    <div class="admin-modal-section">
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+        Set the package access level. Public packages are visible to everyone.
+        Restricted packages require authentication to install.
+      </p>
+      <div class="admin-radio-group">
+        <label><input type="radio" name="access-level" value="public" checked> Public</label>
+        <label><input type="radio" name="access-level" value="restricted"> Restricted</label>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="execAdminAccess('${skillId}')">Set Access</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+async function execAdminAccess(skillId) {
+  const level = document.querySelector('input[name="access-level"]:checked').value;
+
+  try {
+    showToast(`Setting access to ${level}...`, 'info');
+    const response = await fetch('/api/admin/access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillId, level }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(`Error: ${result.error}`, 'error');
+    } else {
+      showToast(`✅ ${result.message}`, 'success');
+      closeModal();
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
 }

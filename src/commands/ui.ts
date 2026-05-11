@@ -25,6 +25,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 // 数据层函数（直接返回数据，无 console.log 副作用）
 import { searchSkillmarketPackages, fetchNpmPackage } from './npm.js';
@@ -35,6 +36,9 @@ import { detectPlatforms, getAllAdapters } from '../adapters/index.js';
 import { installSkill } from './install.js';
 import { uninstallSkill } from './uninstall.js';
 import { updateSkill } from './update.js';
+
+// Admin 功能
+import { resolveFullPackageName, npmExec, fetchScopePackages } from './admin.js';
 import {
   NPM_SCOPE,
   NPM_SCOPE_FALLBACK,
@@ -354,6 +358,221 @@ API_ROUTES.POST['/api/uninstall'] = async (req, res, _url) => {
     });
 
     jsonResponse(res, 200, { success: true, message: `${skillId} uninstalled successfully` });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- GET /api/admin/stats ----
+
+API_ROUTES.GET['/api/admin/stats'] = async (_req, res, _url) => {
+  try {
+    const packages = await fetchScopePackages();
+
+    const infos = (
+      await Promise.all(
+        packages.map(async (pkg) => {
+          try {
+            const info = await fetchNpmPackage(pkg);
+            return info ? { name: pkg, info } : null;
+          } catch { return null; }
+        }),
+      )
+    ).filter(Boolean) as { name: string; info: any }[];
+
+    let totalVersions = 0;
+    let totalSize = 0;
+    const platformSet = new Set<string>();
+    let withMetadata = 0;
+
+    for (const { info } of infos) {
+      const versions = Object.keys(info.versions || {});
+      totalVersions += versions.length;
+      const latestVer = info['dist-tags']?.latest;
+      const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
+      const meta = latestPkg?.skillmarket;
+      if (meta) {
+        withMetadata++;
+        if (meta.platforms) meta.platforms.forEach((p: string) => platformSet.add(p));
+      }
+      if (latestPkg?.dist?.unpackedSize) totalSize += latestPkg.dist.unpackedSize;
+    }
+
+    jsonResponse(res, 200, {
+      totalSkills: infos.length,
+      totalVersions,
+      averageVersions: infos.length > 0 ? (totalVersions / infos.length).toFixed(1) : '0',
+      withMetadata,
+      totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
+      platformCount: platformSet.size,
+      platforms: [...platformSet],
+    });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/admin/deprecate ----
+
+API_ROUTES.POST['/api/admin/deprecate'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillId = String(body.skillId || '');
+    const version = body.version ? String(body.version) : '';
+    const message = body.message ? String(body.message) : '';
+
+    if (!skillId) {
+      jsonResponse(res, 400, { error: 'Missing skillId' });
+      return;
+    }
+
+    const pkgName = await resolveFullPackageName(skillId);
+    const target = version ? `${pkgName}@${version}` : pkgName;
+    const deprecateMsg = message || 'This skill is deprecated. Please use an alternative.';
+
+    npmExec(`npm deprecate "${target}" "${deprecateMsg}"`);
+
+    jsonResponse(res, 200, { success: true, message: `${target} deprecated` });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/admin/unpublish ----
+
+API_ROUTES.POST['/api/admin/unpublish'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillId = String(body.skillId || '');
+    const version = body.version ? String(body.version) : '';
+    const force = !!body.force;
+
+    if (!skillId) {
+      jsonResponse(res, 400, { error: 'Missing skillId' });
+      return;
+    }
+
+    const pkgName = await resolveFullPackageName(skillId);
+    let target: string;
+
+    if (version) {
+      target = `${pkgName}@${version}`;
+    } else {
+      if (!force) {
+        jsonResponse(res, 400, { error: 'Unpublishing entire package requires force=true' });
+        return;
+      }
+      target = pkgName;
+    }
+
+    const forceFlag = force ? ' --force' : '';
+    npmExec(`npm unpublish "${target}"${forceFlag}`);
+
+    jsonResponse(res, 200, { success: true, message: `${target} unpublished` });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/admin/tag ----
+
+API_ROUTES.POST['/api/admin/tag'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillId = String(body.skillId || '');
+    const action = String(body.action || ''); // 'set', 'rm', 'ls'
+    const tag = body.tag ? String(body.tag) : '';
+    const version = body.version ? String(body.version) : '';
+
+    if (!skillId || !action) {
+      jsonResponse(res, 400, { error: 'Missing skillId or action' });
+      return;
+    }
+
+    const pkgName = await resolveFullPackageName(skillId);
+
+    if (action === 'set') {
+      if (!tag || !version) {
+        jsonResponse(res, 400, { error: 'Tag set requires tag and version' });
+        return;
+      }
+      npmExec(`npm dist-tag add "${pkgName}@${version}" "${tag}"`);
+      jsonResponse(res, 200, { success: true, message: `Tag "${tag}" set to ${pkgName}@${version}` });
+    } else if (action === 'rm') {
+      if (!tag) {
+        jsonResponse(res, 400, { error: 'Tag rm requires tag' });
+        return;
+      }
+      npmExec(`npm dist-tag rm "${pkgName}" "${tag}"`);
+      jsonResponse(res, 200, { success: true, message: `Tag "${tag}" removed from ${pkgName}` });
+    } else if (action === 'ls') {
+      const output = npmExec(`npm dist-tag ls "${pkgName}"`);
+      const tags: Record<string, string> = {};
+      if (output) {
+        output.split('\n').filter(Boolean).forEach((line: string) => {
+          const parts = line.split(': ');
+          if (parts.length >= 2) tags[parts[0].trim()] = parts[1].trim();
+        });
+      }
+      jsonResponse(res, 200, { success: true, tags, packageName: pkgName });
+    } else {
+      jsonResponse(res, 400, { error: `Unknown action: ${action} (use set/rm/ls)` });
+    }
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/admin/owner ----
+
+API_ROUTES.POST['/api/admin/owner'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillId = String(body.skillId || '');
+    const action = String(body.action || ''); // 'add', 'rm'
+    const user = String(body.user || '');
+
+    if (!skillId || !action || !user) {
+      jsonResponse(res, 400, { error: 'Missing skillId, action, or user' });
+      return;
+    }
+
+    const pkgName = await resolveFullPackageName(skillId);
+    const npmAction = action === 'add' ? 'add' : 'rm';
+
+    npmExec(`npm owner ${npmAction} "${user}" "${pkgName}"`);
+
+    jsonResponse(res, 200, {
+      success: true,
+      message: `Owner ${npmAction === 'add' ? 'added' : 'removed'}: ${user} ${npmAction === 'add' ? 'to' : 'from'} ${pkgName}`,
+    });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/admin/access ----
+
+API_ROUTES.POST['/api/admin/access'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillId = String(body.skillId || '');
+    const level = String(body.level || ''); // 'public' | 'restricted'
+
+    if (!skillId || !level) {
+      jsonResponse(res, 400, { error: 'Missing skillId or level' });
+      return;
+    }
+
+    if (level !== 'public' && level !== 'restricted') {
+      jsonResponse(res, 400, { error: 'Level must be "public" or "restricted"' });
+      return;
+    }
+
+    const pkgName = await resolveFullPackageName(skillId);
+    npmExec(`npm access "${level}" "${pkgName}"`);
+
+    jsonResponse(res, 200, { success: true, message: `Access for ${pkgName} set to "${level}"` });
   } catch (err) {
     jsonResponse(res, 500, { error: String(err) });
   }

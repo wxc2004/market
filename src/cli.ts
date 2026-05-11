@@ -59,6 +59,14 @@ import {
   adminSearch,
   adminStats,
   adminVerify,
+  adminDeprecate,
+  adminUnpublish,
+  adminTagSet,
+  adminTagRemove,
+  adminTagList,
+  adminOwnerAdd,
+  adminOwnerRemove,
+  adminAccess,
 } from './commands/admin.js'; // 管理员命令
 
 // -----------------------------------------------------------------------------
@@ -587,6 +595,130 @@ admin
       await adminVerify(skill);
     } catch (err) {
       console.error('Admin verify failed:', err);
+      process.exit(1);
+    }
+  });
+
+// ---- skm admin deprecate ----
+
+admin
+  .command('deprecate <skill>')
+  .description('Deprecate a published skill (or specific version)')
+  .option('-v, --version <version>', 'Deprecate a specific version only')
+  .option('-m, --message <message>', 'Deprecation message')
+  .action(async (skill, opts) => {
+    try {
+      await adminDeprecate(skill, {
+        version: opts.version,
+        message: opts.message,
+      });
+    } catch (err) {
+      console.error('Admin deprecate failed:', err);
+      process.exit(1);
+    }
+  });
+
+// ---- skm admin unpublish ----
+
+admin
+  .command('unpublish <skill>')
+  .description('Unpublish a skill (or specific version) from npm')
+  .option('-v, --version <version>', 'Unpublish a specific version only')
+  .option('-f, --force', 'Force unpublish entire package')
+  .action(async (skill, opts) => {
+    try {
+      await adminUnpublish(skill, {
+        version: opts.version,
+        force: opts.force,
+      });
+    } catch (err) {
+      console.error('Admin unpublish failed:', err);
+      process.exit(1);
+    }
+  });
+
+// ---- skm admin tag ----
+
+const adminTag = admin.command('tag').description('Manage dist-tags for a skill');
+
+adminTag
+  .command('set <skill> <tag> <version>')
+  .description('Set a dist-tag for a specific version')
+  .action(async (skill, tag, version) => {
+    try {
+      await adminTagSet(skill, tag, version);
+    } catch (err) {
+      console.error('Admin tag set failed:', err);
+      process.exit(1);
+    }
+  });
+
+adminTag
+  .command('rm <skill> <tag>')
+  .description('Remove a dist-tag')
+  .action(async (skill, tag) => {
+    try {
+      await adminTagRemove(skill, tag);
+    } catch (err) {
+      console.error('Admin tag rm failed:', err);
+      process.exit(1);
+    }
+  });
+
+adminTag
+  .command('ls <skill>')
+  .description('List all dist-tags for a skill')
+  .action(async (skill) => {
+    try {
+      await adminTagList(skill);
+    } catch (err) {
+      console.error('Admin tag ls failed:', err);
+      process.exit(1);
+    }
+  });
+
+// ---- skm admin owner ----
+
+const adminOwner = admin.command('owner').description('Manage package owners/maintainers');
+
+adminOwner
+  .command('add <skill> <user>')
+  .description('Add an owner to a skill package')
+  .action(async (skill, user) => {
+    try {
+      await adminOwnerAdd(skill, user);
+    } catch (err) {
+      console.error('Admin owner add failed:', err);
+      process.exit(1);
+    }
+  });
+
+adminOwner
+  .command('rm <skill> <user>')
+  .description('Remove an owner from a skill package')
+  .action(async (skill, user) => {
+    try {
+      await adminOwnerRemove(skill, user);
+    } catch (err) {
+      console.error('Admin owner rm failed:', err);
+      process.exit(1);
+    }
+  });
+
+// ---- skm admin access ----
+
+admin
+  .command('access <skill> <level>')
+  .description('Set package access (public|restricted)')
+  .action(async (skill, level) => {
+    try {
+      if (level !== 'public' && level !== 'restricted') {
+        console.error('❌ Access level must be "public" or "restricted"');
+        process.exit(1);
+      }
+      await adminAccess(skill, level);
+    } catch (err) {
+      console.error('Admin access failed:', err);
       process.exit(1);
     }
   });

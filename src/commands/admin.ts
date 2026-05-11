@@ -7,11 +7,19 @@
  * 直接操作 npm registry，管理已发布的 skill 内容。
  *
  * 命令:
- *   skm admin ls             列出所有已发布的 skills
- *   skm admin info <skill>   查看 skill 完整信息
- *   skm admin search <keyword>  搜索已发布的 skills
- *   skm admin stats          查看发布统计
- *   skm admin verify <skill> 验证已发布 skill 的结构
+ *   skm admin ls                   列出所有已发布的 skills
+ *   skm admin info <skill>         查看 skill 完整信息
+ *   skm admin search <keyword>     搜索已发布的 skills
+ *   skm admin stats                查看发布统计
+ *   skm admin verify <skill>       验证已发布 skill 的结构
+ *   skm admin deprecate <skill>    弃用 skill（支持 --version, --message）
+ *   skm admin unpublish <skill>    取消发布 skill（支持 --version, --force）
+ *   skm admin tag set <skill> <tag> <ver>   设置 dist-tag
+ *   skm admin tag rm <skill> <tag>          移除 dist-tag
+ *   skm admin tag ls <skill>                列出 dist-tags
+ *   skm admin owner add <skill> <user>      添加维护者
+ *   skm admin owner rm <skill> <user>       移除维护者
+ *   skm admin access <skill> <level>        设置访问权限 (public|restricted)
  *
  * @module commands/admin
  */
@@ -20,6 +28,7 @@
 // 导入
 // -----------------------------------------------------------------------------
 
+import { execSync } from 'child_process';
 import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
 import { NPM_SCOPE, SKILL_SCOPES, NPM_REGISTRY } from '../config.js';
 import { PLATFORMS } from '../constants.js';
@@ -46,7 +55,7 @@ interface VersionInfo {
 // -----------------------------------------------------------------------------
 
 /** 用 scope 搜索包名 */
-async function fetchScopePackages(): Promise<string[]> {
+export async function fetchScopePackages(): Promise<string[]> {
   const all: Set<string> = new Set();
   for (const scope of SKILL_SCOPES) {
     try {
@@ -452,4 +461,181 @@ export async function adminVerify(skillId: string): Promise<void> {
     console.log(`\n⚠️  Skill "${skillId}" has issues that need attention.\n`);
     process.exitCode = 1;
   }
+}
+
+// -----------------------------------------------------------------------------
+// 辅助: 将 skillId 解析为完整包名（通过尝试多个 scope）
+// -----------------------------------------------------------------------------
+
+/**
+ * 将 skillId 解析为完整的 npm 包名。
+ * 如果已经是 scoped 包名则直接返回，否则在每个配置的 scope 下尝试。
+ * 抛出错误如果找不到对应的包。
+ */
+export async function resolveFullPackageName(skillId: string): Promise<string> {
+  if (skillId.startsWith('@')) {
+    // 已经是 scoped 包名，确认存在
+    const info = await fetchNpmPackage(skillId);
+    if (info) return skillId;
+    throw new Error(`Package "${skillId}" not found in npm registry`);
+  }
+
+  for (const scope of SKILL_SCOPES) {
+    const fullName = `${scope}/${skillId}`;
+    const info = await fetchNpmPackage(fullName);
+    if (info) return fullName;
+  }
+
+  throw new Error(
+    `Could not resolve "${skillId}" to any known scope.\n` +
+    `   Scopes checked: ${SKILL_SCOPES.join(', ')}`
+  );
+}
+
+/** 执行 npm CLI 命令并返回 stdout */
+export function npmExec(command: string): string {
+  try {
+    return execSync(command, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (err: any) {
+    const msg = err.stderr?.toString() || err.message || 'Unknown error';
+    throw new Error(`npm command failed: ${msg.trim()}`);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Admin: deprecate — 弃用 skill（或特定版本）
+// -----------------------------------------------------------------------------
+
+export interface AdminDeprecateOptions {
+  version?: string;
+  message?: string;
+}
+
+export async function adminDeprecate(skillId: string, options: AdminDeprecateOptions = {}): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  const version = options.version || '';
+  const message = options.message || 'This skill is deprecated. Please use an alternative.';
+
+  const target = version ? `${pkgName}@${version}` : pkgName;
+  console.log(`\n⚠️  Deprecating ${target}...\n`);
+
+  npmExec(`npm deprecate "${target}" "${message}"`);
+
+  console.log(`✅ Successfully deprecated ${target}`);
+  console.log(`   Message: "${message}"\n`);
+}
+
+// -----------------------------------------------------------------------------
+// Admin: unpublish — 取消发布 skill（或特定版本）
+// -----------------------------------------------------------------------------
+
+export interface AdminUnpublishOptions {
+  version?: string;
+  force?: boolean;
+}
+
+export async function adminUnpublish(skillId: string, options: AdminUnpublishOptions = {}): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  const version = options.version;
+
+  let target: string;
+  if (version) {
+    target = `${pkgName}@${version}`;
+    console.log(`\n🗑️  Unpublishing ${target}...\n`);
+  } else {
+    target = pkgName;
+    console.log(`\n🗑️  Unpublishing entire package ${target}...\n`);
+    if (!options.force) {
+      throw new Error(
+        'Unpublishing entire package requires --force flag.\n' +
+        '   Usage: skm admin unpublish <skill> --force\n' +
+        '   Or unpublish a specific version: skm admin unpublish <skill> --version <ver>'
+      );
+    }
+  }
+
+  const forceFlag = options.force ? ' --force' : '';
+  npmExec(`npm unpublish "${target}"${forceFlag}`);
+
+  if (version) {
+    console.log(`✅ Successfully unpublished ${target}\n`);
+  } else {
+    console.log(`✅ Successfully unpublished entire package ${target}\n`);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Admin: tag — dist-tag 管理
+// -----------------------------------------------------------------------------
+
+export async function adminTagSet(skillId: string, tag: string, version: string): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n🏷️  Setting dist-tag "${tag}" for ${pkgName}@${version}...\n`);
+
+  npmExec(`npm dist-tag add "${pkgName}@${version}" "${tag}"`);
+
+  console.log(`✅ dist-tag "${tag}" set to ${pkgName}@${version}\n`);
+}
+
+export async function adminTagRemove(skillId: string, tag: string): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n🏷️  Removing dist-tag "${tag}" from ${pkgName}...\n`);
+
+  npmExec(`npm dist-tag rm "${pkgName}" "${tag}"`);
+
+  console.log(`✅ dist-tag "${tag}" removed from ${pkgName}\n`);
+}
+
+export async function adminTagList(skillId: string): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n🏷️  dist-tags for ${pkgName}:\n`);
+
+  const output = npmExec(`npm dist-tag ls "${pkgName}"`);
+  if (!output) {
+    console.log('   (no dist-tags found)\n');
+    return;
+  }
+
+  const lines = output.split('\n').filter(Boolean);
+  for (const line of lines) {
+    const [tag, version] = line.split(': ').map(s => s.trim());
+    const isLatest = tag === 'latest' ? ' ← latest' : '';
+    console.log(`   ${tag}: ${version}${isLatest}`);
+  }
+  console.log();
+}
+
+// -----------------------------------------------------------------------------
+// Admin: owner — 维护者管理
+// -----------------------------------------------------------------------------
+
+export async function adminOwnerAdd(skillId: string, user: string): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n👥 Adding owner "${user}" to ${pkgName}...\n`);
+
+  npmExec(`npm owner add "${user}" "${pkgName}"`);
+
+  console.log(`✅ Owner "${user}" added to ${pkgName}\n`);
+}
+
+export async function adminOwnerRemove(skillId: string, user: string): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n👥 Removing owner "${user}" from ${pkgName}...\n`);
+
+  npmExec(`npm owner rm "${user}" "${pkgName}"`);
+
+  console.log(`✅ Owner "${user}" removed from ${pkgName}\n`);
+}
+
+// -----------------------------------------------------------------------------
+// Admin: access — 设置访问权限
+// -----------------------------------------------------------------------------
+
+export async function adminAccess(skillId: string, level: 'public' | 'restricted'): Promise<void> {
+  const pkgName = await resolveFullPackageName(skillId);
+  console.log(`\n🔒 Setting access for ${pkgName} to "${level}"...\n`);
+
+  npmExec(`npm access "${level}" "${pkgName}"`);
+
+  console.log(`✅ Access for ${pkgName} set to "${level}"\n`);
 }

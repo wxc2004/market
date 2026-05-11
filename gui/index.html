@@ -26,6 +26,9 @@
         <button class="nav-btn" data-view="help">
           <span class="icon">📖</span> Help
         </button>
+        <button class="nav-btn" data-view="admin">
+          <span class="icon">⚙️</span> Admin
+        </button>
       </nav>
       <div class="sidebar-footer">
         <span class="version" id="gui-version">v1.3.12</span>
@@ -75,6 +78,16 @@
           <h2>Help &amp; Configuration</h2>
         </div>
         <div id="help-content"></div>
+      </div>
+
+      <!-- Admin 视图 -->
+      <div id="view-admin" class="view">
+        <div class="view-header">
+          <h2>Admin Dashboard</h2>
+          <button id="refresh-admin" class="btn btn-secondary">🔄 Refresh</button>
+        </div>
+        <div id="admin-stats" class="admin-stats"></div>
+        <div id="admin-skills-list" class="admin-skills-list"></div>
       </div>
     </main>
 

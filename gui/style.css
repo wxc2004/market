@@ -554,3 +554,264 @@ nav {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bg-hover);
 }
+
+/* -----------------------------------------------------------------------------
+   Admin 视图
+   ----------------------------------------------------------------------------- */
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.admin-stat-card:hover {
+  border-color: var(--accent);
+}
+
+.admin-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.admin-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-skill-row {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+
+.admin-skill-row:hover {
+  border-color: var(--accent);
+}
+
+.admin-skill-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-skill-info h4 {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.admin-skill-info .admin-skill-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-skill-info .admin-skill-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-btn-deprecate {
+  background: #664400;
+  color: #ffcc00;
+}
+
+.admin-btn-deprecate:hover {
+  background: #886600;
+}
+
+.admin-btn-unpublish {
+  background: #661400;
+  color: #ff6666;
+}
+
+.admin-btn-unpublish:hover {
+  background: #881800;
+}
+
+.admin-btn-tag {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.admin-btn-tag:hover {
+  background: var(--bg-hover);
+}
+
+.admin-btn-owner {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.admin-btn-owner:hover {
+  background: var(--bg-hover);
+}
+
+.admin-btn-access {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.admin-btn-access:hover {
+  background: var(--bg-hover);
+}
+
+/* Admin modal sections */
+
+.admin-modal-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-modal-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.admin-modal-section h3 {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.admin-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.admin-input-group label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.admin-input-group input,
+.admin-input-group select {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 5px;
+  font-size: 0.85rem;
+}
+
+.admin-input-group input:focus,
+.admin-input-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.admin-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.admin-tag-item {
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-tag-item .tag-version {
+  color: var(--text-muted);
+}
+
+.admin-warning-text {
+  color: #ffcc00;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.admin-danger-text {
+  color: #ff6666;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.admin-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-checkbox-group label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.admin-radio-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.admin-radio-group label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
