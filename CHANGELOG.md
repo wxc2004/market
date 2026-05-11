@@ -1,3 +1,28 @@
+# SkillMarket v1.3.16 更新日志
+
+**日期**: 2026-05-11
+**版本**: 1.3.16
+
+---
+
+## 🔧 优化：顶部水平导航栏 + Skill 详情视图
+
+### 变更
+- 侧边栏改为**顶部水平导航栏**，节省垂直空间
+- Skill 卡片点击可进入**详情视图**，显示完整信息（描述、详情、平台、版本列表）
+- 详情视图包含 Install 按钮和 ← Back 返回按钮
+- 移除旧模态框，Skill 详情改用独立视图
+- 已安装 Skill 卡片新增 Info 按钮
+
+### 变更文件
+| 文件 | 变更 |
+|------|------|
+| `gui/index.html` | 侧边栏 → 顶部导航栏；新增 `#view-skill-detail` 详情视图 |
+| `gui/style.css` | 重写布局样式：`.topbar`、`.topbar-nav`、`.skill-detail`、`.modal` |
+| `gui/app.js` | 新增 `showSkillDetail()`、`goBack()`；卡片点击跳转详情；`event.stopPropagation()` 防误触 |
+
+---
+
 # SkillMarket v1.3.15 更新日志
 
 **日期**: 2026-05-11

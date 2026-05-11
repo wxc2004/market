@@ -12,6 +12,7 @@ const state = {
   pageSize: 20,
   searchQuery: '',
   totalPages: 1,
+  previousView: 'skills',
 };
 
 // -----------------------------------------------------------------------------
@@ -60,6 +61,10 @@ function initializeNavigation() {
 }
 
 function switchView(view) {
+  // Save previous view (but not when navigating to skill-detail from back)
+  if (state.currentView !== 'skill-detail') {
+    state.previousView = state.currentView;
+  }
   state.currentView = view;
   
   // 隐藏所有视图
@@ -71,23 +76,25 @@ function switchView(view) {
     targetView.classList.add('active');
   }
   
-  // 加载对应数据
-  switch(view) {
-    case 'skills':
-      loadSkills();
-      break;
-    case 'installed':
-      loadInstalled();
-      break;
-    case 'platforms':
-      loadPlatforms();
-      break;
-    case 'help':
-      loadHelp();
-      break;
-    case 'admin':
-      loadAdminDashboard();
-      break;
+  // 加载对应数据 (skill-detail 视图的数据由 showSkillDetail 加载)
+  if (view !== 'skill-detail') {
+    switch(view) {
+      case 'skills':
+        loadSkills();
+        break;
+      case 'installed':
+        loadInstalled();
+        break;
+      case 'platforms':
+        loadPlatforms();
+        break;
+      case 'help':
+        loadHelp();
+        break;
+      case 'admin':
+        loadAdminDashboard();
+        break;
+    }
   }
 }
 
@@ -122,11 +129,13 @@ function initializeControls() {
   const refreshAdmin = document.getElementById('refresh-admin');
   if (refreshAdmin) refreshAdmin.addEventListener('click', () => loadAdminDashboard());
   
-  // 模态框关闭
-  document.querySelector('.modal-close').addEventListener('click', closeModal);
-  document.getElementById('modal').addEventListener('click', (e) => {
-    if (e.target.id === 'modal') closeModal();
-  });
+  // Admin 模态框 - 点击外部关闭
+  const modalEl = document.getElementById('modal');
+  if (modalEl) {
+    modalEl.addEventListener('click', (e) => {
+      if (e.target === modalEl) closeModal();
+    });
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -196,18 +205,18 @@ function createSkillCard(skill, isInstalled) {
   const platformTags = platforms.map(p => `<span class="platform-tag">${p}</span>`).join('');
   
   return `
-    <div class="skill-card">
+    <div class="skill-card" onclick="showSkillDetail('${skill.id}')">
       <h3>${skill.displayName || skill.id}</h3>
       <div class="skill-id">${skill.id}@${skill.version || 'latest'}</div>
       <p>${skill.description || 'No description'}</p>
       <div class="platforms">${platformTags}</div>
       <div class="actions">
         ${isInstalled ? `
-          <button class="btn btn-danger btn-sm" onclick="uninstallSkill('${skill.id}')">Uninstall</button>
-          <button class="btn btn-primary btn-sm" onclick="updateSkill('${skill.id}')">Update</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); uninstallSkill('${skill.id}')">Uninstall</button>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); updateSkill('${skill.id}')">Update</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showSkillDetail('${skill.id}')">Info</button>
         ` : `
-          <button class="btn btn-success btn-sm" onclick="installSkill('${skill.id}')">Install</button>
-          <button class="btn btn-secondary btn-sm" onclick="showSkillInfo('${skill.id}')">Info</button>
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); installSkill('${skill.id}')">Install</button>
         `}
       </div>
     </div>
@@ -493,42 +502,99 @@ async function updateAllSkills() {
   }
 }
 
-async function showSkillInfo(skillId) {
-  const modal = document.getElementById('modal');
-  const modalBody = document.getElementById('modal-body');
+// -----------------------------------------------------------------------------
+// Skill 详情视图 (替换旧模态框)
+// -----------------------------------------------------------------------------
+
+async function showSkillDetail(skillId) {
+  const content = document.getElementById('skill-detail-content');
+  content.innerHTML = '<div class="loading">Loading skill details...</div>';
   
-  modalBody.innerHTML = '<div class="loading">Loading...</div>';
-  modal.classList.remove('hidden');
+  // 切换到详情视图
+  const btn = document.querySelector(`.nav-btn[data-view="skill-detail"]`);
+  // skill-detail 没有 nav-btn，直接用 switchView
+  state.previousView = state.currentView;
+  state.currentView = 'skill-detail';
+  
+  // 隐藏所有视图，显示详情视图
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const targetView = document.getElementById('view-skill-detail');
+  if (targetView) targetView.classList.add('active');
   
   try {
-    const response = await fetch(`/api/skills?search=${skillId}`);
+    const response = await fetch(`/api/skill-info?skill=${encodeURIComponent(skillId)}`);
     const data = await response.json();
-    const skills = data.skills || data;
-    const skill = Array.isArray(skills) ? skills.find(s => s.id === skillId) : skills;
     
-    if (!skill) {
-      modalBody.innerHTML = '<div class="loading">Skill not found</div>';
+    if (data.error) {
+      content.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
       return;
     }
     
-    modalBody.innerHTML = `
-      <h2>${skill.displayName || skill.id}</h2>
-      <div class="detail-row"><strong>ID:</strong> ${skill.id}</div>
-      <div class="detail-row"><strong>Version:</strong> ${skill.version || 'latest'}</div>
-      <div class="detail-row"><strong>Description:</strong> ${skill.description || 'No description'}</div>
-      <div class="detail-row"><strong>Platforms:</strong> ${(skill.platforms || []).join(', ') || 'None'}</div>
-      ${skill.link ? `<div class="detail-row"><strong>Link:</strong> <a href="${skill.link}" target="_blank">${skill.link}</a></div>` : ''}
-      <div class="actions" style="margin-top: 20px;">
-        <button class="btn btn-success" onclick="installSkill('${skill.id}'); closeModal();">Install</button>
+    const platforms = data.platforms || [];
+    const versions = data.versions || [];
+    const escapedId = data.id.replace(/'/g, "\\'");
+    
+    content.innerHTML = `
+      <div class="skill-detail">
+        <h2>${data.displayName || data.id}</h2>
+        <div class="detail-name">${data.name}@${data.version}</div>
+        
+        <div class="detail-section">
+          <h3>Description</h3>
+          <div class="description-text">${data.description || 'No description'}</div>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Details</h3>
+          <div class="detail-row"><strong>ID:</strong> ${data.id}</div>
+          <div class="detail-row"><strong>Version:</strong> ${data.version}</div>
+          ${data.license ? `<div class="detail-row"><strong>License:</strong> ${data.license}</div>` : ''}
+          ${data.author ? `<div class="detail-row"><strong>Author:</strong> ${data.author}</div>` : ''}
+          ${data.homepage ? `<div class="detail-row"><strong>Homepage:</strong> <a href="${data.homepage}" target="_blank">${data.homepage}</a></div>` : ''}
+          ${data.repository ? `<div class="detail-row"><strong>Repository:</strong> <a href="${data.repository}" target="_blank">${data.repository}</a></div>` : ''}
+        </div>
+        
+        <div class="detail-section">
+          <h3>Platforms</h3>
+          <div class="platform-tags">
+            ${platforms.length ? platforms.map(p => `<span class="platform-tag">${p}</span>`).join('') : '<span class="platform-tag">N/A</span>'}
+          </div>
+        </div>
+        
+        ${versions.length ? `
+        <div class="detail-section">
+          <h3>Versions (last ${versions.length})</h3>
+          <div class="version-list">
+            ${versions.slice().reverse().map(v => `
+              <div class="version-item">
+                <span>${v} ${v === data.version ? '<span class="version-latest">latest</span>' : ''}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+        
+        <div class="detail-actions">
+          <button class="btn btn-success" onclick="installSkill('${escapedId}')">Install</button>
+        </div>
       </div>
     `;
   } catch (err) {
-    modalBody.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    content.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
   }
 }
 
 function closeModal() {
   document.getElementById('modal').classList.add('hidden');
+}
+
+function goBack() {
+  const target = state.previousView || 'skills';
+  // 更新导航按钮状态
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === target);
+  });
+  switchView(target);
 }
 
 // -----------------------------------------------------------------------------

@@ -8,58 +8,20 @@
 </head>
 <body>
   <div id="app">
-    <!-- 侧边栏 -->
-    <aside class="sidebar">
-      <div class="logo">
-        <h1>📦 SkillMarket</h1>
+    <!-- 顶部导航栏 -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-logo">📦 SkillMarket</span>
+        <span class="topbar-version" id="gui-version">v1.3.16</span>
       </div>
-      <nav>
-        <div class="nav-group">
-          <div class="nav-section" onclick="toggleSection(this)">
-            <span>Browse</span>
-            <span class="nav-arrow">▼</span>
-          </div>
-          <div class="nav-items">
-            <button class="nav-btn active" data-view="skills">
-              <span class="icon">📋</span> Skills
-            </button>
-            <button class="nav-btn" data-view="installed">
-              <span class="icon">✅</span> Installed
-            </button>
-            <button class="nav-btn" data-view="platforms">
-              <span class="icon">💻</span> Platforms
-            </button>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section" onclick="toggleSection(this)">
-            <span>Manage</span>
-            <span class="nav-arrow">▼</span>
-          </div>
-          <div class="nav-items">
-            <button class="nav-btn" data-view="admin">
-              <span class="icon">⚙️</span> Admin
-            </button>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section" onclick="toggleSection(this)">
-            <span>Support</span>
-            <span class="nav-arrow">▼</span>
-          </div>
-          <div class="nav-items">
-            <button class="nav-btn" data-view="help">
-              <span class="icon">📖</span> Help
-            </button>
-          </div>
-        </div>
+      <nav class="topbar-nav">
+        <button class="nav-btn active" data-view="skills">📋 Skills</button>
+        <button class="nav-btn" data-view="installed">✅ Installed</button>
+        <button class="nav-btn" data-view="platforms">💻 Platforms</button>
+        <button class="nav-btn" data-view="admin">⚙️ Admin</button>
+        <button class="nav-btn" data-view="help">📖 Help</button>
       </nav>
-      <div class="sidebar-footer">
-        <span class="version" id="gui-version">v1.3.15</span>
-      </div>
-    </aside>
+    </header>
 
     <!-- 主内容区 -->
     <main class="main-content">
@@ -115,12 +77,19 @@
         <div id="admin-stats" class="admin-stats"></div>
         <div id="admin-skills-list" class="admin-skills-list"></div>
       </div>
+
+      <!-- Skill 详情视图 -->
+      <div id="view-skill-detail" class="view">
+        <div class="view-header">
+          <button class="btn btn-secondary" onclick="goBack()">← Back</button>
+        </div>
+        <div id="skill-detail-content"></div>
+      </div>
     </main>
 
-    <!-- Skill 详情模态框 -->
+    <!-- Admin 模态框 -->
     <div id="modal" class="modal hidden">
       <div class="modal-content">
-        <button class="modal-close">&times;</button>
         <div id="modal-body"></div>
       </div>
     </div>
