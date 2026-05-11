@@ -1,3 +1,22 @@
+# SkillMarket v1.3.15 更新日志
+
+**日期**: 2026-05-11
+**版本**: 1.3.15
+
+---
+
+## 🔧 优化：可折叠侧边栏 + 紧凑布局
+
+### 变更
+- 侧边栏分组（Browse/Manage/Support）支持点击折叠/展开
+- 折叠时箭头旋转为 ▶，项目隐藏；展开时 ▼，项目可见
+- 内容区 padding 缩减、标题字号调小，整体布局更紧凑
+- `gui/index.html` — 导航结构调整为 `.nav-group` + `.nav-items` 包裹
+- `gui/style.css` — 新增 `.nav-group`、`.nav-arrow`、`.collapsed` 样式
+- `gui/app.js` — 新增 `toggleSection()` 折叠控制函数
+
+---
+
 # SkillMarket v1.3.14 更新日志
 
 **日期**: 2026-05-11
