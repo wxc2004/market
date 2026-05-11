@@ -83,12 +83,86 @@ skm verify <skill-name>
 skm gui
 skm gui 18790              # Custom port
 
-# Admin: manage published skills
+# Admin: manage published skills (read-only)
 skm admin ls               # List all published skills
 skm admin info <skill>     # View skill details
 skm admin search <keyword> # Search published skills
 skm admin stats            # Publishing statistics
 skm admin verify <skill>   # Verify published skill
+
+# Admin: manage published skills (write operations)
+skm admin deprecate <skill>          # Deprecate a skill (--version, --message)
+skm admin unpublish <skill>          # Unpublish a skill (--version, --force)
+skm admin tag set <skill> <tag> <v>  # Set a dist-tag
+skm admin tag rm <skill> <tag>       # Remove a dist-tag
+skm admin tag ls <skill>             # List all dist-tags
+skm admin owner add <skill> <user>   # Add package maintainer
+skm admin owner rm <skill> <user>    # Remove package maintainer
+skm admin access <skill> <level>     # Set access (public|restricted)
+```
+
+## Admin: Cloud Skill Management
+
+SkillMarket provides a comprehensive admin command group (`skm admin`) for managing published skills on the npm registry. All write operations use your npm credentials.
+
+### Read-Only Commands
+
+| Command | Description |
+|---------|-------------|
+| `skm admin ls` | List all published skills |
+| `skm admin info <skill>` | View full skill details (versions, dist-tags, metadata) |
+| `skm admin search <keyword>` | Search published skills |
+| `skm admin stats` | Publishing statistics dashboard |
+| `skm admin verify <skill>` | Validate published skill structure and metadata |
+
+### Write Operations (Management)
+
+| Command | Description |
+|---------|-------------|
+| `skm admin deprecate <skill>` | Mark skill as deprecated (--version, --message) |
+| `skm admin unpublish <skill>` | Remove skill from npm (--version, --force) |
+| `skm admin tag set <skill> <tag> <ver>` | Set a distribution tag (e.g. `beta`, `next`) |
+| `skm admin tag rm <skill> <tag>` | Remove a distribution tag |
+| `skm admin tag ls <skill>` | List all distribution tags |
+| `skm admin owner add <skill> <user>` | Add an npm user as package maintainer |
+| `skm admin owner rm <skill> <user>` | Remove a package maintainer |
+| `skm admin access <skill> <level>` | Set package visibility (public\|restricted) |
+
+### Admin Examples
+
+```bash
+# Deprecate a skill with custom message
+skm admin deprecate brainstorming --message "Use v2 instead"
+
+# Unpublish a specific version
+skm admin unpublish my-skill --version 1.0.0
+
+# Unpublish entire package (requires --force)
+skm admin unpublish my-skill --force
+
+# Manage dist-tags
+skm admin tag set my-skill beta 2.0.0-beta.1
+skm admin tag ls my-skill
+skm admin tag rm my-skill beta
+
+# Manage maintainers
+skm admin owner add my-skill collaborator-npm-username
+skm admin owner rm my-skill old-maintainer
+
+# Set package to private
+skm admin access my-skill restricted
+```
+
+### GUI Admin Dashboard
+
+The `skm gui` web interface includes an **Admin** view with:
+- **Statistics cards**: Published skills, total/average versions, metadata coverage, total size, platform coverage
+- **Skill management list**: All published skills with inline actions for deprecate, unpublish, tag, owner, and access management
+- **Modal dialogs**: Confirmation dialogs for each management operation
+
+```bash
+# Start GUI and navigate to Admin view
+skm gui
 ```
 
 ## Environment Variables
