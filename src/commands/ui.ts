@@ -28,7 +28,7 @@ import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
 // 数据层函数（直接返回数据，无 console.log 副作用）
-import { searchSkillmarketPackages, fetchNpmPackage } from './npm.js';
+import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
 import { getInstalledSkills } from './registry.js';
 import { detectPlatforms, getAllAdapters } from '../adapters/index.js';
 
@@ -269,7 +269,7 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
     const cacheKey = `skill-info:${skillName}`;
     let info = getCached<any>(cacheKey);
     if (!info) {
-      info = await fetchNpmPackage(skillName);
+      info = await fetchSkillPackage(skillName);
       if (info) setCache(cacheKey, info, 30_000);
     }
     if (!info) {
