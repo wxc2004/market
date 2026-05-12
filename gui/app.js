@@ -16,6 +16,491 @@ const state = {
 };
 
 // -----------------------------------------------------------------------------
+// i18n 国际化系统
+// -----------------------------------------------------------------------------
+
+const translations = {
+  en: {
+    // 导航
+    'nav.skills': 'Skills',
+    'nav.installed': 'Installed',
+    'nav.platforms': 'Platforms',
+    'nav.admin': 'Admin',
+    'nav.help': 'Help',
+    'nav.back': 'Back',
+    
+    // 视图标题
+    'title.availableSkills': 'Available Skills',
+    'title.installedSkills': 'Installed Skills',
+    'title.platforms': 'Available Platforms',
+    'title.help': 'Help & Configuration',
+    'title.admin': 'Admin Dashboard',
+    
+    // 按钮
+    'btn.install': 'Install',
+    'btn.uninstall': 'Uninstall',
+    'btn.update': 'Update',
+    'btn.refresh': '🔄 Refresh',
+    'btn.updateAll': '🔄 Update All',
+    'btn.info': 'Info',
+    'btn.confirm': 'Confirm',
+    'btn.cancel': 'Cancel',
+    
+    // 加载状态
+    'loading.skills': 'Loading skills...',
+    'loading.platforms': 'Loading platforms...',
+    'loading.details': 'Loading skill details...',
+    'loading.stats': 'Loading stats...',
+    'loading.published': 'Loading published skills...',
+    'loading.generic': 'Loading...',
+    
+    // 空状态
+    'empty.noSkills': 'No skills found',
+    'empty.noPlatforms': 'No platforms found',
+    'empty.noPublishedSkills': 'No published skills found',
+    'empty.noTags': 'No dist-tags found.',
+    'empty.couldNotLoadTags': 'Could not load tags.',
+    
+    // 搜索
+    'search.placeholder': '🔍 Search skills...',
+    
+    // 分页
+    'pagination.prev': '← Prev',
+    'pagination.next': 'Next →',
+    'pagination.pageInfo': 'Page {page} of {totalPages}',
+    
+    // 每页数量
+    'pageSize.10': '10 per page',
+    'pageSize.20': '20 per page',
+    'pageSize.50': '50 per page',
+    
+    // 状态
+    'status.available': '✅ Available',
+    'status.unavailable': '❌ Not detected',
+    'status.skillsInstalled': '{count} skills installed',
+    
+    // 详情视图
+    'detail.description': 'Description',
+    'detail.details': 'Details',
+    'detail.id': 'ID',
+    'detail.version': 'Version',
+    'detail.license': 'License',
+    'detail.author': 'Author',
+    'detail.homepage': 'Homepage',
+    'detail.repository': 'Repository',
+    'detail.platforms': 'Platforms',
+    'detail.versions': 'Versions (last {count})',
+    'detail.latest': 'latest',
+    'detail.noDescription': 'No description',
+    'detail.nA': 'N/A',
+    
+    // Toast 消息
+    'toast.installing': 'Installing {skillId}...',
+    'toast.installSuccess': '{skillId} installed successfully!',
+    'toast.uninstalling': 'Uninstalling {skillId}...',
+    'toast.uninstallSuccess': '{skillId} uninstalled!',
+    'toast.updating': 'Updating {skillId}...',
+    'toast.updateSuccess': '{skillId} updated!',
+    'toast.updateAll': 'Updating all skills...',
+    'toast.updateAllSuccess': 'All skills updated!',
+    
+    // 确认对话框
+    'confirm.uninstall': 'Are you sure you want to uninstall {skillId}?',
+    'confirm.updateAll': 'Update all installed skills?',
+    
+    // 警告
+    'warning.fetchErrors': '⚠ {count} skill(s) failed to load details from npm registry. Refresh to retry.',
+    
+    // Admin 视图
+    'admin.publishedSkillsCount': 'Published Skills ({count})',
+    'admin.stats.totalSkills': 'Published Skills',
+    'admin.stats.totalVersions': 'Total Versions',
+    'admin.stats.avgVersions': 'Avg Versions/Skill',
+    'admin.stats.withMetadata': 'With Metadata',
+    'admin.stats.totalSize': '{value} MB',
+    'admin.stats.platformsCovered': 'Platforms Covered',
+    
+    // Admin Modal - Deprecate
+    'admin.deprecating': 'Deprecating {skillId}...',
+    'admin.deprecateTitle': 'Deprecate: {skillId}',
+    'admin.deprecateVersion': 'Version',
+    'admin.deprecateVersionPlaceholder': '(leave empty for all versions)',
+    'admin.deprecateMessage': 'Message',
+    'admin.deprecateDefaultMsg': 'This skill is deprecated. Please use an alternative.',
+    'admin.deprecateWarning': '⚠ Deprecating will mark this skill as deprecated in the npm registry.',
+    'admin.confirmDeprecate': 'Confirm Deprecate',
+    
+    // Admin Modal - Unpublish
+    'admin.unpublishing': 'Unpublishing {skillId}...',
+    'admin.unpublishTitle': 'Unpublish: {skillId}',
+    'admin.unpublishVersion': 'Version',
+    'admin.unpublishVersionPlaceholder': '(leave empty for entire package)',
+    'admin.unpublishForce': 'Force unpublish entire package (required if no version specified)',
+    'admin.unpublishDanger': '⚠ This action cannot be undone! Packages can be restored within 72 hours.',
+    'admin.confirmUnpublish': 'Confirm Unpublish',
+    
+    // Admin Modal - Tags
+    'admin.settingTag': 'Setting tag {tag}...',
+    'admin.removingTag': 'Removing tag {tag}...',
+    'admin.tagsTitle': 'Tags: {skillId}',
+    'admin.currentTags': 'Current Tags',
+    'admin.setTag': 'Set Tag',
+    'admin.removeTag': 'Remove Tag',
+    'admin.tagName': 'Tag',
+    'admin.tagNamePlaceholder': 'e.g. beta, latest',
+    'admin.tagVersion': 'Version',
+    'admin.tagVersionPlaceholder': 'e.g. 1.0.1',
+    'admin.tagNameRemovePlaceholder': 'e.g. beta',
+    'admin.tag.default': ' (default)',
+    'admin.tagRequired': 'Tag and version are required',
+    'admin.tagNameRequired': 'Tag name is required',
+    
+    // Admin Modal - Owners
+    'admin.addingOwner': 'Adding owner {user}...',
+    'admin.removingOwner': 'Removing owner {user}...',
+    'admin.ownersTitle': 'Owners: {skillId}',
+    'admin.addOwner': 'Add Owner',
+    'admin.removeOwner': 'Remove Owner',
+    'admin.npmUser': 'npm User',
+    'admin.npmUserPlaceholder': 'npm username',
+    'admin.usernameRequired': 'Username is required',
+    
+    // Admin Modal - Access
+    'admin.settingAccess': 'Setting access to {level}...',
+    'admin.accessTitle': 'Access: {skillId}',
+    'admin.accessDesc': 'Set the package access level. Public packages are visible to everyone. Restricted packages require authentication to install.',
+    'admin.accessPublic': 'Public',
+    'admin.accessRestricted': 'Restricted',
+    'admin.setAccess': 'Set Access',
+    
+    // Help 视图
+    'help.envVars': 'Environment Variables',
+    'help.setEnvVars': 'Set the following environment variables to override defaults:',
+    'help.envVar.primaryScope': 'Primary npm scope for publishing/lookup',
+    'help.envVar.fallbackScope': 'Fallback scope (backward compatibility)',
+    'help.envVar.scopeList': 'Comma-separated list of scopes to search',
+    'help.envVar.registryUrl': 'npm registry URL',
+    'help.envVar.personalLink': 'Personal link prefix (for publish output)',
+    'help.commands': 'Common Commands',
+    
+    // 语言
+    'lang.en': 'EN',
+    'lang.zh': '中',
+    
+    // 通用错误
+    'error.generic': 'Error',
+  },
+  
+  zh: {
+    // 导航
+    'nav.skills': '技能',
+    'nav.installed': '已安装',
+    'nav.platforms': '平台',
+    'nav.admin': '管理',
+    'nav.help': '帮助',
+    'nav.back': '返回',
+    
+    // 视图标题
+    'title.availableSkills': '可用技能',
+    'title.installedSkills': '已安装技能',
+    'title.platforms': '可用平台',
+    'title.help': '帮助与配置',
+    'title.admin': '管理面板',
+    
+    // 按钮
+    'btn.install': '安装',
+    'btn.uninstall': '卸载',
+    'btn.update': '更新',
+    'btn.refresh': '🔄 刷新',
+    'btn.updateAll': '🔄 全部更新',
+    'btn.info': '详情',
+    'btn.confirm': '确认',
+    'btn.cancel': '取消',
+    
+    // 加载状态
+    'loading.skills': '加载技能中...',
+    'loading.platforms': '加载平台中...',
+    'loading.details': '加载技能详情中...',
+    'loading.stats': '加载统计中...',
+    'loading.published': '加载已发布技能中...',
+    'loading.generic': '加载中...',
+    
+    // 空状态
+    'empty.noSkills': '未找到技能',
+    'empty.noPlatforms': '未找到平台',
+    'empty.noPublishedSkills': '未找到已发布的技能',
+    'empty.noTags': '暂无 dist-tags。',
+    'empty.couldNotLoadTags': '无法加载 tags。',
+    
+    // 搜索
+    'search.placeholder': '🔍 搜索技能...',
+    
+    // 分页
+    'pagination.prev': '← 上一页',
+    'pagination.next': '下一页 →',
+    'pagination.pageInfo': '第 {page} 页 / 共 {totalPages} 页',
+    
+    // 每页数量
+    'pageSize.10': '每页 10 条',
+    'pageSize.20': '每页 20 条',
+    'pageSize.50': '每页 50 条',
+    
+    // 状态
+    'status.available': '✅ 可用',
+    'status.unavailable': '❌ 未检测到',
+    'status.skillsInstalled': '已安装 {count} 个技能',
+    
+    // 详情视图
+    'detail.description': '描述',
+    'detail.details': '详细信息',
+    'detail.id': 'ID',
+    'detail.version': '版本',
+    'detail.license': '许可证',
+    'detail.author': '作者',
+    'detail.homepage': '主页',
+    'detail.repository': '代码仓库',
+    'detail.platforms': '支持平台',
+    'detail.versions': '版本记录（最近 {count} 个）',
+    'detail.latest': '最新',
+    'detail.noDescription': '暂无描述',
+    'detail.nA': 'N/A',
+    
+    // Toast 消息
+    'toast.installing': '正在安装 {skillId}...',
+    'toast.installSuccess': '{skillId} 安装成功！',
+    'toast.uninstalling': '正在卸载 {skillId}...',
+    'toast.uninstallSuccess': '{skillId} 已卸载！',
+    'toast.updating': '正在更新 {skillId}...',
+    'toast.updateSuccess': '{skillId} 已更新！',
+    'toast.updateAll': '正在更新所有技能...',
+    'toast.updateAllSuccess': '所有技能已更新！',
+    
+    // 确认对话框
+    'confirm.uninstall': '确定要卸载 {skillId} 吗？',
+    'confirm.updateAll': '更新所有已安装的技能？',
+    
+    // 警告
+    'warning.fetchErrors': '⚠ {count} 个技能从 npm registry 加载详情失败。刷新重试。',
+    
+    // Admin 视图
+    'admin.publishedSkillsCount': '已发布技能（{count} 个）',
+    'admin.stats.totalSkills': '已发布技能',
+    'admin.stats.totalVersions': '总版本数',
+    'admin.stats.avgVersions': '平均版本数',
+    'admin.stats.withMetadata': '含元数据',
+    'admin.stats.totalSize': '{value} MB',
+    'admin.stats.platformsCovered': '覆盖平台',
+    
+    // Admin Modal - Deprecate
+    'admin.deprecating': '正在废弃 {skillId}...',
+    'admin.deprecateTitle': '废弃: {skillId}',
+    'admin.deprecateVersion': '版本',
+    'admin.deprecateVersionPlaceholder': '（留空表示所有版本）',
+    'admin.deprecateMessage': '消息',
+    'admin.deprecateDefaultMsg': '此技能已废弃，请使用其他替代方案。',
+    'admin.deprecateWarning': '⚠ 废弃操作将在 npm registry 中标记此技能为已废弃。',
+    'admin.confirmDeprecate': '确认废弃',
+    
+    // Admin Modal - Unpublish
+    'admin.unpublishing': '正在取消发布 {skillId}...',
+    'admin.unpublishTitle': '取消发布: {skillId}',
+    'admin.unpublishVersion': '版本',
+    'admin.unpublishVersionPlaceholder': '（留空表示整个包）',
+    'admin.unpublishForce': '强制取消发布整个包（未指定版本时必须勾选）',
+    'admin.unpublishDanger': '⚠ 此操作不可撤销！包可在 72 小时内恢复。',
+    'admin.confirmUnpublish': '确认取消发布',
+    
+    // Admin Modal - Tags
+    'admin.settingTag': '正在设置标签 {tag}...',
+    'admin.removingTag': '正在移除标签 {tag}...',
+    'admin.tagsTitle': '标签: {skillId}',
+    'admin.currentTags': '当前标签',
+    'admin.setTag': '设置标签',
+    'admin.removeTag': '移除标签',
+    'admin.tagName': '标签名',
+    'admin.tagNamePlaceholder': '例如：beta, latest',
+    'admin.tagVersion': '版本',
+    'admin.tagVersionPlaceholder': '例如：1.0.1',
+    'admin.tagNameRemovePlaceholder': '例如：beta',
+    'admin.tag.default': '（默认）',
+    'admin.tagRequired': '标签和版本不能为空',
+    'admin.tagNameRequired': '标签名不能为空',
+    
+    // Admin Modal - Owners
+    'admin.addingOwner': '正在添加维护者 {user}...',
+    'admin.removingOwner': '正在移除维护者 {user}...',
+    'admin.ownersTitle': '维护者: {skillId}',
+    'admin.addOwner': '添加维护者',
+    'admin.removeOwner': '移除维护者',
+    'admin.npmUser': 'npm 用户名',
+    'admin.npmUserPlaceholder': 'npm 用户名',
+    'admin.usernameRequired': '用户名不能为空',
+    
+    // Admin Modal - Access
+    'admin.settingAccess': '正在设置访问权限为 {level}...',
+    'admin.accessTitle': '访问权限: {skillId}',
+    'admin.accessDesc': '设置包的访问级别。公开包对所有人可见。受限包需要认证才能安装。',
+    'admin.accessPublic': '公开',
+    'admin.accessRestricted': '受限',
+    'admin.setAccess': '设置权限',
+    
+    // Help 视图
+    'help.envVars': '环境变量配置',
+    'help.setEnvVars': '设置以下环境变量可覆盖默认配置：',
+    'help.envVar.primaryScope': '主要 npm scope，用于发布/查找 skill',
+    'help.envVar.fallbackScope': '回退 scope（兼容旧安装）',
+    'help.envVar.scopeList': '搜索时尝试的 scope 列表（逗号分隔）',
+    'help.envVar.registryUrl': 'npm registry 地址',
+    'help.envVar.personalLink': '个人链接前缀（publish 输出用）',
+    'help.commands': '常用命令',
+    
+    // 语言
+    'lang.en': 'EN',
+    'lang.zh': '中',
+    
+    // 通用错误
+    'error.generic': '错误',
+  }
+};
+
+let currentLanguage = 'en';
+
+// 翻译函数 - 支持变量替换
+function t(key, params = {}) {
+  let text = translations[currentLanguage]?.[key] || translations['en'][key] || key;
+  // 替换变量 {varName}
+  Object.keys(params).forEach(k => {
+    text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+  });
+  return text;
+}
+
+// 检测语言（localStorage + 浏览器语言）
+function detectLanguage() {
+  const saved = localStorage.getItem('skm-language');
+  if (saved && ['en', 'zh'].includes(saved)) {
+    return saved;
+  }
+  // 浏览器语言检测
+  const browserLang = navigator.language || navigator.userLanguage || '';
+  return browserLang.startsWith('zh') ? 'zh' : 'en';
+}
+
+// 设置语言并重新渲染
+function setLanguage(lang) {
+  if (!['en', 'zh'].includes(lang)) return;
+  currentLanguage = lang;
+  localStorage.setItem('skm-language', lang);
+  
+  // 更新 select 显示
+  const langSelect = document.getElementById('lang-select');
+  if (langSelect) langSelect.value = lang;
+  
+  // 更新语言选项显示
+  updateLanguageOptions();
+  
+  // 重新渲染当前视图
+  reRenderCurrentView();
+}
+
+// 更新语言选项显示（根据当前语言显示选项文本）
+function updateLanguageOptions() {
+  const langSelect = document.getElementById('lang-select');
+  if (!langSelect) return;
+  
+  langSelect.innerHTML = `
+    <option value="en"${currentLanguage === 'en' ? ' selected' : ''}>${t('lang.en')}</option>
+    <option value="zh"${currentLanguage === 'zh' ? ' selected' : ''}>${t('lang.zh')}</option>
+  `;
+}
+
+// 应用翻译到静态 HTML 元素
+function applyI18nToStaticElements() {
+  // 导航按钮
+  const navSkills = document.querySelector('.nav-btn[data-view="skills"]');
+  const navInstalled = document.querySelector('.nav-btn[data-view="installed"]');
+  const navPlatforms = document.querySelector('.nav-btn[data-view="platforms"]');
+  const navAdmin = document.querySelector('.nav-btn[data-view="admin"]');
+  const navHelp = document.querySelector('.nav-btn[data-view="help"]');
+  
+  if (navSkills) navSkills.innerHTML = `📋 ${t('nav.skills')}`;
+  if (navInstalled) navInstalled.innerHTML = `✅ ${t('nav.installed')}`;
+  if (navPlatforms) navPlatforms.innerHTML = `💻 ${t('nav.platforms')}`;
+  if (navAdmin) navAdmin.innerHTML = `⚙️ ${t('nav.admin')}`;
+  if (navHelp) navHelp.innerHTML = `📖 ${t('nav.help')}`;
+  
+  // 视图标题
+  const titles = [
+    { selector: '#view-skills .view-header h2', key: 'title.availableSkills' },
+    { selector: '#view-installed .view-header h2', key: 'title.installedSkills' },
+    { selector: '#view-platforms .view-header h2', key: 'title.platforms' },
+    { selector: '#view-help .view-header h2', key: 'title.help' },
+    { selector: '#view-admin .view-header h2', key: 'title.admin' },
+  ];
+  
+  titles.forEach(({ selector, key }) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = t(key);
+  });
+  
+  // 搜索框 placeholder
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.placeholder = t('search.placeholder');
+  
+  // page-size select 选项
+  const pageSizeSelect = document.getElementById('page-size');
+  if (pageSizeSelect) {
+    const currentValue = pageSizeSelect.value;
+    pageSizeSelect.innerHTML = `
+      <option value="10"${currentValue === '10' ? ' selected' : ''}>${t('pageSize.10')}</option>
+      <option value="20"${currentValue === '20' ? ' selected' : ''}>${t('pageSize.20')}</option>
+      <option value="50"${currentValue === '50' ? ' selected' : ''}>${t('pageSize.50')}</option>
+    `;
+  }
+  
+  // 按钮文本
+  const refreshSkills = document.getElementById('refresh-skills');
+  const refreshAdmin = document.getElementById('refresh-admin');
+  const updateAll = document.getElementById('update-all');
+  const backBtn = document.querySelector('#view-skill-detail .btn-secondary');
+  
+  if (refreshSkills) refreshSkills.innerHTML = `🔄 ${t('btn.refresh')}`;
+  if (refreshAdmin) refreshAdmin.innerHTML = `🔄 ${t('btn.refresh')}`;
+  if (updateAll) updateAll.innerHTML = `🔄 ${t('btn.updateAll')}`;
+  if (backBtn) backBtn.innerHTML = `← ${t('nav.back')}`;
+}
+
+// 重新渲染当前视图
+function reRenderCurrentView() {
+  // 更新语言选项
+  updateLanguageOptions();
+  
+  // 应用翻译到静态元素
+  applyI18nToStaticElements();
+  
+  switch(state.currentView) {
+    case 'skills':
+      loadSkills();
+      break;
+    case 'installed':
+      loadInstalled();
+      break;
+    case 'platforms':
+      loadPlatforms();
+      break;
+    case 'help':
+      loadHelp();
+      break;
+    case 'admin':
+      loadAdminDashboard();
+      break;
+    case 'skill-detail':
+      // 详情视图不需要特殊处理
+      break;
+  }
+}
+
+// -----------------------------------------------------------------------------
 // 初始化
 // -----------------------------------------------------------------------------
 
@@ -129,14 +614,30 @@ function initializeControls() {
   const refreshAdmin = document.getElementById('refresh-admin');
   if (refreshAdmin) refreshAdmin.addEventListener('click', () => loadAdminDashboard());
   
-  // Admin 模态框 - 点击外部关闭
-  const modalEl = document.getElementById('modal');
-  if (modalEl) {
-    modalEl.addEventListener('click', (e) => {
-      if (e.target === modalEl) closeModal();
-    });
-  }
-}
+   // Admin 模态框 - 点击外部关闭
+   const modalEl = document.getElementById('modal');
+   if (modalEl) {
+     modalEl.addEventListener('click', (e) => {
+       if (e.target === modalEl) closeModal();
+     });
+   }
+
+   // 语言切换
+   const langSelect = document.getElementById('lang-select');
+   if (langSelect) {
+     // 初始化当前语言
+     currentLanguage = detectLanguage();
+     langSelect.value = currentLanguage;
+     updateLanguageOptions();
+     
+     // 应用翻译到静态元素
+     applyI18nToStaticElements();
+
+     langSelect.addEventListener('change', () => {
+       setLanguage(langSelect.value);
+     });
+   }
+ }
 
 // -----------------------------------------------------------------------------
 // Skills 列表
@@ -144,79 +645,79 @@ function initializeControls() {
 
 async function loadSkills() {
   const container = document.getElementById('skills-list');
-  container.innerHTML = '<div class="loading">Loading skills...</div>';
-  
+  container.innerHTML = `<div class="loading">${t('loading.skills')}</div>`;
+
   try {
     const params = new URLSearchParams({
       page: state.currentPage.toString(),
       limit: state.pageSize.toString(),
     });
-    
+
     if (state.searchQuery) {
       params.append('search', state.searchQuery);
     }
-    
+
     const response = await fetch(`/api/skills?${params}`);
     const data = await response.json();
-    
+
     if (data.error) {
-      container.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      container.innerHTML = `<div class="loading">${t('error.generic')}: ${data.error}</div>`;
       return;
     }
-    
+
     renderSkills(data.skills || data, container);
     renderPagination(data.page, data.totalPages || 1);
     renderFetchWarning(data.fetchErrors);
   } catch (err) {
-    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
 async function loadInstalled() {
   const container = document.getElementById('installed-list');
-  container.innerHTML = '<div class="loading">Loading...</div>';
-  
+  container.innerHTML = `<div class="loading">${t('loading.generic')}</div>`;
+
   try {
     const response = await fetch('/api/installed');
     const skills = await response.json();
-    
+
     if (skills.error) {
-      container.innerHTML = `<div class="loading">Error: ${skills.error}</div>`;
+      container.innerHTML = `<div class="loading">${t('error.generic')}: ${skills.error}</div>`;
       return;
     }
-    
+
     renderSkills(skills, container, true);
   } catch (err) {
-    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
 function renderSkills(skills, container, isInstalled = false) {
   if (!skills || skills.length === 0) {
-    container.innerHTML = '<div class="loading">No skills found</div>';
+    container.innerHTML = `<div class="loading">${t('empty.noSkills')}</div>`;
     return;
   }
-  
+
   container.innerHTML = skills.map(skill => createSkillCard(skill, isInstalled)).join('');
 }
 
 function createSkillCard(skill, isInstalled) {
   const platforms = skill.platforms || [];
   const platformTags = platforms.map(p => `<span class="platform-tag">${p}</span>`).join('');
-  
+
   return `
     <div class="skill-card" onclick="showSkillDetail('${skill.id}')">
       <h3>${skill.displayName || skill.id}</h3>
       <div class="skill-id">${skill.id}@${skill.version || 'latest'}</div>
-      <p>${skill.description || 'No description'}</p>
+      <p>${skill.description || t('detail.noDescription')}</p>
       <div class="platforms">${platformTags}</div>
       <div class="actions">
         ${isInstalled ? `
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); uninstallSkill('${skill.id}')">Uninstall</button>
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); updateSkill('${skill.id}')">Update</button>
-          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showSkillDetail('${skill.id}')">Info</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); uninstallSkill('${skill.id}')">${t('btn.uninstall')}</button>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); updateSkill('${skill.id}')">${t('btn.update')}</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showSkillDetail('${skill.id}')">${t('btn.info')}</button>
         ` : `
-          <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); installSkill('${skill.id}')">Install</button>
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); installSkill('${skill.id}')">${t('btn.install')}</button>
         `}
       </div>
     </div>
@@ -236,7 +737,7 @@ function renderFetchWarning(fetchErrors) {
   const warning = document.createElement('div');
   warning.id = 'fetch-warning';
   warning.style.cssText = 'background: #664400; color: #ffcc00; padding: 8px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem;';
-  warning.textContent = `⚠ ${fetchErrors} skill(s) failed to load details from npm registry. Refresh to retry.`;
+  warning.textContent = t('warning.fetchErrors', { count: fetchErrors });
   document.querySelector('.view-header').after(warning);
 }
 
@@ -247,20 +748,20 @@ function renderFetchWarning(fetchErrors) {
 function renderPagination(currentPage, totalPages) {
   state.currentPage = currentPage;
   state.totalPages = totalPages;
-  
+
   const container = document.getElementById('pagination');
-  
+
   if (totalPages <= 1) {
     container.innerHTML = '';
     return;
   }
-  
+
   let html = `
-    <button ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">← Prev</button>
-    <span class="page-info">Page ${currentPage} of ${totalPages}</span>
-    <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Next →</button>
+    <button ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">${t('pagination.prev')}</button>
+    <span class="page-info">${t('pagination.pageInfo', { page: currentPage, totalPages: totalPages })}</span>
+    <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">${t('pagination.next')}</button>
   `;
-  
+
   container.innerHTML = html;
 }
 
@@ -276,39 +777,39 @@ function changePage(page) {
 
 async function loadPlatforms() {
   const container = document.getElementById('platforms-list');
-  container.innerHTML = '<div class="loading">Loading platforms...</div>';
-  
+  container.innerHTML = `<div class="loading">${t('loading.platforms')}</div>`;
+
   try {
     const response = await fetch('/api/platforms');
     const platforms = await response.json();
-    
+
     if (platforms.error) {
-      container.innerHTML = `<div class="loading">Error: ${platforms.error}</div>`;
+      container.innerHTML = `<div class="loading">${t('error.generic')}: ${platforms.error}</div>`;
       return;
     }
-    
+
     renderPlatforms(platforms, container);
   } catch (err) {
-    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
 function renderPlatforms(platforms, container) {
   if (!platforms || platforms.length === 0) {
-    container.innerHTML = '<div class="loading">No platforms found</div>';
+    container.innerHTML = `<div class="loading">${t('empty.noPlatforms')}</div>`;
     return;
   }
-  
+
   container.innerHTML = platforms.map(platform => `
     <div class="platform-card">
       <div>
         <h3>${platform.name}</h3>
         <div class="status ${platform.available ? 'status-available' : 'status-unavailable'}">
-          ${platform.available ? '✅ Available' : '❌ Not detected'}
+          ${platform.available ? t('status.available') : t('status.unavailable')}
         </div>
       </div>
       <div>
-        ${platform.installedCount ? `<span>${platform.installedCount} skills installed</span>` : ''}
+        ${platform.installedCount ? `<span>${t('status.skillsInstalled', { count: platform.installedCount })}</span>` : ''}
       </div>
     </div>
   `).join('');
@@ -333,11 +834,11 @@ async function loadHelp() {
 
 function renderHelp(config, container) {
   const envVars = [
-    { var: 'SKM_NPM_SCOPE', default: config.npmScope, desc: '主要 npm scope，用于发布/查找 skill' },
-    { var: 'SKM_NPM_SCOPE_FALLBACK', default: config.npmScopeFallback, desc: '回退 scope（兼容旧安装）' },
-    { var: 'SKM_NPM_SCOPES', default: config.skillScopes.join(', '), desc: '搜索时尝试的 scope 列表（逗号分隔）' },
-    { var: 'SKM_NPM_REGISTRY', default: config.npmRegistry, desc: 'npm registry 地址' },
-    { var: 'SKM_URL', default: config.skmUrl, desc: '个人链接前缀（publish 输出用）' },
+    { var: 'SKM_NPM_SCOPE', default: config.npmScope, desc: t('help.envVar.primaryScope') },
+    { var: 'SKM_NPM_SCOPE_FALLBACK', default: config.npmScopeFallback, desc: t('help.envVar.fallbackScope') },
+    { var: 'SKM_NPM_SCOPES', default: config.skillScopes.join(', '), desc: t('help.envVar.scopeList') },
+    { var: 'SKM_NPM_REGISTRY', default: config.npmRegistry, desc: t('help.envVar.registryUrl') },
+    { var: 'SKM_URL', default: config.skmUrl, desc: t('help.envVar.personalLink') },
   ];
 
   container.innerHTML = `
@@ -412,77 +913,77 @@ skm publish &lt;skill-name&gt; --version 1.0.1</pre>
 
 async function installSkill(skillId) {
   try {
-    showToast(`Installing ${skillId}...`, 'info');
+    showToast(t('toast.installing', { skillId: skillId }), 'info');
     const response = await fetch('/api/install', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skillId })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
-      showToast(`✅ ${skillId} installed successfully!`, 'success');
+      showToast(t('toast.installSuccess', { skillId: skillId }), 'success');
       if (state.currentView === 'installed') loadInstalled();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
 async function uninstallSkill(skillId) {
-  if (!confirm(`Are you sure you want to uninstall ${skillId}?`)) return;
-  
+  if (!confirm(t('confirm.uninstall', { skillId: skillId }))) return;
+
   try {
-    showToast(`Uninstalling ${skillId}...`, 'info');
+    showToast(t('toast.uninstalling', { skillId: skillId }), 'info');
     const response = await fetch('/api/uninstall', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skillId })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
-      showToast(`✅ ${skillId} uninstalled!`, 'success');
+      showToast(t('toast.uninstallSuccess', { skillId: skillId }), 'success');
       loadInstalled();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
 async function updateSkill(skillId) {
   try {
-    showToast(`Updating ${skillId}...`, 'info');
+    showToast(t('toast.updating', { skillId: skillId }), 'info');
     const response = await fetch('/api/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skillId })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
-      showToast(`✅ ${skillId} updated!`, 'success');
+      showToast(t('toast.updateSuccess', { skillId: skillId }), 'success');
       if (state.currentView === 'installed') loadInstalled();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
 async function updateAllSkills() {
-  if (!confirm('Update all installed skills?')) return;
+  if (!confirm(t('confirm.updateAll'))) return;
   
   try {
-    showToast('Updating all skills...', 'info');
+    showToast(t('toast.updateAll'), 'info');
     const response = await fetch('/api/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -492,13 +993,13 @@ async function updateAllSkills() {
     const result = await response.json();
     
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
-      showToast('✅ All skills updated!', 'success');
+      showToast(t('toast.updateAllSuccess'), 'success');
       loadInstalled();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -508,7 +1009,7 @@ async function updateAllSkills() {
 
 async function showSkillDetail(skillId) {
   const content = document.getElementById('skill-detail-content');
-  content.innerHTML = '<div class="loading">Loading skill details...</div>';
+  content.innerHTML = `<div class="loading">${t('loading.details')}</div>`;
   
   // 切换到详情视图
   const btn = document.querySelector(`.nav-btn[data-view="skill-detail"]`);
@@ -526,7 +1027,7 @@ async function showSkillDetail(skillId) {
     const data = await response.json();
     
     if (data.error) {
-      content.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      content.innerHTML = `<div class="loading">${t('error.generic')}: ${data.error}</div>`;
       return;
     }
     
@@ -540,34 +1041,34 @@ async function showSkillDetail(skillId) {
         <div class="detail-name">${data.name}@${data.version}</div>
         
         <div class="detail-section">
-          <h3>Description</h3>
-          <div class="description-text">${data.description || 'No description'}</div>
+          <h3>${t('detail.description')}</h3>
+          <div class="description-text">${data.description || t('detail.noDescription')}</div>
         </div>
         
         <div class="detail-section">
-          <h3>Details</h3>
-          <div class="detail-row"><strong>ID:</strong> ${data.id}</div>
-          <div class="detail-row"><strong>Version:</strong> ${data.version}</div>
-          ${data.license ? `<div class="detail-row"><strong>License:</strong> ${data.license}</div>` : ''}
-          ${data.author ? `<div class="detail-row"><strong>Author:</strong> ${data.author}</div>` : ''}
-          ${data.homepage ? `<div class="detail-row"><strong>Homepage:</strong> <a href="${data.homepage}" target="_blank">${data.homepage}</a></div>` : ''}
-          ${data.repository ? `<div class="detail-row"><strong>Repository:</strong> <a href="${data.repository}" target="_blank">${data.repository}</a></div>` : ''}
+          <h3>${t('detail.details')}</h3>
+          <div class="detail-row"><strong>${t('detail.id')}:</strong> ${data.id}</div>
+          <div class="detail-row"><strong>${t('detail.version')}:</strong> ${data.version}</div>
+          ${data.license ? `<div class="detail-row"><strong>${t('detail.license')}:</strong> ${data.license}</div>` : ''}
+          ${data.author ? `<div class="detail-row"><strong>${t('detail.author')}:</strong> ${data.author}</div>` : ''}
+          ${data.homepage ? `<div class="detail-row"><strong>${t('detail.homepage')}:</strong> <a href="${data.homepage}" target="_blank">${data.homepage}</a></div>` : ''}
+          ${data.repository ? `<div class="detail-row"><strong>${t('detail.repository')}:</strong> <a href="${data.repository}" target="_blank">${data.repository}</a></div>` : ''}
         </div>
         
         <div class="detail-section">
-          <h3>Platforms</h3>
+          <h3>${t('detail.platforms')}</h3>
           <div class="platform-tags">
-            ${platforms.length ? platforms.map(p => `<span class="platform-tag">${p}</span>`).join('') : '<span class="platform-tag">N/A</span>'}
+            ${platforms.length ? platforms.map(p => `<span class="platform-tag">${p}</span>`).join('') : `<span class="platform-tag">${t('detail.nA')}</span>`}
           </div>
         </div>
         
         ${versions.length ? `
         <div class="detail-section">
-          <h3>Versions (last ${versions.length})</h3>
+          <h3>${t('detail.versions', { count: versions.length })}</h3>
           <div class="version-list">
             ${versions.slice().reverse().map(v => `
               <div class="version-item">
-                <span>${v} ${v === data.version ? '<span class="version-latest">latest</span>' : ''}</span>
+                <span>${v} ${v === data.version ? `<span class="version-latest">${t('detail.latest')}</span>` : ''}</span>
               </div>
             `).join('')}
           </div>
@@ -575,12 +1076,12 @@ async function showSkillDetail(skillId) {
         ` : ''}
         
         <div class="detail-actions">
-          <button class="btn btn-success" onclick="installSkill('${escapedId}')">Install</button>
+          <button class="btn btn-success" onclick="installSkill('${escapedId}')">${t('btn.install')}</button>
         </div>
       </div>
     `;
   } catch (err) {
-    content.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    content.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
@@ -622,24 +1123,24 @@ async function loadAdminDashboard() {
 
 async function loadAdminStats() {
   const container = document.getElementById('admin-stats');
-  container.innerHTML = '<div class="loading">Loading stats...</div>';
+  container.innerHTML = `<div class="loading">${t('loading.stats')}</div>`;
 
   try {
     const response = await fetch('/api/admin/stats');
     const data = await response.json();
 
     if (data.error) {
-      container.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      container.innerHTML = `<div class="loading">${t('error.generic')}: ${data.error}</div>`;
       return;
     }
 
     const cards = [
-      { value: data.totalSkills, label: 'Published Skills' },
-      { value: data.totalVersions, label: 'Total Versions' },
-      { value: data.averageVersions, label: 'Avg Versions/Skill' },
-      { value: data.withMetadata, label: 'With Metadata' },
-      { value: `${data.totalSizeMB} MB`, label: 'Total Size' },
-      { value: data.platformCount, label: 'Platforms Covered' },
+      { value: data.totalSkills, label: t('admin.stats.totalSkills') },
+      { value: data.totalVersions, label: t('admin.stats.totalVersions') },
+      { value: data.averageVersions, label: t('admin.stats.avgVersions') },
+      { value: data.withMetadata, label: t('admin.stats.withMetadata') },
+      { value: t('admin.stats.totalSize', { value: data.totalSizeMB }), label: t('admin.stats.totalSize', { value: '' }).replace(': ', '') },
+      { value: data.platformCount, label: t('admin.stats.platformsCovered') },
     ];
 
     container.innerHTML = cards.map(c => `
@@ -649,13 +1150,13 @@ async function loadAdminStats() {
       </div>
     `).join('');
   } catch (err) {
-    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
 async function loadAdminSkills() {
   const container = document.getElementById('admin-skills-list');
-  container.innerHTML = '<div class="loading">Loading published skills...</div>';
+  container.innerHTML = `<div class="loading">${t('loading.published')}</div>`;
 
   try {
     const params = new URLSearchParams({ limit: '100' });
@@ -663,25 +1164,25 @@ async function loadAdminSkills() {
     const data = await response.json();
 
     if (data.error) {
-      container.innerHTML = `<div class="loading">Error: ${data.error}</div>`;
+      container.innerHTML = `<div class="loading">${t('error.generic')}: ${data.error}</div>`;
       return;
     }
 
     const skills = data.skills || [];
     renderAdminSkills(skills, container);
   } catch (err) {
-    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
 }
 
 function renderAdminSkills(skills, container) {
   if (!skills || skills.length === 0) {
-    container.innerHTML = '<div class="loading">No published skills found</div>';
+    container.innerHTML = `<div class="loading">${t('empty.noPublishedSkills')}</div>`;
     return;
   }
 
   container.innerHTML = `
-    <h3 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 1rem;">Published Skills (${skills.length})</h3>
+    <h3 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 1rem;">${t('admin.publishedSkillsCount', { count: skills.length })}</h3>
     ${skills.map(skill => {
       const id = skill.id || skill.name;
       const desc = (skill.description || '').slice(0, 80);
@@ -693,11 +1194,11 @@ function renderAdminSkills(skills, container) {
             ${desc ? `<div class="admin-skill-desc">${desc}</div>` : ''}
           </div>
           <div class="admin-actions">
-            <button class="admin-btn admin-btn-deprecate" onclick="showAdminDeprecateModal('${id}')">Deprecate</button>
-            <button class="admin-btn admin-btn-unpublish" onclick="showAdminUnpublishModal('${id}')">Unpublish</button>
-            <button class="admin-btn admin-btn-tag" onclick="showAdminTagModal('${id}')">Tags</button>
-            <button class="admin-btn admin-btn-owner" onclick="showAdminOwnerModal('${id}')">Owners</button>
-            <button class="admin-btn admin-btn-access" onclick="showAdminAccessModal('${id}')">Access</button>
+            <button class="admin-btn admin-btn-deprecate" onclick="showAdminDeprecateModal('${id}')">${t('admin.deprecateTitle', { skillId: '' }).replace(': ', '')}</button>
+            <button class="admin-btn admin-btn-unpublish" onclick="showAdminUnpublishModal('${id}')">${t('admin.unpublishTitle', { skillId: '' }).replace(': ', '')}</button>
+            <button class="admin-btn admin-btn-tag" onclick="showAdminTagModal('${id}')">${t('admin.tagsTitle', { skillId: '' }).replace(': ', '')}</button>
+            <button class="admin-btn admin-btn-owner" onclick="showAdminOwnerModal('${id}')">${t('admin.ownersTitle', { skillId: '' }).replace(': ', '')}</button>
+            <button class="admin-btn admin-btn-access" onclick="showAdminAccessModal('${id}')">${t('admin.accessTitle', { skillId: '' }).replace(': ', '')}</button>
           </div>
         </div>
       `;
@@ -714,21 +1215,21 @@ function showAdminDeprecateModal(skillId) {
   const modalBody = document.getElementById('modal-body');
 
   modalBody.innerHTML = `
-    <h2>Deprecate: ${skillId}</h2>
+    <h2>${t('admin.deprecateTitle', { skillId: skillId })}</h2>
     <div class="admin-modal-section">
       <div class="admin-input-group">
-        <label>Version</label>
-        <input type="text" id="deprecate-version" placeholder="(leave empty for all versions)">
+        <label>${t('admin.deprecateVersion')}</label>
+        <input type="text" id="deprecate-version" placeholder="${t('admin.deprecateVersionPlaceholder')}">
       </div>
       <div class="admin-input-group">
-        <label>Message</label>
-        <input type="text" id="deprecate-msg" value="This skill is deprecated. Please use an alternative.">
+        <label>${t('admin.deprecateMessage')}</label>
+        <input type="text" id="deprecate-msg" value="${t('admin.deprecateDefaultMsg')}">
       </div>
-      <p class="admin-warning-text">⚠ Deprecating will mark this skill as deprecated in the npm registry.</p>
+      <p class="admin-warning-text">${t('admin.deprecateWarning')}</p>
     </div>
     <div class="actions">
-      <button class="btn btn-danger" onclick="execAdminDeprecate('${skillId}')">Confirm Deprecate</button>
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="execAdminDeprecate('${skillId}')">${t('admin.confirmDeprecate')}</button>
+      <button class="btn btn-secondary" onclick="closeModal()">${t('btn.cancel')}</button>
     </div>
   `;
   modal.classList.remove('hidden');
@@ -739,7 +1240,7 @@ async function execAdminDeprecate(skillId) {
   const message = document.getElementById('deprecate-msg').value;
 
   try {
-    showToast(`Deprecating ${skillId}...`, 'info');
+    showToast(t('admin.deprecating', { skillId: skillId }), 'info');
     const response = await fetch('/api/admin/deprecate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -747,14 +1248,14 @@ async function execAdminDeprecate(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       closeModal();
       loadAdminDashboard();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -763,21 +1264,21 @@ function showAdminUnpublishModal(skillId) {
   const modalBody = document.getElementById('modal-body');
 
   modalBody.innerHTML = `
-    <h2>Unpublish: ${skillId}</h2>
+    <h2>${t('admin.unpublishTitle', { skillId: skillId })}</h2>
     <div class="admin-modal-section">
       <div class="admin-input-group">
-        <label>Version</label>
-        <input type="text" id="unpublish-version" placeholder="(leave empty for entire package)">
+        <label>${t('admin.unpublishVersion')}</label>
+        <input type="text" id="unpublish-version" placeholder="${t('admin.unpublishVersionPlaceholder')}">
       </div>
       <div class="admin-checkbox-group">
         <input type="checkbox" id="unpublish-force">
-        <label for="unpublish-force">Force unpublish entire package (required if no version specified)</label>
+        <label for="unpublish-force">${t('admin.unpublishForce')}</label>
       </div>
-      <p class="admin-danger-text">⚠ This action cannot be undone! Packages can be restored within 72 hours.</p>
+      <p class="admin-danger-text">${t('admin.unpublishDanger')}</p>
     </div>
     <div class="actions">
-      <button class="btn btn-danger" onclick="execAdminUnpublish('${skillId}')">Confirm Unpublish</button>
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="execAdminUnpublish('${skillId}')">${t('admin.confirmUnpublish')}</button>
+      <button class="btn btn-secondary" onclick="closeModal()">${t('btn.cancel')}</button>
     </div>
   `;
   modal.classList.remove('hidden');
@@ -788,7 +1289,7 @@ async function execAdminUnpublish(skillId) {
   const force = document.getElementById('unpublish-force').checked;
 
   try {
-    showToast(`Unpublishing ${skillId}...`, 'info');
+    showToast(t('admin.unpublishing', { skillId: skillId }), 'info');
     const response = await fetch('/api/admin/unpublish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -796,14 +1297,14 @@ async function execAdminUnpublish(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       closeModal();
       loadAdminDashboard();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -812,32 +1313,32 @@ function showAdminTagModal(skillId) {
   const modalBody = document.getElementById('modal-body');
 
   modalBody.innerHTML = `
-    <h2>Tags: ${skillId}</h2>
+    <h2>${t('admin.tagsTitle', { skillId: skillId })}</h2>
     <div id="admin-tag-current">
-      <div class="loading">Loading current tags...</div>
+      <div class="loading">${t('loading.generic')}</div>
     </div>
     <div class="admin-modal-section" style="margin-top: 16px;">
-      <h3>Set Tag</h3>
+      <h3>${t('admin.setTag')}</h3>
       <div class="admin-input-group">
-        <label>Tag</label>
-        <input type="text" id="tag-set-name" placeholder="e.g. beta, latest">
+        <label>${t('admin.tagName')}</label>
+        <input type="text" id="tag-set-name" placeholder="${t('admin.tagNamePlaceholder')}">
       </div>
       <div class="admin-input-group">
-        <label>Version</label>
-        <input type="text" id="tag-set-version" placeholder="e.g. 1.0.1">
+        <label>${t('admin.tagVersion')}</label>
+        <input type="text" id="tag-set-version" placeholder="${t('admin.tagVersionPlaceholder')}">
       </div>
-      <button class="btn btn-primary btn-sm" onclick="execAdminTagSet('${skillId}')">Set Tag</button>
+      <button class="btn btn-primary btn-sm" onclick="execAdminTagSet('${skillId}')">${t('admin.setTag')}</button>
     </div>
     <div class="admin-modal-section">
-      <h3>Remove Tag</h3>
+      <h3>${t('admin.removeTag')}</h3>
       <div class="admin-input-group">
-        <label>Tag</label>
-        <input type="text" id="tag-rm-name" placeholder="e.g. beta">
+        <label>${t('admin.tagName')}</label>
+        <input type="text" id="tag-rm-name" placeholder="${t('admin.tagNameRemovePlaceholder')}">
       </div>
-      <button class="btn btn-danger btn-sm" onclick="execAdminTagRemove('${skillId}')">Remove Tag</button>
+      <button class="btn btn-danger btn-sm" onclick="execAdminTagRemove('${skillId}')">${t('admin.removeTag')}</button>
     </div>
     <div class="actions" style="margin-top: 16px;">
-      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-secondary" onclick="closeModal()">${t('btn.cancel')}</button>
     </div>
   `;
   modal.classList.remove('hidden');
@@ -858,25 +1359,25 @@ async function loadAdminTags(skillId) {
     if (result.success && result.tags) {
       const entries = Object.entries(result.tags);
       if (entries.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No dist-tags found.</p>';
+        container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">${t('empty.noTags')}</p>`;
       } else {
         container.innerHTML = `
-          <h3>Current Tags</h3>
+          <h3>${t('admin.currentTags')}</h3>
           <div class="admin-tag-list">
             ${entries.map(([tag, ver]) => `
               <span class="admin-tag-item">
                 ${tag} <span class="tag-version">→ ${ver}</span>
-                ${tag === 'latest' ? '<span style="color: var(--accent); font-size: 0.75rem;"> (default)</span>' : ''}
+                ${tag === 'latest' ? `<span style="color: var(--accent); font-size: 0.75rem;">${t('admin.tag.default')}</span>` : ''}
               </span>
             `).join('')}
           </div>
         `;
       }
     } else {
-      container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Could not load tags.</p>';
+      container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">${t('empty.couldNotLoadTags')}</p>`;
     }
   } catch (err) {
-    container.innerHTML = `<p style="color: #ff6666; font-size: 0.85rem;">Error: ${err.message}</p>`;
+    container.innerHTML = `<p style="color: #ff6666; font-size: 0.85rem;">${t('error.generic')}: ${err.message}</p>`;
   }
 }
 
@@ -885,12 +1386,12 @@ async function execAdminTagSet(skillId) {
   const version = document.getElementById('tag-set-version').value;
 
   if (!tag || !version) {
-    showToast('Tag and version are required', 'error');
+    showToast(t('admin.tagRequired'), 'error');
     return;
   }
 
   try {
-    showToast(`Setting tag ${tag}...`, 'info');
+    showToast(t('admin.settingTag', { tag: tag }), 'info');
     const response = await fetch('/api/admin/tag', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -898,7 +1399,7 @@ async function execAdminTagSet(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       loadAdminTags(skillId);
@@ -906,7 +1407,7 @@ async function execAdminTagSet(skillId) {
       document.getElementById('tag-set-version').value = '';
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -914,12 +1415,12 @@ async function execAdminTagRemove(skillId) {
   const tag = document.getElementById('tag-rm-name').value;
 
   if (!tag) {
-    showToast('Tag name is required', 'error');
+    showToast(t('admin.tagNameRequired'), 'error');
     return;
   }
 
   try {
-    showToast(`Removing tag ${tag}...`, 'info');
+    showToast(t('admin.removingTag', { tag: tag }), 'info');
     const response = await fetch('/api/admin/tag', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -927,14 +1428,14 @@ async function execAdminTagRemove(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       loadAdminTags(skillId);
       document.getElementById('tag-rm-name').value = '';
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -943,25 +1444,25 @@ function showAdminOwnerModal(skillId) {
   const modalBody = document.getElementById('modal-body');
 
   modalBody.innerHTML = `
-    <h2>Owners: ${skillId}</h2>
+    <h2>${t('admin.ownersTitle', { skillId: skillId })}</h2>
     <div class="admin-modal-section">
-      <h3>Add Owner</h3>
+      <h3>${t('admin.addOwner')}</h3>
       <div class="admin-input-group">
-        <label>npm User</label>
-        <input type="text" id="owner-add-name" placeholder="npm username">
+        <label>${t('admin.npmUser')}</label>
+        <input type="text" id="owner-add-name" placeholder="${t('admin.npmUserPlaceholder')}">
       </div>
-      <button class="btn btn-success btn-sm" onclick="execAdminOwnerAdd('${skillId}')">Add Owner</button>
+      <button class="btn btn-success btn-sm" onclick="execAdminOwnerAdd('${skillId}')">${t('admin.addOwner')}</button>
     </div>
     <div class="admin-modal-section">
-      <h3>Remove Owner</h3>
+      <h3>${t('admin.removeOwner')}</h3>
       <div class="admin-input-group">
-        <label>npm User</label>
-        <input type="text" id="owner-rm-name" placeholder="npm username">
+        <label>${t('admin.npmUser')}</label>
+        <input type="text" id="owner-rm-name" placeholder="${t('admin.npmUserPlaceholder')}">
       </div>
-      <button class="btn btn-danger btn-sm" onclick="execAdminOwnerRemove('${skillId}')">Remove Owner</button>
+      <button class="btn btn-danger btn-sm" onclick="execAdminOwnerRemove('${skillId}')">${t('admin.removeOwner')}</button>
     </div>
     <div class="actions">
-      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-secondary" onclick="closeModal()">${t('btn.cancel')}</button>
     </div>
   `;
   modal.classList.remove('hidden');
@@ -969,10 +1470,10 @@ function showAdminOwnerModal(skillId) {
 
 async function execAdminOwnerAdd(skillId) {
   const user = document.getElementById('owner-add-name').value;
-  if (!user) { showToast('Username is required', 'error'); return; }
+  if (!user) { showToast(t('admin.usernameRequired'), 'error'); return; }
 
   try {
-    showToast(`Adding owner ${user}...`, 'info');
+    showToast(t('admin.addingOwner', { user: user }), 'info');
     const response = await fetch('/api/admin/owner', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -980,22 +1481,22 @@ async function execAdminOwnerAdd(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       document.getElementById('owner-add-name').value = '';
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
 async function execAdminOwnerRemove(skillId) {
   const user = document.getElementById('owner-rm-name').value;
-  if (!user) { showToast('Username is required', 'error'); return; }
+  if (!user) { showToast(t('admin.usernameRequired'), 'error'); return; }
 
   try {
-    showToast(`Removing owner ${user}...`, 'info');
+    showToast(t('admin.removingOwner', { user: user }), 'info');
     const response = await fetch('/api/admin/owner', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1003,13 +1504,13 @@ async function execAdminOwnerRemove(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       document.getElementById('owner-rm-name').value = '';
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }
 
@@ -1018,20 +1519,19 @@ function showAdminAccessModal(skillId) {
   const modalBody = document.getElementById('modal-body');
 
   modalBody.innerHTML = `
-    <h2>Access: ${skillId}</h2>
+    <h2>${t('admin.accessTitle', { skillId: skillId })}</h2>
     <div class="admin-modal-section">
       <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
-        Set the package access level. Public packages are visible to everyone.
-        Restricted packages require authentication to install.
+        ${t('admin.accessDesc')}
       </p>
       <div class="admin-radio-group">
-        <label><input type="radio" name="access-level" value="public" checked> Public</label>
-        <label><input type="radio" name="access-level" value="restricted"> Restricted</label>
+        <label><input type="radio" name="access-level" value="public" checked> ${t('admin.accessPublic')}</label>
+        <label><input type="radio" name="access-level" value="restricted"> ${t('admin.accessRestricted')}</label>
       </div>
     </div>
     <div class="actions">
-      <button class="btn btn-primary" onclick="execAdminAccess('${skillId}')">Set Access</button>
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="execAdminAccess('${skillId}')">${t('admin.setAccess')}</button>
+      <button class="btn btn-secondary" onclick="closeModal()">${t('btn.cancel')}</button>
     </div>
   `;
   modal.classList.remove('hidden');
@@ -1041,7 +1541,7 @@ async function execAdminAccess(skillId) {
   const level = document.querySelector('input[name="access-level"]:checked').value;
 
   try {
-    showToast(`Setting access to ${level}...`, 'info');
+    showToast(t('admin.settingAccess', { level: level }), 'info');
     const response = await fetch('/api/admin/access', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1049,12 +1549,12 @@ async function execAdminAccess(skillId) {
     });
     const result = await response.json();
     if (result.error) {
-      showToast(`Error: ${result.error}`, 'error');
+      showToast(`${t('error.generic')}: ${result.error}`, 'error');
     } else {
       showToast(`✅ ${result.message}`, 'success');
       closeModal();
     }
   } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
+    showToast(`${t('error.generic')}: ${err.message}`, 'error');
   }
 }

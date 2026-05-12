@@ -869,3 +869,41 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--bg-hover);
 }
+
+/* -----------------------------------------------------------------------------
+   语言切换
+   ----------------------------------------------------------------------------- */
+
+.lang-switch {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-color);
+}
+
+#lang-select {
+  padding: 6px 28px 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+#lang-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#lang-select option {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
