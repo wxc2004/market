@@ -1,3 +1,35 @@
+# SkillMarket v1.3.20 更新日志
+
+**日期**: 2026-05-14
+**版本**: 1.3.20
+
+---
+
+## 🐛 修复：GUI 内容区填满页面 + 滚动
+
+### 变更
+
+- `.main-content` 改为 `display: flex; flex-direction: column`，不再用 `height: 0`
+- `.view.active` 改为 `display: flex; flex-col; flex: 1; overflow-y: auto`
+- 效果：内容区填满整个页面，溢出时正确滚动
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `gui/style.css` | `.main-content` flex 容器化；`.view.active` 填满父容器并负责滚动 |
+
+---
+
+## 📦 完整版本历史
+
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.3.20 | 2026-05-14 | GUI 内容区填满页面 + 滚动修复 |
+| 1.3.19 | 2026-05-14 | 修复 GUI 滚动功能 |
+
+---
+
 # SkillMarket v1.3.19 更新日志
 
 **日期**: 2026-05-14
