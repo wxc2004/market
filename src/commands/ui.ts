@@ -150,6 +150,8 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20')));
     const search = url.searchParams.get('search') || '';
+    const sort = url.searchParams.get('sort') || 'name';
+    const platform = url.searchParams.get('platform') || '';
 
     const cacheKey = `search:${search}:limit:${limit}`;
 
@@ -191,6 +193,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
           author: info.author?.name || pkg?.author?.name || '',
           homepage: pkg?.homepage || '',
           repository: pkg?.repository?.url || '',
+          updated: info.time?.[latestVersion] || info.time?.modified || '',
         };
       } catch {
         fetchErrors++;
@@ -198,10 +201,36 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
       }
     }, 3);
 
-    const skills = skillDetails.filter(Boolean);
-    const totalPages = Math.ceil(total / limit) || 1;
+    let skills = skillDetails.filter(Boolean) as any[];
 
-    jsonResponse(res, 200, { skills, page, totalPages, total, fetchErrors });
+    // 按平台过滤
+    if (platform) {
+      skills = skills.filter(s =>
+        Array.isArray(s.platforms) && s.platforms.includes(platform)
+      );
+    }
+
+    // 排序
+    skills.sort((a, b) => {
+      const nameA = (a.displayName || a.id || '').toLowerCase();
+      const nameB = (b.displayName || b.id || '').toLowerCase();
+      switch (sort) {
+        case '-name':
+          return nameB.localeCompare(nameA);
+        case 'updated':
+          return (a.updated || '').localeCompare(b.updated || '');
+        case '-updated':
+          return (b.updated || '').localeCompare(a.updated || '');
+        case 'name':
+        default:
+          return nameA.localeCompare(nameB);
+      }
+    });
+
+    const filteredTotal = skills.length;
+    const totalPages = Math.ceil(filteredTotal / limit) || 1;
+
+    jsonResponse(res, 200, { skills, page, totalPages, total: filteredTotal, fetchErrors });
   } catch (err) {
     jsonResponse(res, 500, {
       error: String(err),

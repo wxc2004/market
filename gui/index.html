@@ -37,6 +37,15 @@
           <h2>Available Skills</h2>
           <div class="controls">
             <input type="text" id="search-input" placeholder="🔍 Search skills...">
+            <select id="sort-select">
+              <option value="name">Name A-Z</option>
+              <option value="-name">Name Z-A</option>
+              <option value="-updated">Recently Updated</option>
+              <option value="updated">Least Recently Updated</option>
+            </select>
+            <select id="platform-filter">
+              <option value="">All Platforms</option>
+            </select>
             <select id="page-size">
               <option value="10">10 per page</option>
               <option value="20" selected>20 per page</option>

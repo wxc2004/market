@@ -1,3 +1,29 @@
+# SkillMarket v1.3.22 更新日志
+
+**日期**: 2026-05-15
+**版本**: 1.3.22
+
+---
+
+## ✨ 新功能：Skill 页分类排序功能
+
+### 变更
+
+1. **排序功能**: Skills 页新增排序下拉框，支持按名称 A-Z、名称 Z-A、最近更新、最早更新排序
+2. **分类过滤**: Skills 页新增平台分类过滤下拉框，可按平台（opencode、cursor 等）筛选技能列表
+3. 后端 `GET /api/skills` 新增 `sort` 和 `platform` 查询参数
+4. 每个 skill 响应新增 `updated` 字段
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/ui.ts` | `/api/skills` 添加 sort/platform 参数支持 + updated 字段 |
+| `gui/index.html` | 添加排序和平台过滤下拉框 |
+| `gui/app.js` | 排序/过滤状态、事件处理、平台列表动态更新 |
+
+---
+
 # SkillMarket v1.3.21 更新日志
 
 **日期**: 2026-05-15

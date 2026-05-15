@@ -11,6 +11,8 @@ const state = {
   currentPage: 1,
   pageSize: 20,
   searchQuery: '',
+  sortBy: 'name',
+  platformFilter: '',
   totalPages: 1,
   previousView: 'skills',
 };
@@ -626,6 +628,26 @@ function initializeControls() {
     loadSkills();
   });
   
+  // 排序
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      state.sortBy = sortSelect.value;
+      state.currentPage = 1;
+      loadSkills();
+    });
+  }
+
+  // 平台分类过滤
+  const platformFilter = document.getElementById('platform-filter');
+  if (platformFilter) {
+    platformFilter.addEventListener('change', () => {
+      state.platformFilter = platformFilter.value;
+      state.currentPage = 1;
+      loadSkills();
+    });
+  }
+
   // 刷新按钮
   document.getElementById('refresh-skills').addEventListener('click', () => loadSkills());
   document.getElementById('update-all').addEventListener('click', updateAllSkills);
@@ -669,10 +691,14 @@ async function loadSkills() {
     const params = new URLSearchParams({
       page: state.currentPage.toString(),
       limit: state.pageSize.toString(),
+      sort: state.sortBy,
     });
 
     if (state.searchQuery) {
       params.append('search', state.searchQuery);
+    }
+    if (state.platformFilter) {
+      params.append('platform', state.platformFilter);
     }
 
     const response = await fetch(`/api/skills?${params}`);
@@ -686,6 +712,7 @@ async function loadSkills() {
     renderSkills(data.skills || data, container);
     renderPagination(data.page, data.totalPages || 1);
     renderFetchWarning(data.fetchErrors);
+    updatePlatformFilterOptions(data.skills || []);
   } catch (err) {
     container.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
   }
@@ -762,6 +789,34 @@ function renderFetchWarning(fetchErrors) {
 // -----------------------------------------------------------------------------
 // 分页
 // -----------------------------------------------------------------------------
+
+/** 收集所有可用平台，更新分类过滤下拉框 */
+function updatePlatformFilterOptions(skills) {
+  const select = document.getElementById('platform-filter');
+  if (!select) return;
+
+  // 收集所有唯一的平台名
+  const allPlatforms = new Set();
+  (skills || []).forEach(s => {
+    if (Array.isArray(s.platforms)) {
+      s.platforms.forEach(p => allPlatforms.add(p));
+    }
+  });
+
+  const currentVal = select.value;
+  const sortedPlatforms = [...allPlatforms].sort();
+
+  // 只有当平台列表有变化时才重新渲染
+  const currentOptions = Array.from(select.options).slice(1).map(o => o.value).sort().join(',');
+  const newOptions = sortedPlatforms.join(',');
+  if (currentOptions === newOptions) return;
+
+  select.innerHTML = `
+    <option value="">All Platforms</option>
+    ${sortedPlatforms.map(p => `<option value="${p}"${currentVal === p ? ' selected' : ''}>${p}</option>`).join('')}
+  `;
+  select.value = currentVal && allPlatforms.has(currentVal) ? currentVal : '';
+}
 
 function renderPagination(currentPage, totalPages) {
   state.currentPage = currentPage;
