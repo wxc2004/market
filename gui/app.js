@@ -470,6 +470,23 @@ function applyI18nToStaticElements() {
   if (backBtn) backBtn.innerHTML = `← ${t('nav.back')}`;
 }
 
+// -----------------------------------------------------------------------------
+// 版本号加载
+// -----------------------------------------------------------------------------
+
+async function loadVersion() {
+  try {
+    const response = await fetch('/api/version');
+    const data = await response.json();
+    const el = document.getElementById('gui-version');
+    if (el && data.version) {
+      el.textContent = `v${data.version}`;
+    }
+  } catch {
+    // 静默失败，保留 HTML 中的占位符
+  }
+}
+
 // 重新渲染当前视图
 function reRenderCurrentView() {
   // 更新语言选项
@@ -508,6 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
   initializeControls();
   initializeCollapsibleSections();
+  loadVersion();
   loadSkills();
 });
 
@@ -561,8 +579,8 @@ function switchView(view) {
     targetView.classList.add('active');
   }
   
-  // 加载对应数据 (skill-detail 视图的数据由 showSkillDetail 加载)
-  if (view !== 'skill-detail') {
+  // 加载对应数据 (skill-detail / platform-detail 视图的数据由各自函数加载)
+  if (view !== 'skill-detail' && view !== 'platform-detail') {
     switch(view) {
       case 'skills':
         loadSkills();
@@ -801,7 +819,7 @@ function renderPlatforms(platforms, container) {
   }
 
   container.innerHTML = platforms.map(platform => `
-    <div class="platform-card">
+    <div class="platform-card" onclick="showPlatformDetail('${platform.id}')" style="cursor: pointer;">
       <div>
         <h3>${platform.name}</h3>
         <div class="status ${platform.available ? 'status-available' : 'status-unavailable'}">
@@ -809,10 +827,84 @@ function renderPlatforms(platforms, container) {
         </div>
       </div>
       <div>
-        ${platform.installedCount ? `<span>${t('status.skillsInstalled', { count: platform.installedCount })}</span>` : ''}
+        ${platform.installedCount ? `<span>${t('status.skillsInstalled', { count: platform.installedCount })}</span>` : '<span style="color: var(--text-muted); font-size: 0.85rem;">0 installed</span>'}
       </div>
     </div>
   `).join('');
+}
+
+// -----------------------------------------------------------------------------
+// Platform 详情视图
+// -----------------------------------------------------------------------------
+
+async function showPlatformDetail(platformId) {
+  const content = document.getElementById('platform-detail-content');
+  content.innerHTML = `<div class="loading">${t('loading.generic')}</div>`;
+
+  state.previousView = state.currentView;
+  state.currentView = 'platform-detail';
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const targetView = document.getElementById('view-platform-detail');
+  if (targetView) targetView.classList.add('active');
+
+  try {
+    const response = await fetch(`/api/platform-info?id=${encodeURIComponent(platformId)}`);
+    const platform = await response.json();
+
+    if (platform.error) {
+      content.innerHTML = `<div class="loading">${t('error.generic')}: ${platform.error}</div>`;
+      return;
+    }
+
+    const skills = platform.installedSkills || [];
+
+    content.innerHTML = `
+      <div class="platform-detail">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h2 style="color: var(--accent); font-size: 1.5rem; margin: 0;">${platform.name}</h2>
+            <span class="status ${platform.available ? 'status-available' : 'status-unavailable'}">
+              ${platform.available ? t('status.available') : t('status.unavailable')}
+            </span>
+            <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 12px;">
+              ${t('status.skillsInstalled', { count: platform.installedCount })}
+            </span>
+          </div>
+        </div>
+        <div class="admin-skill-row" style="background: var(--bg-card); padding: 10px 16px; margin-bottom: 12px;">
+          <span style="color: var(--text-muted); font-size: 0.85rem;">Platform ID</span>
+          <span style="color: var(--text-secondary); font-size: 0.9rem; font-family: monospace;">${platform.id}</span>
+        </div>
+        <h3 style="color: var(--text-secondary); margin-bottom: 10px; font-size: 1rem;">
+          Installed Skills (${skills.length})
+        </h3>
+        ${skills.length === 0 ? '<div class="loading" style="padding: 20px;">No skills installed on this platform.</div>' : `
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            ${skills.map((skill, i) => `
+              <div class="admin-skill-row" style="cursor: pointer;" onclick="showSkillDetail('${skill.id}')">
+                <div class="admin-skill-info">
+                  <h4>${skill.displayName || skill.id}</h4>
+                  <div class="admin-skill-meta">${skill.id}@${skill.version || 'latest'}</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showSkillDetail('${skill.id}')">${t('btn.info')}</button>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  } catch (err) {
+    content.innerHTML = `<div class="loading">${t('error.generic')}: ${err.message}</div>`;
+  }
+}
+
+function goBackFromPlatformDetail() {
+  const target = state.previousView || 'platforms';
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === target);
+  });
+  switchView(target);
 }
 
 // -----------------------------------------------------------------------------

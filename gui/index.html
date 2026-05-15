@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <span class="topbar-logo">📦 SkillMarket</span>
-        <span class="topbar-version" id="gui-version">v1.3.16</span>
+        <span class="topbar-version" id="gui-version">...</span>
       </div>
       <nav class="topbar-nav">
         <button class="nav-btn active" data-view="skills">📋 Skills</button>
@@ -64,6 +64,14 @@
           <h2>Available Platforms</h2>
         </div>
         <div id="platforms-list" class="platforms-list"></div>
+      </div>
+
+      <!-- Platform 详情视图 -->
+      <div id="view-platform-detail" class="view">
+        <div class="view-header">
+          <button class="btn btn-secondary" onclick="goBackFromPlatformDetail()">← Back to Platforms</button>
+        </div>
+        <div id="platform-detail-content"></div>
       </div>
 
       <!-- Help 视图 -->

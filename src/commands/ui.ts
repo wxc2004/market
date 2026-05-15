@@ -246,11 +246,46 @@ API_ROUTES.GET['/api/platforms'] = async (_req, res, _url) => {
           name: adapter.name,
           available: !!isAvailable,
           installedCount: Array.isArray(installed) ? installed.length : 0,
+          installedSkills: Array.isArray(installed) ? installed : [],
         };
       })
     );
 
     jsonResponse(res, 200, platforms);
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- GET /api/platform-info ----
+
+API_ROUTES.GET['/api/platform-info'] = async (_req, res, url) => {
+  try {
+    const platformId = url.searchParams.get('id') || '';
+    if (!platformId) {
+      jsonResponse(res, 400, { error: 'Missing "id" query parameter' });
+      return;
+    }
+
+    const allAdapters = getAllAdapters();
+    const adapter = allAdapters.find(a => a.id === platformId);
+    if (!adapter) {
+      jsonResponse(res, 404, { error: `Platform "${platformId}" not found` });
+      return;
+    }
+
+    const available = await detectPlatforms();
+    const isAvailable = available.find(a => a.id === adapter.id);
+    const installed = await adapter.listInstalled();
+    const installedSkills = Array.isArray(installed) ? installed : [];
+
+    jsonResponse(res, 200, {
+      id: adapter.id,
+      name: adapter.name,
+      available: !!isAvailable,
+      installedCount: installedSkills.length,
+      installedSkills,
+    });
   } catch (err) {
     jsonResponse(res, 500, { error: String(err) });
   }
@@ -303,6 +338,18 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
 };
 
 // ---- GET /api/config ----
+
+// ---- GET /api/version ----
+
+API_ROUTES.GET['/api/version'] = async (_req, res, _url) => {
+  try {
+    const pkgPath = join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    jsonResponse(res, 200, { version: pkg.version || '1.0.0' });
+  } catch {
+    jsonResponse(res, 200, { version: '1.0.0' });
+  }
+};
 
 API_ROUTES.GET['/api/config'] = async (_req, res, _url) => {
   jsonResponse(res, 200, {

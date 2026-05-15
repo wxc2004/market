@@ -1,3 +1,31 @@
+# SkillMarket v1.3.21 更新日志
+
+**日期**: 2026-05-15
+**版本**: 1.3.21
+
+---
+
+## 🐛 修复：GUI 滚动 + 版本号动态获取 + Platform 点击查看详情
+
+### 变更
+
+1. **滚动修复**: 添加 `#app` flex 容器 CSS，恢复高度约束链，页面内容溢出时正确滚动
+2. **版本号动态获取**: 去除 HTML 中硬编码的 `v1.3.16`，改为 `GET /api/version` 从 package.json 实时获取
+3. **Platform 点击查看详情**: Platform 卡片可点击，展示该平台已安装的 skills 列表，并可进一步查看 skill 详情
+4. 新增 `GET /api/platform-info?id=xxx` API 端点
+5. 新增 `GET /api/version` API 端点
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `gui/style.css` | 添加 `#app` flex 容器样式 |
+| `gui/index.html` | 版本号改为占位符；新增 platform-detail 视图 |
+| `gui/app.js` | 新增 `loadVersion()`、Platform 详情视图逻辑 |
+| `src/commands/ui.ts` | 新增 `/api/version` 和 `/api/platform-info` API 端点 |
+
+---
+
 # SkillMarket v1.3.20 更新日志
 
 **日期**: 2026-05-14
