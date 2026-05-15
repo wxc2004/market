@@ -1,0 +1,19 @@
+{
+  "id": "test-skill-7",
+  "displayName": "测试技能7",
+  "description": "Test Skill 7 - 用于测试 SkillMarket 分页功能",
+  "version": "1.0.0",
+  "author": "SkillMarket",
+  "platforms": [
+    "opencode",
+    "cursor",
+    "vscode",
+    "claude",
+    "codex",
+    "antigravity"
+  ],
+  "tags": [
+    "test",
+    "pagination"
+  ]
+}

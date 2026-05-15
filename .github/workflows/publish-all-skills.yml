@@ -1,0 +1,33 @@
+name: Publish All Test Skills
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish all skills
+        run: |
+          for dir in skills/*/; do
+            skill_name=$(basename "$dir")
+            # Skip README.md and non-directory entries
+            if [ "$skill_name" = "README.md" ]; then continue; fi
+            echo "📦 Publishing $skill_name..."
+            cd "$dir"
+            npm install 2>/dev/null || true
+            npm publish --access=public 2>&1 || echo "⚠️  Failed to publish $skill_name (may already exist)"
+            cd ../..
+          done
+          echo "✅ All skills processed"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,26 @@
+{
+  "name": "@wanxuchen/test-skill-4",
+  "version": "1.0.0",
+  "description": "Test Skill 4 - 用于测试 SkillMarket 分页功能",
+  "type": "module",
+  "main": "index.js",
+  "keywords": [
+    "skillmarket",
+    "test"
+  ],
+  "author": "SkillMarket",
+  "license": "MIT",
+  "skillmarket": {
+    "id": "test-skill-4",
+    "displayName": "测试技能4",
+    "description": "Test Skill 4 - 用于测试 SkillMarket 分页功能",
+    "platforms": [
+      "opencode",
+      "cursor",
+      "vscode",
+      "claude",
+      "codex",
+      "antigravity"
+    ]
+  }
+}
