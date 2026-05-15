@@ -832,6 +832,12 @@ function renderPagination(currentPage, totalPages) {
   let html = `
     <button ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">${t('pagination.prev')}</button>
     <span class="page-info">${t('pagination.pageInfo', { page: currentPage, totalPages: totalPages })}</span>
+    <span class="page-jump">
+      <label>Go to</label>
+      <input type="number" id="page-jump-input" min="1" max="${totalPages}" value="${currentPage}"
+        onkeydown="if(event.key==='Enter')jumpToPage()">
+      <button onclick="jumpToPage()">Go</button>
+    </span>
     <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">${t('pagination.next')}</button>
   `;
 
@@ -842,6 +848,17 @@ function changePage(page) {
   if (page < 1 || page > state.totalPages) return;
   state.currentPage = page;
   loadSkills();
+}
+
+function jumpToPage() {
+  const input = document.getElementById('page-jump-input');
+  if (!input) return;
+  const page = parseInt(input.value);
+  if (isNaN(page) || page < 1 || page > state.totalPages) {
+    input.value = state.currentPage;
+    return;
+  }
+  changePage(page);
 }
 
 // -----------------------------------------------------------------------------

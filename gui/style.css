@@ -366,6 +366,54 @@ body {
   font-size: 0.85rem;
 }
 
+.pagination .page-jump {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.pagination .page-jump input {
+  width: 50px;
+  padding: 5px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pagination .page-jump input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pagination .page-jump button {
+  padding: 5px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.pagination .page-jump button:hover {
+  background: var(--bg-hover);
+}
+
+/* Hide spinner for number input */
+.pagination .page-jump input::-webkit-outer-spin-button,
+.pagination .page-jump input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pagination .page-jump input[type=number] {
+  -moz-appearance: textfield;
+}
+
 /* -----------------------------------------------------------------------------
    Skill 详情视图
    ----------------------------------------------------------------------------- */

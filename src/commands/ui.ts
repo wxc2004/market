@@ -230,7 +230,11 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const filteredTotal = skills.length;
     const totalPages = Math.ceil(filteredTotal / limit) || 1;
 
-    jsonResponse(res, 200, { skills, page, totalPages, total: filteredTotal, fetchErrors });
+    // 按当前页截取
+    const start = (page - 1) * limit;
+    const pagedSkills = skills.slice(start, start + limit);
+
+    jsonResponse(res, 200, { skills: pagedSkills, page, totalPages, total: filteredTotal, fetchErrors });
   } catch (err) {
     jsonResponse(res, 500, {
       error: String(err),
