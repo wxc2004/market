@@ -54,6 +54,12 @@ import { publishSkill } from './commands/publish.js'; // 发布命令
 import { verifySkill } from './commands/verify.js'; // 验证命令
 import { startGuiServer } from './commands/ui.js'; // GUI 服务器
 import {
+  listConfig,
+  getConfigValue,
+  setConfigValue,
+  resetConfig,
+} from './commands/config.js'; // 配置命令
+import {
   adminList,
   adminInfo,
   adminSearch,
@@ -134,6 +140,10 @@ Commands:
                           --all          Update all skills
   sync                 Synchronize platform links
   platforms            Show available platforms
+  config               View all configuration
+      config get <key>  Get a config value
+      config set <key>  Set a config value
+      config reset [key] Reset config to defaults
 
 Examples:
   skm ls                     List all available skills (page 1)
@@ -153,6 +163,11 @@ Examples:
   skm uninstall --all --yes  Force uninstall all without confirmation
   skm uninstall brainstorming --dry-run  Preview uninstall
   skm platforms              Show available platforms
+  skm config                 View all configuration
+  skm config get npmRegistry  View specific config
+  skm config set npmRegistry https://registry.npmmirror.com  Set mirror registry
+  skm config reset npmScope  Reset config to default
+  skm config reset --all     Reset all config
        `);
       process.exit(0);
     }
@@ -530,6 +545,48 @@ program
       console.error('Verify failed:', err);
       process.exit(1);
     }
+  });
+
+// -----------------------------------------------------------------------------
+// Config 命令组 (skm config)
+// -----------------------------------------------------------------------------
+
+const config = program.command('config').description('View and manage configuration');
+
+config
+  .command('list')
+  .alias('ls')
+  .description('List all configuration values')
+  .action(async () => {
+    await listConfig();
+  });
+
+// Default: `skm config` without subcommand → list
+config
+  .action(async () => {
+    await listConfig();
+  });
+
+config
+  .command('get <key>')
+  .description('Get a specific configuration value')
+  .action(async (key: string) => {
+    await getConfigValue(key);
+  });
+
+config
+  .command('set <key> <value>')
+  .description('Set a configuration value (persisted to config file)')
+  .action(async (key: string, value: string) => {
+    await setConfigValue(key, value);
+  });
+
+config
+  .command('reset [key]')
+  .description('Reset configuration to default values')
+  .option('--all', 'Reset all configuration values')
+  .action(async (key: string | undefined, opts: { all?: boolean }) => {
+    await resetConfig(key, opts.all ?? false);
   });
 
 // -----------------------------------------------------------------------------
