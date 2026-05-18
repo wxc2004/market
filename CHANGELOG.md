@@ -1,3 +1,51 @@
+# SkillMarket v1.3.24 更新日志
+
+**日期**: 2026-05-18
+**版本**: 1.3.24
+
+---
+
+## ✨ 新功能：skm config 配置管理命令
+
+### 变更
+
+1. **新增 `skm config` 命令组**: 支持查看/设置/重置持久化配置（存储在 `~/.skillmarket/config.json`）
+2. **配置文件回退机制**: `src/config.ts` 新增配置文件读取逻辑，优先级：环境变量 > 配置文件 > 默认值
+3. **GUI Help 视图更新**: 新增 skm config 命令文档和环境变量配置说明
+
+### 命令用法
+
+```bash
+skm config                    # 查看所有配置项及来源（环境变量/配置文件/默认值）
+skm config get <key>          # 查看指定配置
+skm config set <key> <value>  # 设置配置值（持久化）
+skm config reset <key>        # 恢复默认值
+skm config reset --all        # 全部恢复默认
+```
+
+### 可配置项
+
+| 配置键 | 环境变量 | 默认值 | 说明 |
+|--------|---------|--------|------|
+| `npmScope` | `SKM_NPM_SCOPE` | `@itismyskillmarket` | 主要 npm scope |
+| `npmScopeFallback` | `SKM_NPM_SCOPE_FALLBACK` | `@wanxuchen` | 回退 scope |
+| `npmRegistry` | `SKM_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry URL |
+| `npmScopes` | `SKM_NPM_SCOPES` | 5 scopes | 搜索 scope 列表 |
+| `skmUrl` | `SKM_URL` | npmjs URL | 技能链接前缀 |
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/config.ts` | **新建**: 467 行，config 命令模块（list/get/set/reset + 配置文件读写） |
+| `src/config.ts` | 新增同步读取 `~/.skillmarket/config.json` 作为环境变量和默认值之间的回退层 |
+| `src/cli.ts` | 注册 config 命令组及子命令；更新帮助文本 |
+| `gui/app.js` | Help 视图新增 `skm config` 命令文档和环境变量配置说明 |
+| `gui/index.html` | (无变更) |
+| `gui/style.css` | (无变更) |
+
+---
+
 # SkillMarket v1.3.23 更新日志
 
 **日期**: 2026-05-15

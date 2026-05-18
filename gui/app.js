@@ -66,10 +66,21 @@ const translations = {
     // 搜索
     'search.placeholder': '🔍 Search skills...',
     
+    // 排序
+    'sort.nameAsc': 'Name A-Z',
+    'sort.nameDesc': 'Name Z-A',
+    'sort.recentlyUpdated': 'Recently Updated',
+    'sort.leastUpdated': 'Least Recently Updated',
+    
+    // 筛选
+    'filter.allPlatforms': 'All Platforms',
+    
     // 分页
     'pagination.prev': '← Prev',
     'pagination.next': 'Next →',
     'pagination.pageInfo': 'Page {page} of {totalPages}',
+    'pagination.goTo': 'Go to',
+    'pagination.go': 'Go',
     
     // 每页数量
     'pageSize.10': '10 per page',
@@ -1036,8 +1047,19 @@ skm publish &lt;skill-name&gt; --version 1.0.1</pre>
     </div>
 
     <div class="help-section">
+      <h3>⚙️ 配置管理</h3>
+      <p>使用 <code>skm config</code> 命令可查看和修改配置（持久化到 <code>~/.skillmarket/config.json</code>）：</p>
+      <pre>skm config                    # 查看所有配置
+skm config get &lt;key&gt;          # 查看指定配置
+skm config set &lt;key&gt; &lt;value&gt;  # 设置配置值
+skm config reset &lt;key&gt;        # 恢复默认值
+skm config reset --all         # 全部恢复默认</pre>
+      <p class="help-note">⚠ 环境变量优先级高于配置文件。如需环境变量生效，unset 后可重开终端。</p>
+    </div>
+
+    <div class="help-section">
       <h3>⚙️ 环境变量配置</h3>
-      <p>设置以下环境变量可覆盖默认配置：</p>
+      <p>设置以下环境变量可覆盖配置文件和默认值（最高优先级）：</p>
       <table class="help-table">
         <thead>
           <tr><th>变量</th><th>当前值</th><th>说明</th></tr>
@@ -1069,6 +1091,8 @@ skm publish &lt;skill-name&gt; --version 1.0.1</pre>
           <tr><td><code>skm platforms</code></td><td>查看可用平台</td></tr>
           <tr><td><code>skm gui</code></td><td>启动图形界面</td></tr>
           <tr><td><code>skm gui 18790</code></td><td>指定端口启动 GUI</td></tr>
+          <tr><td><code>skm config</code></td><td>查看所有配置项</td></tr>
+          <tr><td><code>skm config set npmRegistry https://...</code></td><td>设置 registry 镜像</td></tr>
         </tbody>
       </table>
     </div>

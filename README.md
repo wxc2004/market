@@ -79,6 +79,13 @@ skm publish <skill-name> --version 1.0.1
 # Verify a skill
 skm verify <skill-name>
 
+# Manage configuration
+skm config                 # View all configuration values
+skm config get npmRegistry # Get a specific config value
+skm config set npmRegistry https://registry.npmmirror.com  # Set a value (persistent)
+skm config reset npmScope  # Reset a config to default
+skm config reset --all     # Reset all config to defaults
+
 # Start GUI (web interface)
 skm gui
 skm gui 18790              # Custom port
@@ -165,9 +172,27 @@ The `skm gui` web interface includes an **Admin** view with:
 skm gui
 ```
 
-## Environment Variables
+## Configuration
 
-SkillMarket reads configuration from environment variables:
+SkillMarket supports three levels of configuration (priority: high → low):
+
+1. **Environment variables** — highest priority, override everything
+2. **Config file** (`~/.skillmarket/config.json`) — set via `skm config set`
+3. **Defaults** — sensible built-in values
+
+Use the `skm config` CLI commands to manage persistent configuration:
+
+```bash
+skm config                    # View all config with source indicators
+skm config set npmRegistry https://registry.npmmirror.com  # Set mirror registry
+skm config get npmRegistry    # View single config value
+skm config reset npmScope     # Reset to default
+skm config reset --all        # Reset all config
+```
+
+### Environment Variables
+
+Environment variables override both config file and defaults:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
