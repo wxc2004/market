@@ -92,6 +92,11 @@ const translations = {
     'status.unavailable': '❌ Not detected',
     'status.skillsInstalled': '{count} skills installed',
     
+    // Platform 详情
+    'platform.id': 'Platform ID',
+    'platform.installedSkills': 'Installed Skills ({count})',
+    'platform.noSkills': 'No skills installed on this platform.',
+    
     // 详情视图
     'detail.description': 'Description',
     'detail.details': 'Details',
@@ -248,10 +253,21 @@ const translations = {
     // 搜索
     'search.placeholder': '🔍 搜索技能...',
     
+    // 排序
+    'sort.nameAsc': '名称 A-Z',
+    'sort.nameDesc': '名称 Z-A',
+    'sort.recentlyUpdated': '最近更新',
+    'sort.leastUpdated': '最早更新',
+    
+    // 筛选
+    'filter.allPlatforms': '所有平台',
+    
     // 分页
     'pagination.prev': '← 上一页',
     'pagination.next': '下一页 →',
     'pagination.pageInfo': '第 {page} 页 / 共 {totalPages} 页',
+    'pagination.goTo': '跳转到',
+    'pagination.go': '跳转',
     
     // 每页数量
     'pageSize.10': '每页 10 条',
@@ -262,6 +278,11 @@ const translations = {
     'status.available': '✅ 可用',
     'status.unavailable': '❌ 未检测到',
     'status.skillsInstalled': '已安装 {count} 个技能',
+    
+    // Platform 详情
+    'platform.id': '平台 ID',
+    'platform.installedSkills': '已安装技能（{count} 个）',
+    'platform.noSkills': '该平台未安装任何技能',
     
     // 详情视图
     'detail.description': '描述',
@@ -469,6 +490,28 @@ function applyI18nToStaticElements() {
       <option value="20"${currentValue === '20' ? ' selected' : ''}>${t('pageSize.20')}</option>
       <option value="50"${currentValue === '50' ? ' selected' : ''}>${t('pageSize.50')}</option>
     `;
+  }
+  
+  // sort-select 排序选项
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) {
+    const currentSort = sortSelect.value || state.sortBy;
+    sortSelect.innerHTML = `
+      <option value="name"${currentSort === 'name' ? ' selected' : ''}>${t('sort.nameAsc')}</option>
+      <option value="-name"${currentSort === '-name' ? ' selected' : ''}>${t('sort.nameDesc')}</option>
+      <option value="-updated"${currentSort === '-updated' ? ' selected' : ''}>${t('sort.recentlyUpdated')}</option>
+      <option value="updated"${currentSort === 'updated' ? ' selected' : ''}>${t('sort.leastUpdated')}</option>
+    `;
+  }
+  
+  // platform-filter 默认选项（后续由 updatePlatformFilterOptions 补充完整列表）
+  const platformFilter = document.getElementById('platform-filter');
+  if (platformFilter && platformFilter.options.length <= 1) {
+    const currentFilter = platformFilter.value;
+    platformFilter.innerHTML = `
+      <option value="">${t('filter.allPlatforms')}</option>
+    `;
+    if (currentFilter) platformFilter.value = currentFilter;
   }
   
   // 按钮文本
@@ -817,13 +860,14 @@ function updatePlatformFilterOptions(skills) {
   const currentVal = select.value;
   const sortedPlatforms = [...allPlatforms].sort();
 
-  // 只有当平台列表有变化时才重新渲染
+  // 当平台列表或当前语言变化时才重新渲染
   const currentOptions = Array.from(select.options).slice(1).map(o => o.value).sort().join(',');
   const newOptions = sortedPlatforms.join(',');
-  if (currentOptions === newOptions) return;
+  const currentAllText = select.options[0]?.textContent || '';
+  if (currentOptions === newOptions && currentAllText === t('filter.allPlatforms')) return;
 
   select.innerHTML = `
-    <option value="">All Platforms</option>
+    <option value="">${t('filter.allPlatforms')}</option>
     ${sortedPlatforms.map(p => `<option value="${p}"${currentVal === p ? ' selected' : ''}>${p}</option>`).join('')}
   `;
   select.value = currentVal && allPlatforms.has(currentVal) ? currentVal : '';
@@ -844,10 +888,10 @@ function renderPagination(currentPage, totalPages) {
     <button ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">${t('pagination.prev')}</button>
     <span class="page-info">${t('pagination.pageInfo', { page: currentPage, totalPages: totalPages })}</span>
     <span class="page-jump">
-      <label>Go to</label>
+      <label>${t('pagination.goTo')}</label>
       <input type="number" id="page-jump-input" min="1" max="${totalPages}" value="${currentPage}"
         onkeydown="if(event.key==='Enter')jumpToPage()">
-      <button onclick="jumpToPage()">Go</button>
+      <button onclick="jumpToPage()">${t('pagination.go')}</button>
     </span>
     <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">${t('pagination.next')}</button>
   `;
@@ -910,7 +954,7 @@ function renderPlatforms(platforms, container) {
         </div>
       </div>
       <div>
-        ${platform.installedCount ? `<span>${t('status.skillsInstalled', { count: platform.installedCount })}</span>` : '<span style="color: var(--text-muted); font-size: 0.85rem;">0 installed</span>'}
+        ${platform.installedCount ? `<span>${t('status.skillsInstalled', { count: platform.installedCount })}</span>` : `<span style="color: var(--text-muted); font-size: 0.85rem;">${t('status.skillsInstalled', { count: 0 })}</span>`}
       </div>
     </div>
   `).join('');
@@ -956,13 +1000,13 @@ async function showPlatformDetail(platformId) {
           </div>
         </div>
         <div class="admin-skill-row" style="background: var(--bg-card); padding: 10px 16px; margin-bottom: 12px;">
-          <span style="color: var(--text-muted); font-size: 0.85rem;">Platform ID</span>
+          <span style="color: var(--text-muted); font-size: 0.85rem;">${t('platform.id')}</span>
           <span style="color: var(--text-secondary); font-size: 0.9rem; font-family: monospace;">${platform.id}</span>
         </div>
         <h3 style="color: var(--text-secondary); margin-bottom: 10px; font-size: 1rem;">
-          Installed Skills (${skills.length})
+          ${t('platform.installedSkills', { count: skills.length })}
         </h3>
-        ${skills.length === 0 ? '<div class="loading" style="padding: 20px;">No skills installed on this platform.</div>' : `
+        ${skills.length === 0 ? `<div class="loading" style="padding: 20px;">${t('platform.noSkills')}</div>` : `
           <div style="display: flex; flex-direction: column; gap: 6px;">
             ${skills.map((skill, i) => `
               <div class="admin-skill-row" style="cursor: pointer;" onclick="showSkillDetail('${skill.id}')">
@@ -1083,16 +1127,32 @@ skm config reset --all         # 全部恢复默认</pre>
         <tbody>
           <tr><td><code>skm ls</code></td><td>列出可用 skills</td></tr>
           <tr><td><code>skm ls --installed</code></td><td>列出已安装 skills</td></tr>
+          <tr><td><code>skm search &lt;keyword&gt;</code></td><td>搜索 skills</td></tr>
+          <tr><td><code>skm info &lt;skill&gt;</code></td><td>查看 skill 详情</td></tr>
           <tr><td><code>skm install &lt;skill&gt;</code></td><td>安装 skill 到所有平台</td></tr>
+          <tr><td><code>skm install &lt;skill&gt;@&lt;ver&gt;</code></td><td>安装指定版本</td></tr>
           <tr><td><code>skm install &lt;skill&gt; --platform opencode</code></td><td>安装到指定平台</td></tr>
+          <tr><td><code>skm install &lt;skill&gt; --force</code></td><td>强制覆盖安装</td></tr>
+          <tr><td><code>skm install owner/repo</code></td><td>从 GitHub 安装</td></tr>
           <tr><td><code>skm uninstall &lt;skill&gt;</code></td><td>卸载 skill</td></tr>
-          <tr><td><code>skm update &lt;skill&gt;</code></td><td>更新 skill</td></tr>
+          <tr><td><code>skm uninstall --all</code></td><td>卸载所有 skills</td></tr>
+          <tr><td><code>skm update [skill]</code></td><td>更新 skill（不指定则更新全部）</td></tr>
           <tr><td><code>skm update --all</code></td><td>更新所有 skills</td></tr>
+          <tr><td><code>skm publish &lt;skill&gt;</code></td><td>发布 skill 到 npm</td></tr>
+          <tr><td><code>skm verify &lt;skill&gt;</code></td><td>验证 skill 完整性</td></tr>
           <tr><td><code>skm platforms</code></td><td>查看可用平台</td></tr>
+          <tr><td><code>skm sync</code></td><td>同步平台链接</td></tr>
+          <tr><td><code>skm sync &lt;skill&gt;</code></td><td>同步指定 skill 到最新</td></tr>
           <tr><td><code>skm gui</code></td><td>启动图形界面</td></tr>
           <tr><td><code>skm gui 18790</code></td><td>指定端口启动 GUI</td></tr>
           <tr><td><code>skm config</code></td><td>查看所有配置项</td></tr>
-          <tr><td><code>skm config set npmRegistry https://...</code></td><td>设置 registry 镜像</td></tr>
+          <tr><td><code>skm config get &lt;key&gt;</code></td><td>查看指定配置</td></tr>
+          <tr><td><code>skm config set &lt;key&gt; &lt;value&gt;</code></td><td>设置配置值</td></tr>
+          <tr><td><code>skm config reset [key]</code></td><td>恢复配置为默认值</td></tr>
+          <tr><td><code>skm admin ls</code></td><td>列出所有已发布 skills</td></tr>
+          <tr><td><code>skm admin info &lt;skill&gt;</code></td><td>查看已发布 skill 详情</td></tr>
+          <tr><td><code>skm admin deprecate &lt;skill&gt;</code></td><td>废弃 skill</td></tr>
+          <tr><td><code>skm admin unpublish &lt;skill&gt;</code></td><td>取消发布 skill</td></tr>
         </tbody>
       </table>
     </div>

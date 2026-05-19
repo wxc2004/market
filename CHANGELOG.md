@@ -1,3 +1,30 @@
+# SkillMarket v1.3.25 更新日志
+
+**日期**: 2026-05-19
+**版本**: 1.3.25
+
+---
+
+## 🐛 修复：GUI i18n 硬编码 + Help/CLI 帮助文本补全
+
+### 变更
+
+1. **i18n 国际化修复**: 补全中英文翻译键（sort/filter/pagination/platform 相关共 13 个键），6 处硬编码文本改为 `t()` 调用，现在切换中文时所有界面文字正确显示中文
+2. **排序下拉走 i18n**: 排序选项从静态 HTML 改为动态渲染，跟随语言切换
+3. **platform-filter 语言同步**: 切换语言时"All Platforms"/"所有平台"即时更新
+4. **GUI Help 视图补全**: 常用命令表新增 `search`、`info`、`publish`、`verify`、`sync`、`admin` 等 14 条缺失命令
+5. **CLI `--help` 补全**: 新增 `search`/`publish`/`verify`/`gui`/`sync [skill]`/`admin` 子命令组，扩充示例
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `gui/app.js` | 新增 i18n 键、修复 6 处硬编码、排序下拉动态渲染、platform-filter 语言同步、Help 命令表补全 |
+| `gui/index.html` | 排序/筛选下拉移除硬编码 option，由 JS 动态渲染 |
+| `src/cli.ts` | 补全 `--help` 命令列表和示例 |
+
+---
+
 # SkillMarket v1.3.24 更新日志
 
 **日期**: 2026-05-18

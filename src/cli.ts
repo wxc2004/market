@@ -120,54 +120,81 @@ SkillMarket CLI
 Usage: skm <command> [options]
 
 Commands:
-  ls [options]         List available skills
-                          --installed    Show only installed skills
-                          --updates      Check for updates
-                          --page <n>     Page number (default: 1)
-                          --limit <n>    Items per page (default: 20)
-                          -s, --search   Search by keyword
-  info <skill-id>      Display skill information
-  install <skill>      Install a skill
-                          @version      Install specific version
-                          --platform    Target platforms (opencode,claude,vscode)
-                          --force       Overwrite if already installed
-  uninstall <skill>    Remove an installed skill
-                          --platform    Target platforms
-                          --all          Uninstall ALL installed skills
-                          --dry-run     Preview without deleting
-                          -y, --yes     Skip confirmation
-  update [options]     Update skills
-                          --all          Update all skills
-  sync                 Synchronize platform links
-  platforms            Show available platforms
-  config               View all configuration
-      config get <key>  Get a config value
-      config set <key>  Set a config value
-      config reset [key] Reset config to defaults
+  ls [options]            List available skills
+                            --installed    Show only installed skills
+                            --updates      Check for updates
+                            --page <n>     Page number (default: 1)
+                            --limit <n>    Items per page (default: 20)
+                            -s, --search   Search by keyword
+  search <keyword>        Search skills from npm registry
+  info <skill>            Display skill information
+  install <skill>         Install a skill from npm or GitHub
+                            @<version>    Install specific version
+                            --platform    Target platforms (opencode,claude,...)
+                            --force       Overwrite if already installed
+                            -b, --branch  GitHub branch to install from
+                            -c, --commit  GitHub commit to install from
+  uninstall <skill>       Remove an installed skill
+                            --platform    Target platforms
+                            --all         Uninstall ALL installed skills
+                            --dry-run     Preview without deleting
+                            -y, --yes     Skip confirmation
+  update [skill]          Update installed skills (all if no skill specified)
+                            --all         Update all skills
+  publish <skill>         Publish a skill to npm
+                            -v, --version Specify version
+  verify <skill>          Verify skill integrity and format
+  sync [skill]            Synchronize platform links (or sync a skill to latest)
+  platforms               Show available platforms
+  gui [port]              Start SkillMarket GUI web interface
+  config                  View and manage configuration
+    config get <key>        Get a config value
+    config set <key> <val>  Set a config value
+    config reset [key]      Reset config to defaults
+  admin                   Admin: manage published skills
+    admin ls                List all published skills
+    admin info <skill>      Show detailed info for a published skill
+    admin search <keyword>  Search published skills
+    admin stats             Publishing statistics
+    admin verify <skill>    Verify a published skill
+    admin deprecate <skill> Deprecate a skill (--version, --message)
+    admin unpublish <skill> Unpublish a skill (--version, --force)
+    admin tag set/tag rm/tag ls  Manage dist-tags
+    admin owner add/rm      Manage package maintainers
+    admin access <skill>    Set package access (public|restricted)
 
 Examples:
-  skm ls                     List all available skills (page 1)
-  skm ls --page 2            Go to page 2
-  skm ls --limit 10          Show 10 items per page
-  skm ls --search brain      Search skills by keyword
-  skm ls -s brain           Search with short form
-  skm ls --installed         Show installed skills only
-  skm ls --installed --search test  Search installed skills
-  skm ls --installed --page 2
-  skm info brainstorming     View skill details
-  skm install brainstorming  Install to all platforms
-  skm install brainstorming --platform opencode  Install to OpenCode only
-  skm install brainstorming --platform claude,vscode  Install to multiple
-  skm uninstall brainstorming
-  skm uninstall --all        Uninstall all skills (with confirmation)
-  skm uninstall --all --yes  Force uninstall all without confirmation
-  skm uninstall brainstorming --dry-run  Preview uninstall
-  skm platforms              Show available platforms
-  skm config                 View all configuration
-  skm config get npmRegistry  View specific config
+  skm ls                           List available skills
+  skm ls --page 2 --limit 10       Paginated listing
+  skm ls --installed               Show installed skills
+  skm ls -s brain                  Search skills by keyword
+  skm search test                  Search from registry
+  skm info brainstorming           View skill details
+  skm install brainstorming        Install to all detected platforms
+  skm install brainstorming@1.0.0  Install specific version
+  skm install owner/repo           Install from GitHub
+  skm install brainstorming --platform opencode  Install to specific platform
+  skm uninstall brainstorming      Uninstall skill
+  skm uninstall --all              Uninstall all skills
+  skm uninstall --all --yes        Force uninstall all without confirmation
+  skm uninstall --dry-run          Preview uninstall
+  skm update brainstorming         Update specific skill
+  skm update                       Update all skills
+  skm publish my-skill             Publish a skill
+  skm publish my-skill --version 1.0.1  Publish specific version
+  skm verify my-skill              Verify skill integrity
+  skm sync                         Sync platform links
+  skm sync brainstorming           Sync skill to latest version
+  skm platforms                    Show available platforms
+  skm gui                          Start GUI on default port 18770
+  skm gui 18790                    Start GUI on custom port
+  skm config                       View all configuration
+  skm config get npmRegistry       View specific config
   skm config set npmRegistry https://registry.npmmirror.com  Set mirror registry
-  skm config reset npmScope  Reset config to default
-  skm config reset --all     Reset all config
+  skm config reset npmScope        Reset config to default
+  skm config reset --all           Reset all config
+  skm admin ls                     List all published skills
+  skm admin deprecate my-skill --message "Use v2"  Deprecate a skill
        `);
       process.exit(0);
     }
