@@ -100,6 +100,33 @@ interface SearchPackage {
 }
 
 // -----------------------------------------------------------------------------
+// 内存缓存（减少 npm registry 请求）
+// -----------------------------------------------------------------------------
+
+/** 缓存条目 */
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+/** 简单内存缓存，默认 TTL 30 秒 */
+const npmCache = new Map<string, CacheEntry<any>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = npmCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    npmCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCache(key: string, data: unknown, ttlMs = 30_000): void {
+  npmCache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+// -----------------------------------------------------------------------------
 // 获取包信息
 // -----------------------------------------------------------------------------
 
@@ -110,6 +137,8 @@ interface SearchPackage {
  * 包括所有版本、描述、依赖等。
  * 
  * API 端点: GET https://registry.npmjs.org/{package}
+ * 
+ * 结果会被缓存 30 秒以减少对 npm registry 的压力。
  * 
  * @param {string} packageName - 包名称（支持 @scope/name 格式）
  * @returns {Promise<NpmRegistryResponse | null>} 包信息，失败返回 null
@@ -125,10 +154,19 @@ interface SearchPackage {
  * const scoped = await fetchNpmPackage('@skillmarket/brainstorming');
  */
 export async function fetchNpmPackage(packageName: string, retries = 1): Promise<NpmRegistryResponse | null> {
+  // 先查缓存
+  const cacheKey = `pkg:${packageName}`;
+  const cached = getCached<NpmRegistryResponse>(cacheKey);
+  if (cached) return cached;
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const result = await fetchNpmPackageOnce(packageName);
-      if (result !== null) return result;
+      if (result !== null) {
+        // 写入缓存
+        setCache(cacheKey, result);
+        return result;
+      }
     } catch {
       // 最后一次尝试失败才返回 null
       if (attempt === retries) return null;
