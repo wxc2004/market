@@ -95,8 +95,9 @@ export async function verifySkill(skillName: string): Promise<void> {
     if (await fs.pathExists(registryPath)) {
       try {
         const registry = await fs.readJson(registryPath);
-        if (registry[skillName]) {
-          console.log(`✅ Skill registered in registry (v${registry[skillName].version})`);
+        const registered = registry.skills?.[skillName];
+        if (registered) {
+          console.log(`✅ Skill registered in registry (v${registered.version})`);
           passed++;
         } else {
           console.log(`⚠️  Skill not found in registry`);
