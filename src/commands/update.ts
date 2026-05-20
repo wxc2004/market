@@ -21,8 +21,7 @@
 
 import { installSkill } from './install.js';    // 安装函数（复用）
 import { getInstalledSkills } from './registry.js';  // 注册表操作
-import { fetchNpmPackage } from './npm.js';    // npm 查询
-import { NPM_SCOPE, NPM_SCOPE_FALLBACK } from '../config.js';
+import { fetchSkillPackage } from './npm.js';    // npm 查询（自动尝试所有 scope）
 
 // -----------------------------------------------------------------------------
 // 更新函数
@@ -47,15 +46,21 @@ export async function updateSkill(skillId?: string): Promise<void> {
   // ==========================================================================
   
   if (skillId) {
-    // 查询 npm 获取最新版本
-    const pkgInfo = await fetchNpmPackage(`${NPM_SCOPE}/${skillId}`);
+    // 查询 npm 获取最新版本（自动尝试所有配置的 scope）
+    const pkgInfo = await fetchSkillPackage(skillId);
 
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;
+      if (!latestVersion) {
+        console.log(`No latest version found for ${skillId}.`);
+        return;
+      }
       console.log(`Updating ${skillId} to ${latestVersion}...`);
 
       // 复用 installSkill 安装最新版本
       await installSkill(skillId, latestVersion);
+    } else {
+      console.log(`Skill "${skillId}" not found in any configured scope.`);
     }
 
     return;
@@ -81,8 +86,8 @@ export async function updateSkill(skillId?: string): Promise<void> {
   
   // 遍历每个已安装的 skill
   for (const skill of installed) {
-    // 查询 npm 获取最新版本信息
-    const pkgInfo = await fetchNpmPackage(`${NPM_SCOPE_FALLBACK}/${skill.id}`);
+    // 查询 npm 获取最新版本信息（自动尝试所有配置的 scope）
+    const pkgInfo = await fetchSkillPackage(skill.id);
     
     if (pkgInfo) {
       const latestVersion = pkgInfo['dist-tags']?.latest;
@@ -104,6 +109,8 @@ export async function updateSkill(skillId?: string): Promise<void> {
         // 已是最新版本
         console.log(`  ${skill.id}: ${skill.version} (up to date)`);
       }
+    } else {
+      console.log(`  ${skill.id}: ${skill.version} (failed to fetch remote)`);
     }
   }
   
