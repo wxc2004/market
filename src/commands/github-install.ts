@@ -449,7 +449,7 @@ export async function installFromGitHub(
   }
   
   // ==========================================================================
-  // 步骤 6: 创建 latest 软链接
+  // 步骤 5: 创建 latest 软链接
   // ==========================================================================
   
   const skillDir = path.join(skillsDir, skillId);
@@ -506,16 +506,7 @@ export async function installFromGitHub(
   console.log(`\n📊 Summary: ${installed} installed, ${skipped} skipped, ${failed} failed`);
   
   // ==========================================================================
-  
-  // 这里复用 install.ts 中的平台安装逻辑
-  // 由于跨模块依赖，我将简化实现
-  console.log(`\nInstalling to platforms: ${targetPlatforms.join(', ')}`);
-  console.log('  (Platform installation logic needs to be completed)');
-  
-  // TODO: 调用平台适配器的 install 方法
-  
-  // ==========================================================================
-  // 步骤 8: 更新注册表
+  // 步骤 7: 更新注册表
   // ==========================================================================
   
   const registry = await loadRegistry();
