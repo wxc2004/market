@@ -5,27 +5,19 @@
  * Hermes also supports project-level skills/ directory
  * Hermes uses AgentSkills-compatible SKILL.md format with metadata.hermes
  */
-import { PlatformAdapter } from './base.js';
-import { readdirSync, existsSync, cpSync, rmSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { ensureDirSync } from 'fs-extra';
+import { BaseAdapter } from './base.js';
+import path from 'path';
+import os from 'os';
+import fs from 'fs-extra';
 
-export class HermesAdapter implements PlatformAdapter {
+export class HermesAdapter extends BaseAdapter {
   readonly id = 'hermes';
   readonly name = 'Hermes Agent';
-  readonly skillDir = join(homedir(), '.hermes', 'skills');
+  readonly skillDir = path.join(os.homedir(), '.hermes', 'skills');
 
   async isAvailable(): Promise<boolean> {
     try {
-      // Check global hermes directory
-      if (existsSync(join(homedir(), '.hermes'))) {
-        return true;
-      }
-      
-      // Could also check for project-level skills/ directory
-      // but for SkillMarket, we focus on global installation
-      return false;
+      return await fs.pathExists(path.join(os.homedir(), '.hermes'));
     } catch {
       return false;
     }
@@ -33,43 +25,41 @@ export class HermesAdapter implements PlatformAdapter {
 
   async isInstalled(skillId: string): Promise<boolean> {
     try {
-      const skillPath = join(this.skillDir, skillId);
-      return existsSync(skillPath);
+      return await fs.pathExists(path.join(this.skillDir, skillId));
     } catch {
       return false;
     }
   }
 
   async install(skillId: string, sourceDir: string): Promise<void> {
-    ensureDirSync(this.skillDir);
-    const targetDir = join(this.skillDir, skillId);
-    
+    await fs.ensureDir(this.skillDir);
+    const targetDir = path.join(this.skillDir, skillId);
+
     // Remove existing skill directory if present
-    if (existsSync(targetDir)) {
-      rmSync(targetDir, { recursive: true, force: true });
+    if (await fs.pathExists(targetDir)) {
+      await fs.remove(targetDir);
     }
-    
+
     // Copy entire skill directory (SKILL.md + supporting files)
-    cpSync(sourceDir, targetDir, { recursive: true });
+    await fs.copy(sourceDir, targetDir, { recursive: true });
   }
 
   async uninstall(skillId: string): Promise<void> {
-    const targetDir = join(this.skillDir, skillId);
-    if (existsSync(targetDir)) {
-      rmSync(targetDir, { recursive: true, force: true });
+    const targetDir = path.join(this.skillDir, skillId);
+    if (await fs.pathExists(targetDir)) {
+      await fs.remove(targetDir);
     }
   }
 
   async listInstalled(): Promise<string[]> {
     try {
-      if (!existsSync(this.skillDir)) {
+      if (!(await fs.pathExists(this.skillDir))) {
         return [];
       }
-      return readdirSync(this.skillDir)
-        .filter(name => {
-          const fullPath = join(this.skillDir, name);
-          return existsSync(fullPath) && name !== '.';
-        });
+      const entries = await fs.readdir(this.skillDir, { withFileTypes: true });
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name);
     } catch {
       return [];
     }

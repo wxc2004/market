@@ -4,20 +4,19 @@
  * Installs skills to ~/.openclaw/skills/
  * OpenClaw uses AgentSkills-compatible SKILL.md format
  */
-import { PlatformAdapter } from './base.js';
-import { readdirSync, existsSync, cpSync, rmSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { ensureDirSync } from 'fs-extra';
+import { BaseAdapter } from './base.js';
+import path from 'path';
+import os from 'os';
+import fs from 'fs-extra';
 
-export class OpenClawAdapter implements PlatformAdapter {
+export class OpenClawAdapter extends BaseAdapter {
   readonly id = 'openclaw';
   readonly name = 'OpenClaw';
-  readonly skillDir = join(homedir(), '.openclaw', 'skills');
+  readonly skillDir = path.join(os.homedir(), '.openclaw', 'skills');
 
   async isAvailable(): Promise<boolean> {
     try {
-      return existsSync(join(homedir(), '.openclaw'));
+      return await fs.pathExists(path.join(os.homedir(), '.openclaw'));
     } catch {
       return false;
     }
@@ -25,43 +24,41 @@ export class OpenClawAdapter implements PlatformAdapter {
 
   async isInstalled(skillId: string): Promise<boolean> {
     try {
-      const skillPath = join(this.skillDir, skillId);
-      return existsSync(skillPath);
+      return await fs.pathExists(path.join(this.skillDir, skillId));
     } catch {
       return false;
     }
   }
 
   async install(skillId: string, sourceDir: string): Promise<void> {
-    ensureDirSync(this.skillDir);
-    const targetDir = join(this.skillDir, skillId);
-    
+    await fs.ensureDir(this.skillDir);
+    const targetDir = path.join(this.skillDir, skillId);
+
     // Remove existing skill directory if present
-    if (existsSync(targetDir)) {
-      rmSync(targetDir, { recursive: true, force: true });
+    if (await fs.pathExists(targetDir)) {
+      await fs.remove(targetDir);
     }
-    
+
     // Copy entire skill directory (SKILL.md + supporting files)
-    cpSync(sourceDir, targetDir, { recursive: true });
+    await fs.copy(sourceDir, targetDir, { recursive: true });
   }
 
   async uninstall(skillId: string): Promise<void> {
-    const targetDir = join(this.skillDir, skillId);
-    if (existsSync(targetDir)) {
-      rmSync(targetDir, { recursive: true, force: true });
+    const targetDir = path.join(this.skillDir, skillId);
+    if (await fs.pathExists(targetDir)) {
+      await fs.remove(targetDir);
     }
   }
 
   async listInstalled(): Promise<string[]> {
     try {
-      if (!existsSync(this.skillDir)) {
+      if (!(await fs.pathExists(this.skillDir))) {
         return [];
       }
-      return readdirSync(this.skillDir)
-        .filter(name => {
-          const fullPath = join(this.skillDir, name);
-          return existsSync(fullPath) && name !== '.';
-        });
+      const entries = await fs.readdir(this.skillDir, { withFileTypes: true });
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name);
     } catch {
       return [];
     }
