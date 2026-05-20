@@ -1,3 +1,39 @@
+# SkillMarket v1.3.26 更新日志
+
+**日期**: 2026-05-20
+**版本**: 1.3.26
+
+---
+
+## 🐛 修复：Bug 修复 + 代码质量改进
+
+### 变更
+
+1. **verify 命令 registry 访问路径修复**: `registry[skillName]` → `registry.skills?.[skillName]`，verify 命令现在能正确从注册表找到已安装技能
+2. **update 命令多 scope 查找修复**: `fetchNpmPackage` 替换为 `fetchSkillPackage`，更新时自动遍历所有配置的 npm scope，不再只查单个 scope
+3. **github-install 死代码清理**: 移除步骤重复的平台安装注释和 TODO 占位符，修正步骤编号
+
+### 🔧 重构
+
+4. **hermes/openclaw adapter 统一**: 两者改为 `extends BaseAdapter`，消除同步 fs API，统一为异步 `fs-extra`，代码体积分别缩减 30%/26%
+
+### ⚡ 性能
+
+5. **npm 查询加入内存缓存**: `fetchNpmPackage` 加入 30 秒 TTL 内存缓存，减少对 npm registry 的重复 HTTP 请求
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/verify.ts` | 修复 `registry.skills` 访问路径 |
+| `src/commands/update.ts` | 改用 `fetchSkillPackage` 遍历所有 scope |
+| `src/commands/github-install.ts` | 移除死代码段，修正步骤编号 |
+| `src/adapters/hermes.ts` | 重构：`extends BaseAdapter` + 异步 fs-extra，67 行→54 行 |
+| `src/adapters/openclaw.ts` | 重构：`extends BaseAdapter` + 异步 fs-extra，69 行→51 行 |
+| `src/commands/npm.ts` | 新增内存缓存层（30 秒 TTL） |
+
+---
+
 # SkillMarket v1.3.25 更新日志
 
 **日期**: 2026-05-19
