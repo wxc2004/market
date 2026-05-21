@@ -27,6 +27,7 @@ const translations = {
     'nav.skills': 'Skills',
     'nav.installed': 'Installed',
     'nav.platforms': 'Platforms',
+    'nav.upload': 'Upload',
     'nav.admin': 'Admin',
     'nav.help': 'Help',
     'nav.back': 'Back',
@@ -205,6 +206,42 @@ const translations = {
     'lang.en': 'EN',
     'lang.zh': '中',
     
+    // Upload 视图
+    'upload.title': 'Upload Skill',
+    'upload.dropzoneText': 'Drop a skill .zip file here, or click to select',
+    'upload.dropzoneHint': 'The zip should contain SKILL.md and optionally package.json',
+    'upload.chooseFile': 'Choose File',
+    'upload.skillNameLabel': 'Skill Name',
+    'upload.skillNamePlaceholder': 'Auto-detected from zip, or override here',
+    'upload.uploadParse': '📤 Upload & Parse',
+    'upload.processing': 'Processing...',
+    'upload.parsing': 'Parsing skill archive...',
+    'upload.previewTitle': 'Skill Preview',
+    'upload.id': 'ID',
+    'upload.version': 'Version',
+    'upload.description': 'Description',
+    'upload.platforms': 'Platforms',
+    'upload.fileCount': 'Files',
+    'upload.hasPackageJson': 'package.json',
+    'upload.hasSkillMd': 'SKILL.md',
+    'upload.yes': 'Yes',
+    'upload.no': 'No',
+    'upload.actionPublish': '📦 Publish to npm',
+    'upload.actionInstall': '💻 Install Locally',
+    'upload.actionBoth': '✅ Both',
+    'upload.actionDiscard': '🗑 Discard',
+    'upload.publishing': 'Publishing {skillName}...',
+    'upload.installing': 'Installing {skillName}...',
+    'upload.bothStarted': 'Publishing & installing {skillName}...',
+    'upload.publishSuccess': '{skillName} published to npm successfully!',
+    'upload.installSuccess': '{skillName} installed locally!',
+    'upload.bothSuccess': '{skillName} published & installed!',
+    'upload.discarded': 'Upload discarded',
+    'upload.errorInvalidZip': 'Invalid or empty zip file',
+    'upload.errorNoFile': 'Please select a zip file first',
+    'upload.uploadError': 'Upload failed: {error}',
+    'upload.actionError': 'Action failed: {error}',
+
     // 通用错误
     'error.generic': 'Error',
   },
@@ -214,6 +251,7 @@ const translations = {
     'nav.skills': '技能',
     'nav.installed': '已安装',
     'nav.platforms': '平台',
+    'nav.upload': '上传',
     'nav.admin': '管理',
     'nav.help': '帮助',
     'nav.back': '返回',
@@ -392,6 +430,42 @@ const translations = {
     'lang.en': 'EN',
     'lang.zh': '中',
     
+    // Upload 视图
+    'upload.title': '上传 Skill',
+    'upload.dropzoneText': '将 skill 的 .zip 文件拖放到此处，或点击选择',
+    'upload.dropzoneHint': 'zip 应包含 SKILL.md 和可选的 package.json',
+    'upload.chooseFile': '选择文件',
+    'upload.skillNameLabel': 'Skill 名称',
+    'upload.skillNamePlaceholder': '自动从 zip 中检测，也可手动覆盖',
+    'upload.uploadParse': '📤 上传并解析',
+    'upload.processing': '处理中...',
+    'upload.parsing': '正在解析 skill 压缩包...',
+    'upload.previewTitle': 'Skill 预览',
+    'upload.id': 'ID',
+    'upload.version': '版本',
+    'upload.description': '描述',
+    'upload.platforms': '支持平台',
+    'upload.fileCount': '文件数',
+    'upload.hasPackageJson': 'package.json',
+    'upload.hasSkillMd': 'SKILL.md',
+    'upload.yes': '是',
+    'upload.no': '否',
+    'upload.actionPublish': '📦 发布到 npm',
+    'upload.actionInstall': '💻 安装到本地',
+    'upload.actionBoth': '✅ 两者都做',
+    'upload.actionDiscard': '🗑 丢弃',
+    'upload.publishing': '正在发布 {skillName}...',
+    'upload.installing': '正在安装 {skillName}...',
+    'upload.bothStarted': '正在发布并安装 {skillName}...',
+    'upload.publishSuccess': '{skillName} 已成功发布到 npm！',
+    'upload.installSuccess': '{skillName} 已安装到本地！',
+    'upload.bothSuccess': '{skillName} 已发布并安装！',
+    'upload.discarded': '上传已丢弃',
+    'upload.errorInvalidZip': '无效或空的 zip 文件',
+    'upload.errorNoFile': '请先选择一个 zip 文件',
+    'upload.uploadError': '上传失败：{error}',
+    'upload.actionError': '操作失败：{error}',
+
     // 通用错误
     'error.generic': '错误',
   }
@@ -454,12 +528,14 @@ function applyI18nToStaticElements() {
   const navSkills = document.querySelector('.nav-btn[data-view="skills"]');
   const navInstalled = document.querySelector('.nav-btn[data-view="installed"]');
   const navPlatforms = document.querySelector('.nav-btn[data-view="platforms"]');
+  const navUpload = document.querySelector('.nav-btn[data-view="upload"]');
   const navAdmin = document.querySelector('.nav-btn[data-view="admin"]');
   const navHelp = document.querySelector('.nav-btn[data-view="help"]');
   
   if (navSkills) navSkills.innerHTML = `📋 ${t('nav.skills')}`;
   if (navInstalled) navInstalled.innerHTML = `✅ ${t('nav.installed')}`;
   if (navPlatforms) navPlatforms.innerHTML = `💻 ${t('nav.platforms')}`;
+  if (navUpload) navUpload.innerHTML = `📤 ${t('nav.upload')}`;
   if (navAdmin) navAdmin.innerHTML = `⚙️ ${t('nav.admin')}`;
   if (navHelp) navHelp.innerHTML = `📖 ${t('nav.help')}`;
   
@@ -470,6 +546,7 @@ function applyI18nToStaticElements() {
     { selector: '#view-platforms .view-header h2', key: 'title.platforms' },
     { selector: '#view-help .view-header h2', key: 'title.help' },
     { selector: '#view-admin .view-header h2', key: 'title.admin' },
+    { selector: '#view-upload .view-header h2', key: 'upload.title' },
   ];
   
   titles.forEach(({ selector, key }) => {
@@ -564,6 +641,9 @@ function reRenderCurrentView() {
     case 'help':
       loadHelp();
       break;
+    case 'upload':
+      // Upload 视图不需要重新加载
+      break;
     case 'admin':
       loadAdminDashboard();
       break;
@@ -581,6 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeNavigation();
   initializeControls();
   initializeCollapsibleSections();
+  initializeUploadControls();
   loadVersion();
   loadSkills();
 });
@@ -649,6 +730,9 @@ function switchView(view) {
         break;
       case 'help':
         loadHelp();
+        break;
+      case 'upload':
+        resetUploadView();
         break;
       case 'admin':
         loadAdminDashboard();
@@ -1804,5 +1888,260 @@ async function execAdminAccess(skillId) {
     }
   } catch (err) {
     showToast(`${t('error.generic')}: ${err.message}`, 'error');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Upload 视图
+// -----------------------------------------------------------------------------
+
+/** Upload 状态 */
+const uploadState = {
+  skillName: '',
+  file: null,
+  data: null, // Parsed result from backend
+};
+
+/** 初始化 Upload 控件 */
+function initializeUploadControls() {
+  const dropzone = document.getElementById('upload-dropzone');
+  const fileInput = document.getElementById('upload-file-input');
+  const selectBtn = document.getElementById('upload-select-btn');
+  const submitBtn = document.getElementById('upload-submit-btn');
+  const skillNameInput = document.getElementById('upload-skill-name');
+
+  if (!dropzone) return;
+
+  // 文件选择
+  selectBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      uploadState.file = e.target.files[0];
+      submitBtn.disabled = false;
+    }
+  });
+
+  // 拖拽上传
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('drag-over');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) {
+      uploadState.file = e.dataTransfer.files[0];
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Upload & Parse
+  submitBtn.addEventListener('click', () => {
+    if (!uploadState.file) {
+      showToast(t('upload.errorNoFile'), 'error');
+      return;
+    }
+    // Use skill name override if provided
+    const override = skillNameInput.value.trim();
+    handleUpload(uploadState.file, override || undefined);
+  });
+
+  // Action buttons
+  document.getElementById('upload-action-publish').addEventListener('click', () => {
+    executeUploadAction('publish');
+  });
+  document.getElementById('upload-action-install').addEventListener('click', () => {
+    executeUploadAction('install');
+  });
+  document.getElementById('upload-action-both').addEventListener('click', () => {
+    executeUploadAction('both');
+  });
+  document.getElementById('upload-action-discard').addEventListener('click', () => {
+    resetUploadView();
+    showToast(t('upload.discarded'), 'info');
+  });
+}
+
+/** 重置 Upload 视图到 Phase 1 */
+function resetUploadView() {
+  uploadState.file = null;
+  uploadState.data = null;
+  uploadState.skillName = '';
+  document.getElementById('upload-phase1').classList.remove('hidden');
+  document.getElementById('upload-phase2').classList.add('hidden');
+  document.getElementById('upload-submit-btn').disabled = true;
+  document.getElementById('upload-progress').classList.add('hidden');
+  document.getElementById('upload-file-input').value = '';
+  document.getElementById('upload-skill-name').value = '';
+}
+
+/** 上传 zip 到后端 */
+async function handleUpload(file, skillNameOverride) {
+  const submitBtn = document.getElementById('upload-submit-btn');
+  const progress = document.getElementById('upload-progress');
+  const progressFill = document.getElementById('upload-progress-fill');
+  const progressText = document.getElementById('upload-progress-text');
+
+  submitBtn.disabled = true;
+  progress.classList.remove('hidden');
+  progressFill.style.width = '30%';
+  progressText.textContent = t('upload.processing');
+
+  try {
+    // Read file as base64
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve, reject) => {
+      reader.onload = () => {
+        // Remove data URL prefix
+        const result = reader.result;
+        const commaIndex = result.indexOf(',');
+        resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    progressFill.style.width = '60%';
+    progressText.textContent = t('upload.parsing');
+
+    // Send to backend
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileData: base64,
+        fileName: file.name,
+        skillNameOverride: skillNameOverride || undefined,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.error) {
+      showToast(t('upload.uploadError', { error: result.error }), 'error');
+      resetUploadView();
+      return;
+    }
+
+    progressFill.style.width = '100%';
+    progressText.textContent = '✅ Done';
+
+    uploadState.data = result;
+    uploadState.skillName = skillNameOverride || result.skillName;
+
+    // Switch to preview phase
+    setTimeout(() => {
+      document.getElementById('upload-phase1').classList.add('hidden');
+      document.getElementById('upload-phase2').classList.remove('hidden');
+      progress.classList.add('hidden');
+      renderUploadPreview(result);
+    }, 400);
+  } catch (err) {
+    showToast(t('upload.uploadError', { error: err.message }), 'error');
+    resetUploadView();
+  }
+}
+
+/** 渲染 skill 预览卡片 */
+function renderUploadPreview(data) {
+  const container = document.getElementById('upload-preview');
+
+  const platformsHtml = data.platforms && data.platforms.length
+    ? data.platforms.map(p => `<span class="platform-tag">${p}</span>`).join('')
+    : `<span style="color: var(--text-muted); font-size: 0.85rem;">N/A</span>`;
+
+  container.innerHTML = `
+    <h2>${data.displayName || data.skillName}</h2>
+    <div class="upload-preview-id">${data.skillName}@${data.version}</div>
+
+    <div class="upload-preview-section">
+      <h3>${t('upload.description')}</h3>
+      <p>${data.description || t('detail.noDescription')}</p>
+    </div>
+
+    <div class="upload-preview-section">
+      <h3>${t('upload.platforms')}</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${platformsHtml}</div>
+    </div>
+
+    <div class="upload-preview-section">
+      <h3>Validation</h3>
+      <div>
+        <span class="upload-preview-badge ${data.hasPackageJson ? 'success' : 'warning'}">
+          📦 ${t('upload.hasPackageJson')}: ${data.hasPackageJson ? t('upload.yes') : t('upload.no')}
+        </span>
+        <span class="upload-preview-badge ${data.hasSkillMd ? 'success' : 'warning'}">
+          📄 ${t('upload.hasSkillMd')}: ${data.hasSkillMd ? t('upload.yes') : t('upload.no')}
+        </span>
+      </div>
+    </div>
+
+    <div class="upload-preview-section" style="border-bottom:none;margin-bottom:0;padding-bottom:0;">
+      <h3>Stats</h3>
+      <div class="upload-preview-stats">
+        <div class="upload-preview-stat">
+          <div class="upload-preview-stat-value">${data.fileCount}</div>
+          <div class="upload-preview-stat-label">${t('upload.fileCount')}</div>
+        </div>
+        <div class="upload-preview-stat">
+          <div class="upload-preview-stat-value">${data.version}</div>
+          <div class="upload-preview-stat-label">${t('upload.version')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/** 执行上传后的操作 */
+async function executeUploadAction(action) {
+  if (!uploadState.data || !uploadState.skillName) {
+    showToast('No skill uploaded. Please upload first.', 'error');
+    return;
+  }
+
+  const actionLabel = { publish: 'upload.publishing', install: 'upload.installing', both: 'upload.bothStarted' };
+  const successMsg = { publish: 'upload.publishSuccess', install: 'upload.installSuccess', both: 'upload.bothSuccess' };
+
+  showToast(t(actionLabel[action], { skillName: uploadState.skillName }), 'info');
+
+  try {
+    const response = await fetch('/api/upload/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skillName: uploadState.skillName,
+        action: action,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.error) {
+      showToast(t('upload.actionError', { error: result.error }), 'error');
+      return;
+    }
+
+    // Check for individual operation results
+    const hasError = Object.values(result.results || {}).some(r => !r.success);
+    if (hasError) {
+      const errors = Object.entries(result.results || {})
+        .filter(([, r]) => !r.success)
+        .map(([k, r]) => `${k}: ${r.message}`)
+        .join('; ');
+      showToast(`⚠️ ${errors}`, 'error');
+      return;
+    }
+
+    showToast(t(successMsg[action], { skillName: uploadState.skillName }), 'success');
+    resetUploadView();
+  } catch (err) {
+    showToast(t('upload.actionError', { error: err.message }), 'error');
   }
 }

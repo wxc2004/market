@@ -22,10 +22,11 @@
 // -----------------------------------------------------------------------------
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { readFileSync, existsSync } from 'fs';
-import { join, extname, dirname } from 'path';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { join, extname, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import AdmZip from 'adm-zip';
 
 // 数据层函数（直接返回数据，无 console.log 副作用）
 import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
@@ -36,6 +37,7 @@ import { detectPlatforms, getAllAdapters } from '../adapters/index.js';
 import { installSkill } from './install.js';
 import { uninstallSkill } from './uninstall.js';
 import { updateSkill } from './update.js';
+import { publishSkill } from './publish.js';
 
 // Admin 功能
 import { resolveFullPackageName, npmExec, fetchScopePackages } from './admin.js';
@@ -671,6 +673,158 @@ API_ROUTES.POST['/api/update'] = async (req, res, _url) => {
       ? `${skillId} updated successfully`
       : 'All skills updated successfully';
     jsonResponse(res, 200, { success: true, message: msg });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// -----------------------------------------------------------------------------
+// Project root path (for skills/ directory)
+// -----------------------------------------------------------------------------
+
+const PROJECT_ROOT = join(__dirname, '..');
+
+// ---- POST /api/upload ----
+
+API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const fileData = String(body.fileData || '');     // base64 encoded zip
+    const fileName = String(body.fileName || 'upload.zip');
+    const skillNameOverride = body.skillNameOverride ? String(body.skillNameOverride).trim() : '';
+
+    if (!fileData) {
+      jsonResponse(res, 400, { error: 'Missing fileData' });
+      return;
+    }
+
+    // Decode base64 zip
+    const buffer = Buffer.from(fileData, 'base64');
+    if (buffer.length === 0) {
+      jsonResponse(res, 400, { error: 'Empty file data' });
+      return;
+    }
+
+    const zip = new AdmZip(buffer);
+    const entries = zip.getEntries();
+
+    if (entries.length === 0) {
+      jsonResponse(res, 400, { error: 'ZIP archive is empty' });
+      return;
+    }
+
+    // Read package.json from zip to determine skill name
+    const pkgEntry = entries.find(e => e.entryName === 'package.json' || e.entryName.endsWith('/package.json'));
+    let skillName = '';
+    let pkgInfo: any = {};
+
+    if (pkgEntry) {
+      try {
+        pkgInfo = JSON.parse(pkgEntry.getData().toString('utf-8'));
+        skillName = pkgInfo.skillmarket?.id || pkgInfo.name?.replace(/^@[^/]+\//, '') || '';
+      } catch { /* ignore invalid json */ }
+    }
+
+    // Override: use user-provided name if given
+    if (skillNameOverride) {
+      skillName = skillNameOverride;
+    }
+
+    // Fallback: use file name (without .zip) or extract from zip root dir name
+    if (!skillName) {
+      const rootDirs = [...new Set(entries.map(e => e.entryName.split('/')[0]))].filter(Boolean);
+      skillName = rootDirs.length === 1 ? rootDirs[0] : basename(fileName, '.zip');
+    }
+
+    // Sanitize skill name
+    skillName = skillName.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    if (!skillName) skillName = 'untitled-skill';
+
+    // Ensure target directory is clean
+    const skillDir = join(PROJECT_ROOT, 'skills', skillName);
+    if (existsSync(skillDir)) {
+      rmSync(skillDir, { recursive: true, force: true });
+    }
+    mkdirSync(skillDir, { recursive: true });
+
+    // Extract all entries
+    zip.extractAllTo(skillDir, true);
+
+    // Check SKILL.md exists
+    const skillMdExists = existsSync(join(skillDir, 'SKILL.md')) ||
+      entries.some(e => e.entryName.endsWith('SKILL.md'));
+
+    // Re-read package.json from extracted location
+    const pkgJsonPath = join(skillDir, 'package.json');
+    if (existsSync(pkgJsonPath)) {
+      try {
+        pkgInfo = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+      } catch { /* keep existing pkgInfo */ }
+    }
+
+    const meta = pkgInfo?.skillmarket || {};
+
+    const result = {
+      skillName,
+      displayName: meta.displayName || pkgInfo.displayName || skillName,
+      version: pkgInfo.version || '0.0.0',
+      description: pkgInfo.description || meta.description || '',
+      platforms: meta.platforms || [],
+      hasPackageJson: existsSync(pkgJsonPath),
+      hasSkillMd: skillMdExists,
+      fileCount: entries.length,
+    };
+
+    jsonResponse(res, 200, result);
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/upload/action ----
+
+API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const skillName = String(body.skillName || '');
+    const action = String(body.action || ''); // 'publish' | 'install' | 'both'
+
+    if (!skillName) {
+      jsonResponse(res, 400, { error: 'Missing skillName' });
+      return;
+    }
+    if (!['publish', 'install', 'both'].includes(action)) {
+      jsonResponse(res, 400, { error: 'action must be "publish", "install", or "both"' });
+      return;
+    }
+
+    const skillDir = join(PROJECT_ROOT, 'skills', skillName);
+    if (!existsSync(skillDir)) {
+      jsonResponse(res, 404, { error: `Skill "${skillName}" not found in skills/ directory. Upload first.` });
+      return;
+    }
+
+    const results: Record<string, { success: boolean; message: string }> = {};
+
+    if (action === 'publish' || action === 'both') {
+      try {
+        await publishSkill(skillName);
+        results.publish = { success: true, message: `${skillName} published to npm` };
+      } catch (err) {
+        results.publish = { success: false, message: String(err) };
+      }
+    }
+
+    if (action === 'install' || action === 'both') {
+      try {
+        await installSkill(skillName, undefined, { force: true });
+        results.install = { success: true, message: `${skillName} installed locally` };
+      } catch (err) {
+        results.install = { success: false, message: String(err) };
+      }
+    }
+
+    jsonResponse(res, 200, { success: true, skillName, action, results });
   } catch (err) {
     jsonResponse(res, 500, { error: String(err) });
   }

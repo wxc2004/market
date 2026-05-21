@@ -18,6 +18,7 @@
         <button class="nav-btn active" data-view="skills">📋 Skills</button>
         <button class="nav-btn" data-view="installed">✅ Installed</button>
         <button class="nav-btn" data-view="platforms">💻 Platforms</button>
+        <button class="nav-btn" data-view="upload">📤 Upload</button>
         <button class="nav-btn" data-view="admin">⚙️ Admin</button>
         <button class="nav-btn" data-view="help">📖 Help</button>
      </nav>
@@ -92,6 +93,45 @@
         </div>
         <div id="admin-stats" class="admin-stats"></div>
         <div id="admin-skills-list" class="admin-skills-list"></div>
+      </div>
+
+      <!-- Upload 视图 -->
+      <div id="view-upload" class="view">
+        <div class="view-header">
+          <h2>Upload Skill</h2>
+        </div>
+        <!-- Phase 1: Upload -->
+        <div id="upload-phase1" class="upload-phase">
+          <div class="upload-dropzone" id="upload-dropzone">
+            <div class="upload-dropzone-icon">📦</div>
+            <p class="upload-dropzone-text">Drop a skill .zip file here, or click to select</p>
+            <p class="upload-dropzone-hint">The zip should contain SKILL.md and optionally package.json</p>
+            <input type="file" id="upload-file-input" accept=".zip" style="display:none">
+            <button id="upload-select-btn" class="btn btn-primary" style="margin-top:12px;">Choose File</button>
+          </div>
+          <div class="upload-skill-name-input">
+            <label for="upload-skill-name">Skill Name</label>
+            <input type="text" id="upload-skill-name" placeholder="Auto-detected from zip, or override here">
+          </div>
+          <button id="upload-submit-btn" class="btn btn-success" disabled style="align-self:center;margin-top:8px;">
+            📤 Upload &amp; Parse
+          </button>
+          <div id="upload-progress" class="upload-progress hidden">
+            <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+            <span id="upload-progress-text">Processing...</span>
+          </div>
+        </div>
+        <!-- Phase 2: Preview -->
+        <div id="upload-phase2" class="upload-phase hidden">
+          <div id="upload-preview" class="upload-preview"></div>
+          <div class="upload-actions">
+            <button id="upload-action-publish" class="btn btn-primary">📦 Publish to npm</button>
+            <button id="upload-action-install" class="btn btn-success">💻 Install Locally</button>
+            <button id="upload-action-both" class="btn btn-primary" style="background:var(--accent)">✅ Both</button>
+            <button id="upload-action-discard" class="btn btn-secondary">🗑 Discard</button>
+          </div>
+        </div>
+        <!-- Phase 3: Result (toast-based) -->
       </div>
 
       <!-- Skill 详情视图 -->

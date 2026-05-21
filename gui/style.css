@@ -915,6 +915,205 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
+   Upload 视图
+   ----------------------------------------------------------------------------- */
+
+.upload-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upload-phase.hidden {
+  display: none;
+}
+
+.upload-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--bg-secondary);
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.upload-dropzone-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.upload-dropzone-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.upload-dropzone-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.upload-skill-name-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-skill-name-input label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.upload-skill-name-input input {
+  padding: 9px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.upload-skill-name-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-progress.hidden {
+  display: none;
+}
+
+.upload-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.upload-progress-text {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.upload-preview {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.upload-preview h2 {
+  font-size: 1.4rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.upload-preview .upload-preview-id {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.upload-preview .upload-preview-section {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.upload-preview .upload-preview-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.upload-preview .upload-preview-section h3 {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.upload-preview .upload-preview-section p,
+.upload-preview .upload-preview-section div {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.upload-preview .upload-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
+.upload-preview .upload-preview-badge.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--success);
+}
+
+.upload-preview .upload-preview-badge.warning {
+  background: rgba(255, 152, 0, 0.2);
+  color: var(--warning);
+}
+
+.upload-preview .upload-preview-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.upload-preview .upload-preview-stat {
+  text-align: center;
+  min-width: 60px;
+}
+
+.upload-preview .upload-preview-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.upload-preview .upload-preview-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* -----------------------------------------------------------------------------
    滚动条
    ----------------------------------------------------------------------------- */
 
