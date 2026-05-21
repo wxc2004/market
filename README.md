@@ -1,6 +1,6 @@
 # SkillMarket
 
-Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
+> **v1.3.27** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
 
 ## Installation
 
@@ -159,6 +159,14 @@ skm admin owner rm my-skill old-maintainer
 # Set package to private
 skm admin access my-skill restricted
 ```
+
+### GUI Upload Skill
+
+The `skm gui` web interface includes an **Upload** view for publishing or installing skills from a `.zip` archive:
+
+1. Drag & drop or select a skill zip file
+2. Click "Upload & Parse" to extract and validate
+3. Choose action: **Publish to npm**, **Install Locally**, or **Both**
 
 ### GUI Admin Dashboard
 

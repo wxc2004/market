@@ -1,3 +1,45 @@
+# SkillMarket v1.3.27 更新日志
+
+**日期**: 2026-05-21
+**版本**: 1.3.27
+
+---
+
+## ✨ 新功能：GUI Upload — 上传 Skill zip 包并发布/安装
+
+### 变更
+
+1. **GUI 新增 Upload 视图**: 顶部导航栏新增 **Upload 📤** 按钮，支持三阶段流程：
+   - **Phase 1 上传**: 拖拽或选择 `.zip` 文件，可选覆盖 skill 名称
+   - **Phase 2 预览**: 解析后展示 skill 信息（名称、版本、描述、平台、校验状态）
+   - **Phase 3 操作**: 选择 **Publish to npm** / **Install Locally** / **Both** / **Discard**
+
+2. **后端新增 API 端点**:
+   - `POST /api/upload` — 接收 base64 编码的 zip，解压到 `skills/<name>/`，返回解析信息
+   - `POST /api/upload/action` — 对已上传 skill 执行 publish/install/both
+
+3. **新增依赖**: `adm-zip` 用于服务端 zip 解压
+
+### 操作流程
+
+```bash
+skm gui → Upload 标签 → 拖放 skill.zip
+→ Upload & Parse → 预览信息
+→ Publish / Install / Both
+```
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `gui/index.html` | 新增 Upload 视图 HTML + 导航按钮 |
+| `gui/style.css` | 上传区域、拖拽高亮、预览卡片、进度条样式 |
+| `gui/app.js` | i18n 翻译、上传逻辑、拖拽/文件选择/预览/操作 |
+| `src/commands/ui.ts` | 新增 `POST /api/upload` 和 `POST /api/upload/action` |
+| `package.json` | 新增 `adm-zip` 依赖 |
+
+---
+
 # SkillMarket v1.3.26 更新日志
 
 **日期**: 2026-05-20
