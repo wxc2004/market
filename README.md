@@ -1,6 +1,6 @@
 # SkillMarket
 
-> **v1.3.27** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
+> **v1.3.28** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
 
 ## Installation
 
@@ -13,6 +13,23 @@ Or use directly:
 ```bash
 npx itismyskillmarket --help
 ```
+
+## Download Standalone .exe (Windows)
+
+Download the **standalone Windows executable** (~73 MB) — no Node.js installation required:
+
+```bash
+# Download from GitHub Releases
+# https://github.com/wxc2004/market/releases/download/v1.3.28/skillmarket.exe
+
+# Run directly
+.\skillmarket.exe --help
+
+# Start GUI
+.\skillmarket.exe gui
+```
+
+All CLI commands work identically to the npm version. Built with Node.js SEA (Single Executable Applications).
 
 ## Usage
 

@@ -1,3 +1,68 @@
+# SkillMarket v1.3.28 更新日志
+
+**日期**: 2026-05-25
+**版本**: 1.3.28
+
+---
+
+## 🚀 新功能：独立可执行文件 (.exe)
+
+SkillMarket 现在可以下载 **独立 Windows .exe** 运行，无需安装 Node.js 环境。
+
+### 变更
+
+1. **Node.js SEA 打包**: 使用 Node.js Single Executable Applications (SEA) 技术将 CLI + GUI 打包为单个 `.exe` 文件
+2. **嵌入式 GUI**: GUI 静态文件（`index.html`、`app.js`、`style.css`）嵌入到可执行文件内部，无需外部依赖
+3. **GUI 资源自包含**: `serveStaticFile()` 优先从内存中提供嵌入式文件，磁盘上不存在 `gui/` 目录时也能正常显示 GUI
+
+### 下载
+
+- **下载地址**: [GitHub Releases](https://github.com/wxc2004/market/releases/download/v1.3.28/skillmarket.exe) (~73 MB)
+- **平台**: Windows x64（其他平台可使用 `npx itismyskillmarket`）
+- **要求**: Windows 10+，无需 Node.js
+
+### 使用方式
+
+```bash
+# 查看帮助
+.\skillmarket.exe --help
+
+# 启动 GUI（默认端口 18771）
+.\skillmarket.exe gui
+
+# 所有 CLI 命令与 npm 版本一致
+.\skillmarket.exe ls
+.\skillmarket.exe install brainstorming
+```
+
+### 自动化构建
+
+- 新增 GitHub Actions 工作流 `.github/workflows/release-exe.yml`
+- 在 GitHub 发布 Release 时自动构建 Windows `.exe` 并上传为附件
+- 也支持 `workflow_dispatch` 手动触发
+
+### 技术实现
+
+| 技术 | 说明 |
+|------|------|
+| Node.js SEA | 将 Node.js 运行时 + 应用代码注入单个二进制文件 |
+| esbuild | TypeScript → CJS 打包（SEA 仅支持 CJS 加载） |
+| postject | 将 SEA blob 注入 Node.js 可执行文件 |
+| 内存文件映射 | GUI 文件嵌入代码，运行时通过 `__GUI_EMBEDDED__` 对象提供 |
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `scripts/build-exe.mjs` | **新建**: SEA 构建脚本（esbuild → patch → embed → blob → inject） |
+| `.github/workflows/release-exe.yml` | **新建**: 自动构建 + 上传 .exe 到 Release |
+| `package.json` | 新增 `build:exe` 脚本、`postject` 依赖 |
+| `.gitignore` | 新增 `sea-config.json` |
+| `CHANGELOG.md` | v1.3.28 更新日志 |
+| `README.md` | 新增 .exe 下载说明和版本更新 |
+
+---
+
 # SkillMarket v1.3.27 更新日志
 
 **日期**: 2026-05-21
