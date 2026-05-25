@@ -1,0 +1,59 @@
+name: Build and Release .exe
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Git tag to build from (e.g., v1.3.27)'
+        required: true
+        type: string
+
+jobs:
+  build-exe:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build .exe (Node.js SEA)
+        run: node scripts/build-exe.mjs
+        shell: pwsh
+
+      - name: Verify .exe
+        run: |
+          if (-not (Test-Path "dist/skillmarket.exe")) {
+            Write-Error "skillmarket.exe not found!"
+            exit 1
+          }
+          $size = (Get-Item "dist/skillmarket.exe").Length
+          Write-Output "skillmarket.exe size: $([math]::Round($size / 1MB, 1)) MB"
+          # Quick smoke test
+          $help = & .\dist\skillmarket.exe --help 2>&1 | Out-String
+          if ($help -match "Usage:") {
+            Write-Output "Smoke test PASSED: --help works"
+          } else {
+            Write-Error "Smoke test FAILED"
+            exit 1
+          }
+
+      - name: Upload .exe to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name || github.event.inputs.tag_name }}
+          files: dist/skillmarket.exe
+          fail_on_unmatched_files: false

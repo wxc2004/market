@@ -4,3 +4,4 @@ dist/
 *.log
 gui-server.err
 HANDOFF.md
+sea-config.json
