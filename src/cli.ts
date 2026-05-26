@@ -32,6 +32,7 @@ import { Command } from 'commander';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { execSync } from 'child_process';
 
 // 获取 package.json 中的版本号
 const __filename = fileURLToPath(import.meta.url);
@@ -808,15 +809,44 @@ admin
   });
 
 // -----------------------------------------------------------------------------
-// 解析命令行参数
+// 空参数检测 - 双击 exe 时自动启动 GUI
 // -----------------------------------------------------------------------------
 
 /**
- * 解析 process.argv 中的命令行参数
+ * 当用户直接双击 exe（无任何命令行参数）时，
+ * 自动启动 Web GUI 界面并打开浏览器。
  * 
- * Commander.js 会根据配置自动:
- * 1. 匹配命令和选项
- * 2. 验证必需参数
- * 3. 调用对应的 action 处理函数
+ * 这是为了提供类似 Codex CLI 的体验：
+ * 双击即可使用图形界面。
  */
-program.parse();
+const hasArgs = process.argv.slice(2).length > 0;
+
+if (!hasArgs) {
+  // 无参数 → 启动 GUI 模式（双击友好）
+  const port = 18770;
+
+  // 异步打开浏览器（延迟 1.5 秒等服务器就绪）
+  setTimeout(() => {
+    try {
+      execSync(`start http://localhost:${port}`, { timeout: 5000 });
+    } catch {
+      // 浏览器打开失败不影响 GUI 启动
+    }
+  }, 1500);
+
+  startGuiServer(port);
+} else {
+  // ---------------------------------------------------------------------------
+  // 解析命令行参数
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 解析 process.argv 中的命令行参数
+   * 
+   * Commander.js 会根据配置自动:
+   * 1. 匹配命令和选项
+   * 2. 验证必需参数
+   * 3. 调用对应的 action 处理函数
+   */
+  program.parse();
+}

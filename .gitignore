@@ -5,3 +5,5 @@ dist/
 gui-server.err
 HANDOFF.md
 sea-config.json
+.sisyphus/
+docs/plans/

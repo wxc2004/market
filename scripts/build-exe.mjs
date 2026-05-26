@@ -92,8 +92,10 @@ ${mapLines}
 };
 
 function serveStaticFile(res, filePath) {
+  var _fs = require("fs");
+  var _path = require("path");
   var fileName;
-  try { fileName = require("path").basename(filePath); } catch(e) {}
+  try { fileName = _path.basename(filePath); } catch(e) {}
   var embedded = __GUI_EMBEDDED__[fileName];
   if (embedded !== void 0) {
     var ext = filePath.endsWith(".html") ? ".html" : filePath.endsWith(".js") ? ".js" : ".css";
@@ -107,13 +109,13 @@ function serveStaticFile(res, filePath) {
     res.end(embedded);
     return;
   }
-  if (!existsSync3(filePath)) {
+  if (!_fs.existsSync(filePath)) {
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end("Not Found");
     return;
   }
-  var content = readFileSync2(filePath);
-  var ext = extname(filePath);
+  var content = _fs.readFileSync(filePath);
+  var ext = _path.extname(filePath);
   var mime = MIME_TYPES[ext] || "application/octet-stream";
   res.writeHead(200, {
     "Content-Type": mime,

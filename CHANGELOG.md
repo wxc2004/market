@@ -1,3 +1,39 @@
+# SkillMarket v1.3.29 更新日志
+
+**日期**: 2026-05-26
+**版本**: 1.3.29
+
+---
+
+## 🚀 新功能：双击 exe 自动启动 GUI
+
+双击 `skillmarket.exe` 现在会自动启动 Web GUI 界面并打开浏览器，无需在终端输入命令。
+
+### 变更
+
+1. **双击启动 GUI**: 检测到无命令行参数时（双击场景），自动调用 `startGuiServer()` 启动 Web 服务
+2. **自动打开浏览器**: 服务器启动 1.5 秒后自动调用 `start http://localhost:18770` 打开默认浏览器
+3. **构建脚本修复**: `serveStaticFile` 嵌入式函数改用 `require('fs')` 直接引用，不再依赖 esbuild 变量重命名，避免 `existsSync is not defined` 运行时错误
+
+### 使用方式
+
+```bash
+# 双击 exe → 自动启动 GUI + 打开浏览器
+# 或命令行：
+.\skillmarket.exe          # 启动 GUI
+.\skillmarket.exe gui      # 同上
+.\skillmarket.exe ls       # CLI 模式不变
+```
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/cli.ts` | 无参数时自动启动 GUI + 打开浏览器 |
+| `scripts/build-exe.mjs` | 修复嵌入函数中 esbuild 变量名硬编码问题 |
+
+---
+
 # SkillMarket v1.3.28 更新日志
 
 **日期**: 2026-05-25
