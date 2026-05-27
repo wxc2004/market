@@ -1,3 +1,63 @@
+# SkillMarket v1.3.30 更新日志
+
+**日期**: 2026-05-27
+**版本**: 1.3.30
+
+---
+
+## ✅ 测试覆盖：143 个测试用例 + 3 个 Bug 修复
+
+新增 **11 个测试文件**，共 **143 个测试用例**覆盖核心模块，并在测试过程中发现并修复了 3 个 GitHub URL 解析 Bug。
+
+### 新增测试文件
+
+| 测试文件 | 用例数 | 覆盖范围 |
+|---------|--------|---------|
+| `src/commands/github-install.test.ts` | 23 | `parseGitHubUrl()` 所有 URL 格式（HTTPS/简写/分支/commit/子路径） |
+| `src/config.test.ts` | 12 | 配置加载优先级（环境变量 > 配置文件 > 默认值）、缺省值 |
+| `src/utils/platform.test.ts` | 23 | 所有平台检测函数、优先级顺序（OPENCODE > CURSOR > VSCODE > CLAUDE_CODE > ANTIGRAVITY > codex) |
+| `src/utils/dirs.test.ts` | 5 | 目录路径工具函数 |
+| `src/adapters/base.test.ts` | 15 | BaseAdapter 安装/卸载/列表/检查，使用 TestAdapter + 临时目录 |
+| `src/adapters/opencode.test.ts` | 7 | OpenCodeAdapter 身份/可用性/安装/卸载 |
+| `src/adapters/claude.test.ts` | 8 | ClaudeAdapter 身份/可用性（env var + 目录）/安装/卸载 |
+| `src/adapters/vscode.test.ts` | 9 | VSCodeAdapter 身份/可用性/安装（含跨兼容 symlink）/卸载 |
+| `src/adapters/openclaw.test.ts` | 6 | OpenClawAdapter 身份/可用性/安装检查 |
+| `src/adapters/hermes.test.ts` | 6 | HermesAdapter 身份/可用性/安装检查 |
+| `src/adapters/registry.test.ts` | 26 | `getAllAdapters`、`getPlatformAdapter`、`getAdapterByPlatform`（8 个平台映射）、`detectPlatforms`（使用 vi.mock 控制可用性） |
+
+### 🐛 Bug 修复
+
+在编写 `github-install.test.ts` 时通过 TDD 发现并修复了 3 个 `parseGitHubUrl()` 正则 Bug：
+
+1. **Pattern 2（简写 + 分支）**: `([^/]+)` 会贪婪吞掉 `#branch` 到仓库名中 → 修复为 `[^/#]+`
+2. **Pattern 3（简写 + commit）**: `([^/]+)` 会贪婪吞掉 `@commit` 到仓库名中 → 修复为 `[^/@]+`
+3. **`path` 变量取错索引**: `match[5]`（不存在）→ `match[4]`，导致子路径解析永远为 `undefined`
+4. **Pattern 顺序**: `@commit` 模式移到 `#branch` 之前，确保最具体模式优先匹配
+
+### 技术实现
+
+- 使用 `vi.mock()` + `vi.hoisted()` 控制 adapter 可用性，避免测试对真实文件系统的副作用
+- 使用 `vi.spyOn(os, 'homedir')` + 临时目录隔离 Claude/VSCode adapter 文件操作
+- 使用 `process.env.OPENCODE_CONFIG_DIR` 隔离 OpenCode adapter
+- 平台测试防御性清理 `process.env.OPENCODE` 避免 shell 环境变量泄漏
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/github-install.ts` | 修复 3 个 regex Bug + 调整 Pattern 匹配顺序 |
+| `src/commands/github-install.test.ts` | **新建**: 23 个测试用例 |
+| `src/config.test.ts` | **新建**: 12 个测试用例 |
+| `src/utils/platform.test.ts` | **新建**: 23 个测试用例 |
+| `src/utils/dirs.test.ts` | **新建**: 5 个测试用例 |
+| `src/adapters/base.test.ts` | **新建**: 15 个测试用例 |
+| `src/adapters/opencode.test.ts` | **新建**: 7 个测试用例 |
+| `src/adapters/claude.test.ts` | **新建**: 8 个测试用例 |
+| `src/adapters/vscode.test.ts` | **新建**: 9 个测试用例 |
+| `src/adapters/registry.test.ts` | 4 → 26 个测试用例（重写） |
+
+---
+
 # SkillMarket v1.3.29 更新日志
 
 **日期**: 2026-05-26

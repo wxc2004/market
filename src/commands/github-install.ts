@@ -42,9 +42,9 @@ import type { PlatformAdapter, InstalledSkill } from '../types.js';
  * - owner/repo@commit
  */
 const GITHUB_URL_PATTERNS = [
-  /^https?:\/\/github\.com\/([^/]+)\/([^/]+)(?:\/tree\/([^/]+)(?:\/(.+))?)?$/,
-  /^([^/]+)\/([^/]+)(?:#(.+))?$/,  // owner/repo#branch
-  /^([^/]+)\/([^/]+)@(.+)$/,  // owner/repo@commit
+  /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\/tree\/([^/]+)(?:\/(.+))?)?$/,
+  /^([^/]+)\/([^/@]+)@(.+)$/,  // owner/repo@commit (must come before # pattern)
+  /^([^/]+)\/([^/#]+)(?:#(.+))?$/,  // owner/repo#branch
 ];
 
 export interface GitHubSkillSource {
@@ -72,7 +72,7 @@ export function parseGitHubUrl(input: string): GitHubSkillSource | null {
       const repo = match[2].replace(/\.git$/, '');
       const branch = match[3] || 'main';  // 默认 main 分支
       const commitOrPath = match[4] || match[3];
-      const path = match[5] || undefined;
+      const path = match[4] || undefined;
       
       return {
         owner,
