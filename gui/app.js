@@ -601,6 +601,31 @@ function applyI18nToStaticElements() {
   if (refreshAdmin) refreshAdmin.innerHTML = `🔄 ${t('btn.refresh')}`;
   if (updateAll) updateAll.innerHTML = `🔄 ${t('btn.updateAll')}`;
   if (backBtn) backBtn.innerHTML = `← ${t('nav.back')}`;
+
+  // Upload 视图静态文本
+  const uploadDropzoneText = document.getElementById('upload-dropzone-text');
+  const uploadDropzoneHint = document.getElementById('upload-dropzone-hint');
+  const uploadSelectBtn = document.getElementById('upload-select-btn');
+  const uploadSkillNameLabel = document.getElementById('upload-skill-name-label');
+  const uploadSkillNameInput = document.getElementById('upload-skill-name');
+  const uploadSubmitBtn = document.getElementById('upload-submit-btn');
+  const uploadActionPublish = document.getElementById('upload-action-publish');
+  const uploadActionInstall = document.getElementById('upload-action-install');
+  const uploadActionBoth = document.getElementById('upload-action-both');
+  const uploadActionDiscard = document.getElementById('upload-action-discard');
+  const uploadProgressText = document.getElementById('upload-progress-text');
+
+  if (uploadDropzoneText) uploadDropzoneText.textContent = t('upload.dropzoneText');
+  if (uploadDropzoneHint) uploadDropzoneHint.textContent = t('upload.dropzoneHint');
+  if (uploadSelectBtn) uploadSelectBtn.textContent = t('upload.chooseFile');
+  if (uploadSkillNameLabel) uploadSkillNameLabel.textContent = t('upload.skillNameLabel');
+  if (uploadSkillNameInput) uploadSkillNameInput.placeholder = t('upload.skillNamePlaceholder');
+  if (uploadSubmitBtn) uploadSubmitBtn.innerHTML = t('upload.uploadParse');
+  if (uploadActionPublish) uploadActionPublish.innerHTML = t('upload.actionPublish');
+  if (uploadActionInstall) uploadActionInstall.innerHTML = t('upload.actionInstall');
+  if (uploadActionBoth) uploadActionBoth.innerHTML = t('upload.actionBoth');
+  if (uploadActionDiscard) uploadActionDiscard.innerHTML = t('upload.actionDiscard');
+  if (uploadProgressText) uploadProgressText.textContent = t('upload.processing');
 }
 
 // -----------------------------------------------------------------------------

@@ -62,7 +62,7 @@ export async function publishSkill(
   // ==========================================================================
   
   const __dirname = fileURLToPath(new URL('.', import.meta.url));
-  const projectRoot = join(__dirname, '..', '..');
+  const projectRoot = join(__dirname, '..');
   const skillDir = join(projectRoot, 'skills', skillName);
   
   console.log(`Publishing ${skillName}...`);

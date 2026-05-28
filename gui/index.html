@@ -104,13 +104,13 @@
         <div id="upload-phase1" class="upload-phase">
           <div class="upload-dropzone" id="upload-dropzone">
             <div class="upload-dropzone-icon">📦</div>
-            <p class="upload-dropzone-text">Drop a skill .zip file here, or click to select</p>
-            <p class="upload-dropzone-hint">The zip should contain SKILL.md and optionally package.json</p>
+            <p class="upload-dropzone-text" id="upload-dropzone-text">Drop a skill .zip file here, or click to select</p>
+            <p class="upload-dropzone-hint" id="upload-dropzone-hint">The zip should contain SKILL.md and optionally package.json</p>
             <input type="file" id="upload-file-input" accept=".zip" style="display:none">
             <button id="upload-select-btn" class="btn btn-primary" style="margin-top:12px;">Choose File</button>
           </div>
           <div class="upload-skill-name-input">
-            <label for="upload-skill-name">Skill Name</label>
+            <label for="upload-skill-name" id="upload-skill-name-label">Skill Name</label>
             <input type="text" id="upload-skill-name" placeholder="Auto-detected from zip, or override here">
           </div>
           <button id="upload-submit-btn" class="btn btn-success" disabled style="align-self:center;margin-top:8px;">
