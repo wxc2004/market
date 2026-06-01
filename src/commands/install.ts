@@ -36,22 +36,21 @@
 // 导入依赖
 // -----------------------------------------------------------------------------
 
-import fs from 'fs-extra';          // 文件系统操作
-import path from 'path';             // 路径处理
-import { exec } from 'child_process'; // 执行 shell 命令
-import { promisify } from 'util';    // Promise 化工具
+import fs from 'fs-extra';
+import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as tar from 'tar';
 
-// 模块导入
-import { fetchSkillPackage } from './npm.js';         // npm 查询
-import { loadRegistry, saveRegistry } from './registry.js';  // 注册表操作
-import { getCacheDir, getSkillsDir, ensureMarketDirs } from '../utils/dirs.js';  // 目录工具
-import { detectPlatforms, getAdapterByPlatform } from '../adapters/index.js';  // 平台适配器
-import { LATEST_LINK } from '../constants.js';       // 常量
-import type { InstalledSkill } from '../types.js';    // 类型定义
+import { fetchSkillPackage } from './npm.js';
+import { loadRegistry, saveRegistry } from './registry.js';
+import { getCacheDir, getSkillsDir, ensureMarketDirs } from '../utils/dirs.js';
+import { detectPlatforms, getAdapterByPlatform } from '../adapters/index.js';
+import { LATEST_LINK } from '../constants.js';
+import type { InstalledSkill } from '../types.js';
 import type { Platform } from '../constants.js';
 import type { PlatformAdapter } from '../types.js';
 
-// 将 exec 转为 Promise 形式
 const execAsync = promisify(exec);
 
 // -----------------------------------------------------------------------------
@@ -139,33 +138,25 @@ export async function installSkill(
     await fs.ensureDir(cacheDir);
     
     try {
-      // 使用 npm pack 下载包到指定目录
-      // npm pack 会生成 .tgz 文件
-      await execAsync(`npm pack ${packageName}@${targetVersion} --pack-destination ${cacheDir}`);
-      
-      // 查找下载的 tarball 文件
-      const files = await fs.readdir(cacheDir);
-      
-      // npm pack 生成的文件名格式: <package-name>-<version>.tgz
-      // scoped 包格式: @scope-package-name-<version>.tgz (注意：@ 不在文件名中)
-      const tarball = files.find(f => 
-        f.endsWith('.tgz') && 
-        f.includes(packageName.replace(/^@/, '').replace('/', '-'))
+      // 使用 npm pack 下载包 — stdout 返回 tarball 路径
+      const { stdout } = await execAsync(
+        `npm pack ${packageName}@${targetVersion} --pack-destination "${cacheDir}"`
       );
+      const tarballName = stdout.trim();
+      const tarballPath = path.join(cacheDir, tarballName);
       
-      if (tarball) {
-        // 解压 tarball
-        await execAsync(`tar -xzf "${path.join(cacheDir, tarball)}" -C "${cacheDir}"`);
+      if (await fs.pathExists(tarballPath)) {
+        // 使用 cross-platform tar 库解压
+        await tar.extract({
+          file: tarballPath,
+          cwd: cacheDir,
+        });
         
-        // 删除 tarball（不再需要）
-        await fs.remove(path.join(cacheDir, tarball));
+        // 删除 tarball
+        await fs.remove(tarballPath);
         
-        // npm 解压后目录名固定为 'package'，需要重命名为目标版本目录
-        const extractedDir = path.join(cacheDir, 'package');
-        const finalDir = targetDir;
-        
-        // 移动并覆盖（如果已存在）
-        await fs.move(extractedDir, finalDir, { overwrite: true });
+        // npm pack 解压后目录名固定为 'package'
+        await fs.move(path.join(cacheDir, 'package'), targetDir, { overwrite: true });
       }
     } catch (err) {
       throw new Error(`Failed to download package: ${err}`);

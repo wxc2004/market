@@ -496,9 +496,16 @@ export async function resolveFullPackageName(skillId: string): Promise<string> {
 export function npmExec(command: string): string {
   try {
     return execSync(command, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-  } catch (err: any) {
-    const msg = err.stderr?.toString() || err.message || 'Unknown error';
-    throw new Error(`npm command failed: ${msg.trim()}`);
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'stderr' in err) {
+      const stderr = (err as { stderr: string | Buffer }).stderr;
+      const msg = Buffer.isBuffer(stderr) ? stderr.toString() : stderr;
+      throw new Error(`npm command failed: ${msg.trim()}`);
+    }
+    if (err instanceof Error) {
+      throw new Error(`npm command failed: ${err.message}`);
+    }
+    throw new Error('npm command failed with an unknown error');
   }
 }
 

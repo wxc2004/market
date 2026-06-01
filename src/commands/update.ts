@@ -81,41 +81,69 @@ export async function updateSkill(skillId?: string): Promise<void> {
   
   console.log(`Checking updates for ${installed.length} skill(s)...\n`);
   
-  // 标记是否有可用的更新
-  let hasUpdates = false;
-  
-  // 遍历每个已安装的 skill
-  for (const skill of installed) {
-    // 查询 npm 获取最新版本信息（自动尝试所有配置的 scope）
-    const pkgInfo = await fetchSkillPackage(skill.id);
-    
-    if (pkgInfo) {
-      const latestVersion = pkgInfo['dist-tags']?.latest;
-      
-      // 比较版本，判断是否需要更新
-      if (latestVersion && latestVersion !== skill.version) {
-        // 发现新版本
-        console.log(`  ${skill.id}: ${skill.version} → ${latestVersion} [UPDATE]`);
-        hasUpdates = true;
-        
-        try {
-          // 执行更新
-          await installSkill(skill.id, latestVersion);
-        } catch (err) {
-          // 更新失败，打印错误但继续处理其他 skill
-          console.error(`  Failed to update ${skill.id}:`, err);
-        }
-      } else {
-        // 已是最新版本
-        console.log(`  ${skill.id}: ${skill.version} (up to date)`);
+  // 并发检查所有已安装 skill 的远程版本
+  const checkResults = await Promise.allSettled(
+    installed.map(async (skill) => {
+      const pkgInfo = await fetchSkillPackage(skill.id);
+      if (!pkgInfo) {
+        return { skill, latestVersion: null as string | null, error: 'failed to fetch remote' };
       }
+      const latestVersion = pkgInfo['dist-tags']?.latest || null;
+      return { skill, latestVersion, error: null };
+    })
+  );
+  
+  // 收集需要更新的 skills
+  const toUpdate: { skill: typeof installed[0]; latestVersion: string }[] = [];
+  let upToDate = 0;
+  let fetchFailed = 0;
+  
+  for (const result of checkResults) {
+    if (result.status === 'rejected') {
+      fetchFailed++;
+      continue;
+    }
+    const { skill, latestVersion, error } = result.value;
+    if (error) {
+      console.log(`  ${skill.id}: ${skill.version} (${error})`);
+      fetchFailed++;
+    } else if (latestVersion && latestVersion !== skill.version) {
+      console.log(`  ${skill.id}: ${skill.version} → ${latestVersion} [UPDATE]`);
+      toUpdate.push({ skill, latestVersion });
     } else {
-      console.log(`  ${skill.id}: ${skill.version} (failed to fetch remote)`);
+      console.log(`  ${skill.id}: ${skill.version} (up to date)`);
+      upToDate++;
     }
   }
   
-  // 所有 skills 都已是最新
-  if (!hasUpdates) {
+  // 并行安装所有更新
+  if (toUpdate.length > 0) {
+    console.log(`\nUpdating ${toUpdate.length} skill(s)...\n`);
+    
+    const updateResults = await Promise.allSettled(
+      toUpdate.map(async ({ skill, latestVersion }) => {
+        try {
+          await installSkill(skill.id, latestVersion);
+          return { id: skill.id, success: true };
+        } catch (err) {
+          return { id: skill.id, success: false, error: err };
+        }
+      })
+    );
+    
+    for (const result of updateResults) {
+      if (result.status === 'fulfilled' && result.value.success) {
+        console.log(`  ✅ ${result.value.id} updated`);
+      } else if (result.status === 'fulfilled' && !result.value.success) {
+        console.error(`  ❌ Failed to update ${result.value.id}:`, result.value.error);
+      }
+    }
+  }
+  
+  // 汇总
+  if (toUpdate.length === 0) {
     console.log('\nAll skills are up to date!');
+  } else {
+    console.log(`\n📊 Update summary: ${toUpdate.length} updated, ${upToDate} up-to-date, ${fetchFailed} failed`);
   }
 }

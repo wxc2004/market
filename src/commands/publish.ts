@@ -22,11 +22,14 @@
 // 导入依赖
 // -----------------------------------------------------------------------------
 
-import { execSync } from 'child_process';
+import { execSync, exec } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
+import { promisify } from 'util';
 import { SKM_URL } from '../config.js';
+
+const execAsync = promisify(exec);
 
 // -----------------------------------------------------------------------------
 // 发布函数
@@ -78,10 +81,7 @@ export async function publishSkill(
   if (!options?.skipInstall) {
     console.log('Running npm install...');
     try {
-      execSync('npm install', {
-        cwd: skillDir,
-        stdio: 'inherit'
-      });
+      await execAsync('npm install', { cwd: skillDir });
     } catch (err) {
       console.warn('Warning: npm install failed, continuing anyway...');
     }
@@ -94,9 +94,8 @@ export async function publishSkill(
   if (options?.version) {
     console.log(`Updating version to ${options.version}...`);
     try {
-      execSync(`npm version ${options.version} --no-git-tag-version`, {
+      await execAsync(`npm version ${options.version} --no-git-tag-version`, {
         cwd: skillDir,
-        stdio: 'inherit'
       });
     } catch (err) {
       throw new Error(`Failed to update version: ${err}`);
@@ -109,10 +108,7 @@ export async function publishSkill(
   
   console.log('Publishing to npm...');
   try {
-    execSync('npm publish --access=public', {
-      cwd: skillDir,
-      stdio: 'inherit'
-    });
+    await execAsync('npm publish --access=public', { cwd: skillDir });
   } catch (err) {
     throw new Error(`Failed to publish: ${err}`);
   }
