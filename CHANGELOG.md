@@ -1,3 +1,99 @@
+# SkillMarket v1.3.32 更新日志
+
+**日期**: 2026-06-01
+**版本**: 1.3.32
+
+---
+
+## 🐛 修复：上传界面英文未翻译 & ZIP 中 package.json 识别问题
+
+### 1. 修复 ZIP 压缩包中 package.json 无法识别
+
+**问题**: 上传技能 ZIP 包后，GUI 预览显示 "package.json: No"，无法从 `package.json` 中提取技能名称、版本等信息。
+
+**根因**:
+- ZIP 条目匹配条件 `e.entryName === 'package.json' || e.entryName.endsWith('/package.json')` 不兼容 `./package.json` 前缀和 Windows 反斜杠路径格式
+- 提取后 `hasPackageJson` 检查仅查找 `skillDir/package.json`（根目录），但若 ZIP 来自文件夹压缩（如 `my-skill/package.json`），实际文件在子目录中
+
+**修复**:
+- 新增 `normalizeEntryName` 统一处理反斜杠和 `./` 前缀后匹配
+- 记录 package.json 在 ZIP 中的相对路径，提取后从实际路径读取和检查
+
+### 2. 上传界面剩余英文翻译
+
+**问题**: Upload 视图中 "Validation"、"Stats"、"✅ Done" 等文字未走 i18n 翻译系统，切换语言后仍显示英文。
+
+**修复**: 新增翻译键 `upload.validation`、`upload.stats`、`upload.done`、`upload.noSkillUploaded`，并替换所有硬编码字符串为 `t()` 调用。
+
+---
+
+# SkillMarket v1.3.31 更新日志
+
+**日期**: 2026-06-01
+**版本**: 1.3.31
+
+---
+
+## 🔧 优化：构建配置、跨平台兼容性与并发更新
+
+### 1. 修复 tsup.config.ts 构建配置
+
+**问题**: `esbuildOptions(options) { options.external = [...] }` 会**覆盖** tsup 内部所有默认 external 配置，且列出了不必要的模块（`express` 未使用，`fs/path/url` 为 Node 内置模块无需 external）。
+
+**修复**: 改用 tsup 顶层 `external` 配置项（正确合并行为），只保留必要的 `adm-zip` 和 `tar` 作为外部依赖。
+
+### 2. Windows 兼容性：tar CLI → npm `tar` 包
+
+**问题**: `install.ts` 中使用 `execAsync('tar -xzf ...')` 调用系统 `tar` 命令解压 npm 包。**Windows 没有预装 GNU tar**，导致安装命令在 Windows 上失败。
+
+**修复**: 替换为 cross-platform 的 [`tar`](https://www.npmjs.com/package/tar) npm 包（纯 JS 实现）：
+
+```typescript
+// 之前
+await execAsync(`tar -xzf "${tarballPath}" -C "${cacheDir}"`);
+
+// 之后
+await tar.extract({ file: tarballPath, cwd: cacheDir });
+```
+
+同时利用 `npm pack` 的 stdout 直接获取 tarball 路径，不再依赖文件名模式匹配。
+
+### 3. 修复 admin.ts 类型安全
+
+`npmExec()` 中 `catch (err: any)` 改为 `catch (err: unknown)` + 完整类型守卫（`stderr` 为 `string | Buffer` 的处理），消除 `any` 类型。
+
+### 4. 批量更新并发化
+
+**问题**: `update.ts` 中更新所有 skills 时使用 `for...of` 串行 fetch + install，N 个 skill 耗时是单次的 N 倍。
+
+**修复**: 两阶段并发：
+- **Phase 1**: 用 `Promise.allSettled` 并发查询所有 skill 的远程版本
+- **Phase 2**: 用 `Promise.allSettled` 并发安装所有需要更新的 skills
+
+### 5. 发布命令异步化
+
+`publish.ts` 中的 `execSync`（npm install / npm version / npm publish）替换为 `execAsync`，发布期间不再阻塞事件循环。
+
+### 6. GitHub Actions：自动发布
+
+`publish-npm.yml` 新增 `push: [master]` 触发 + 版本检测 step：
+- 每次 push 自动运行 `test` job（build + 测试）
+- 检测当前版本是否已在 npm 上存在，未发布则自动 `npm publish`
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `tsup.config.ts` | 修复 external 配置（合并而非覆盖），移除无用外部依赖 |
+| `src/commands/install.ts` | tar CLI → npm `tar` 包，利用 stdout 获取 tarball 路径 |
+| `src/commands/admin.ts` | `catch (err: any)` → `unknown` + 类型守卫 |
+| `src/commands/update.ts` | 串行批量更新 → `Promise.allSettled` 并发 |
+| `src/commands/publish.ts` | `execSync` → `execAsync`，非阻塞发布 |
+| `.github/workflows/publish-npm.yml` | 新增 push 触发 + 版本检测 + test job |
+| `package.json` | 版本升至 1.3.31，新增 `tar` 依赖 |
+
+---
+
 # SkillMarket v1.3.30 更新日志
 
 **日期**: 2026-05-27

@@ -220,6 +220,10 @@ const translations = {
     'upload.id': 'ID',
     'upload.version': 'Version',
     'upload.description': 'Description',
+    'upload.validation': 'Validation',
+    'upload.stats': 'Stats',
+    'upload.done': '✅ Done',
+    'upload.noSkillUploaded': 'No skill uploaded. Please upload first.',
     'upload.platforms': 'Platforms',
     'upload.fileCount': 'Files',
     'upload.hasPackageJson': 'package.json',
@@ -444,6 +448,10 @@ const translations = {
     'upload.id': 'ID',
     'upload.version': '版本',
     'upload.description': '描述',
+    'upload.validation': '验证',
+    'upload.stats': '统计',
+    'upload.done': '✅ 完成',
+    'upload.noSkillUploaded': '未上传技能，请先上传。',
     'upload.platforms': '支持平台',
     'upload.fileCount': '文件数',
     'upload.hasPackageJson': 'package.json',
@@ -1149,7 +1157,7 @@ function goBackFromPlatformDetail() {
 
 async function loadHelp() {
   const container = document.getElementById('help-content');
-  container.innerHTML = '<div class="loading">Loading...</div>';
+  container.innerHTML = `<div class="loading">${t('loading.generic')}</div>`;
 
   try {
     const response = await fetch('/api/config');
@@ -2056,7 +2064,7 @@ async function handleUpload(file, skillNameOverride) {
     }
 
     progressFill.style.width = '100%';
-    progressText.textContent = '✅ Done';
+    progressText.textContent = t('upload.done');
 
     uploadState.data = result;
     uploadState.skillName = skillNameOverride || result.skillName;
@@ -2097,7 +2105,7 @@ function renderUploadPreview(data) {
     </div>
 
     <div class="upload-preview-section">
-      <h3>Validation</h3>
+      <h3>${t('upload.validation')}</h3>
       <div>
         <span class="upload-preview-badge ${data.hasPackageJson ? 'success' : 'warning'}">
           📦 ${t('upload.hasPackageJson')}: ${data.hasPackageJson ? t('upload.yes') : t('upload.no')}
@@ -2109,7 +2117,7 @@ function renderUploadPreview(data) {
     </div>
 
     <div class="upload-preview-section" style="border-bottom:none;margin-bottom:0;padding-bottom:0;">
-      <h3>Stats</h3>
+      <h3>${t('upload.stats')}</h3>
       <div class="upload-preview-stats">
         <div class="upload-preview-stat">
           <div class="upload-preview-stat-value">${data.fileCount}</div>
@@ -2127,7 +2135,7 @@ function renderUploadPreview(data) {
 /** 执行上传后的操作 */
 async function executeUploadAction(action) {
   if (!uploadState.data || !uploadState.skillName) {
-    showToast('No skill uploaded. Please upload first.', 'error');
+    showToast(t('upload.noSkillUploaded'), 'error');
     return;
   }
 

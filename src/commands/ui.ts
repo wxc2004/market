@@ -713,13 +713,22 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
       return;
     }
 
+    // Normalize entry name helper: strip ./ prefix, normalize backslashes
+    const normalizeEntryName = (name: string) => name.replace(/\\/g, '/').replace(/^\.\//, '');
+
     // Read package.json from zip to determine skill name
-    const pkgEntry = entries.find(e => e.entryName === 'package.json' || e.entryName.endsWith('/package.json'));
+    // Handle various zip formats: package.json, ./package.json, my-skill/package.json, my-skill\package.json
+    const pkgEntry = entries.find(e => {
+      const normalized = normalizeEntryName(e.entryName);
+      return normalized === 'package.json' || normalized.endsWith('/package.json');
+    });
     let skillName = '';
     let pkgInfo: any = {};
+    let pkgEntryRelativePath = ''; // relative path inside zip (for post-extraction lookup)
 
     if (pkgEntry) {
       try {
+        pkgEntryRelativePath = normalizeEntryName(pkgEntry.entryName);
         pkgInfo = JSON.parse(pkgEntry.getData().toString('utf-8'));
         skillName = pkgInfo.skillmarket?.id || pkgInfo.name?.replace(/^@[^/]+\//, '') || '';
       } catch { /* ignore invalid json */ }
@@ -755,7 +764,15 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
       entries.some(e => e.entryName.endsWith('SKILL.md'));
 
     // Re-read package.json from extracted location
-    const pkgJsonPath = join(skillDir, 'package.json');
+    // If zip had entries in a subdirectory (e.g. my-skill/package.json),
+    // the extracted path preserves that structure
+    let pkgJsonPath = join(skillDir, 'package.json');
+    if (pkgEntryRelativePath) {
+      const extractedPkgPath = join(skillDir, pkgEntryRelativePath);
+      if (existsSync(extractedPkgPath)) {
+        pkgJsonPath = extractedPkgPath;
+      }
+    }
     if (existsSync(pkgJsonPath)) {
       try {
         pkgInfo = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
