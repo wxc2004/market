@@ -22,7 +22,7 @@
 // -----------------------------------------------------------------------------
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync, renameSync } from 'fs';
 import { join, extname, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -756,6 +756,20 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
 
     // Extract all entries
     zip.extractAllTo(skillDir, true);
+
+    // Flatten: 如果解压后只有一个子目录（常见于文件夹压缩的 ZIP），将其内容提到根目录
+    // 这样 publishSkill / installSkill 才能正确找到 package.json
+    const extractedItems = readdirSync(skillDir, { withFileTypes: true });
+    const subDirs = extractedItems.filter(i => i.isDirectory());
+    const files = extractedItems.filter(i => !i.isDirectory());
+    if (subDirs.length === 1 && files.length === 0) {
+      const subDirPath = join(skillDir, subDirs[0].name);
+      const subItems = readdirSync(subDirPath, { withFileTypes: true });
+      for (const item of subItems) {
+        renameSync(join(subDirPath, item.name), join(skillDir, item.name));
+      }
+      rmSync(subDirPath, { recursive: true, force: true });
+    }
 
     // 解压后从磁盘递归搜索 SKILL.md 和 package.json
     // 不依赖 zip entry path 猜测，兼容各种 zip 结构

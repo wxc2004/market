@@ -1,3 +1,39 @@
+# SkillMarket v1.3.34 更新日志
+
+**日期**: 2026-06-03
+**版本**: 1.3.34
+
+---
+
+## 🐛 修复：ZIP 上传后文件夹结构导致 publish/install 失败
+
+**问题**: 当上传的 ZIP 来自文件夹压缩（如 `my-skill/package.json` 结构），解压后文件在 `skills/<name>/my-skill/` 子目录中。`findFileSync` 虽然能递归检测到 `package.json`，但 `publishSkill` 和 `installSkill` 期望文件在 `skills/<name>/` 根目录，导致"在技能目录中找不到"错误。
+
+**修复**: 解压后自动检测"仅有一个子目录且无文件"的扁平化场景，将子目录内容提到根目录：
+
+```typescript
+// 解压后提取根目录条目
+const items = readdirSync(skillDir, { withFileTypes: true });
+// 如果只有一个子目录且没有文件 → 内容上提
+if (subDirs.length === 1 && files.length === 0) {
+  for (const item of readdirSync(subDirPath, { withFileTypes: true })) {
+    renameSync(join(subDirPath, item.name), join(skillDir, item.name));
+  }
+  rmSync(subDirPath, { recursive: true, force: true });
+}
+```
+
+**效果**: 无论 ZIP 是"扁平文件"还是"文件夹压缩"结构，统一为文件在 `skills/<name>/` 根目录，后续 publish/install 正常进行。
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/ui.ts` | 解压后新增目录扁平化逻辑；新增 `renameSync` import |
+| `package.json` | 版本升至 1.3.34 |
+
+---
+
 # SkillMarket v1.3.33 更新日志
 
 **日期**: 2026-06-03
