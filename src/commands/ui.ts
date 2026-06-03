@@ -22,7 +22,7 @@
 // -----------------------------------------------------------------------------
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'fs';
 import { join, extname, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -724,11 +724,9 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
     });
     let skillName = '';
     let pkgInfo: any = {};
-    let pkgEntryRelativePath = ''; // relative path inside zip (for post-extraction lookup)
 
     if (pkgEntry) {
       try {
-        pkgEntryRelativePath = normalizeEntryName(pkgEntry.entryName);
         pkgInfo = JSON.parse(pkgEntry.getData().toString('utf-8'));
         skillName = pkgInfo.skillmarket?.id || pkgInfo.name?.replace(/^@[^/]+\//, '') || '';
       } catch { /* ignore invalid json */ }
@@ -759,20 +757,13 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
     // Extract all entries
     zip.extractAllTo(skillDir, true);
 
-    // Check SKILL.md exists
-    const skillMdExists = existsSync(join(skillDir, 'SKILL.md')) ||
-      entries.some(e => e.entryName.endsWith('SKILL.md'));
+    // 解压后从磁盘递归搜索 SKILL.md 和 package.json
+    // 不依赖 zip entry path 猜测，兼容各种 zip 结构
+    const skillMdPath = findFileSync(skillDir, 'SKILL.md');
+    const skillMdExists = skillMdPath !== null;
 
-    // Re-read package.json from extracted location
-    // If zip had entries in a subdirectory (e.g. my-skill/package.json),
-    // the extracted path preserves that structure
-    let pkgJsonPath = join(skillDir, 'package.json');
-    if (pkgEntryRelativePath) {
-      const extractedPkgPath = join(skillDir, pkgEntryRelativePath);
-      if (existsSync(extractedPkgPath)) {
-        pkgJsonPath = extractedPkgPath;
-      }
-    }
+    const pkgJsonPath = findFileSync(skillDir, 'package.json') || join(skillDir, 'package.json');
+
     if (existsSync(pkgJsonPath)) {
       try {
         pkgInfo = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
@@ -850,6 +841,26 @@ API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
 // -----------------------------------------------------------------------------
 // 静态文件服务
 // -----------------------------------------------------------------------------
+
+/**
+ * 递归搜索文件，在 dir 下找名为 filename 的文件
+ * 解压后不知道 zip 的结构（是否有子目录），用这个来找 package.json / SKILL.md
+ */
+function findFileSync(dir: string, filename: string): string | null {
+  try {
+    const items = readdirSync(dir, { withFileTypes: true });
+    for (const item of items) {
+      const fullPath = join(dir, item.name);
+      if (item.isDirectory()) {
+        const found = findFileSync(fullPath, filename);
+        if (found) return found;
+      } else if (item.name === filename) {
+        return fullPath;
+      }
+    }
+  } catch { /* permission denied, skip */ }
+  return null;
+}
 
 function serveStaticFile(res: ServerResponse, filePath: string): void {
   if (!existsSync(filePath)) {

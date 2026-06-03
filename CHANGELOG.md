@@ -1,3 +1,40 @@
+# SkillMarket v1.3.33 更新日志
+
+**日期**: 2026-06-03
+**版本**: 1.3.33
+
+---
+
+## 🐛 修复：ZIP 上传兼容性改进 + 配置文件统一
+
+### 1. 递归搜索 ZIP 解压后的文件
+
+**问题**: 上传 ZIP 后依赖 zip entry path 猜测 package.json 和 SKILL.md 的位置，遇到不标准的 ZIP 结构（如 Windows 反斜杠路径、嵌套多级目录）时识别失败。
+
+**修复**: 新增 `findFileSync()` 递归搜索函数，解压后从磁盘递归查找 `package.json` 和 `SKILL.md`，不依赖 ZIP entry path 猜测：
+
+```typescript
+const skillMdPath = findFileSync(skillDir, 'SKILL.md');
+const skillMdExists = skillMdPath !== null;
+const pkgJsonPath = findFileSync(skillDir, 'package.json') || join(skillDir, 'package.json');
+```
+
+同时移除不再需要的 `pkgEntryRelativePath` 变量，简化代码。
+
+### 2. tsup.config.js 配置文件
+
+新增 `tsup.config.js`（ESM 格式），与 `tsup.config.ts` 保持一致的构建配置，供不支持 TypeScript 配置文件的工具链使用。
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/ui.ts` | 新增 `findFileSync` 递归搜索，移除旧的 zip entry 路径猜测逻辑 |
+| `tsup.config.js` | **新建**: ESM 格式 tsup 配置文件 |
+| `package.json` | 版本升至 1.3.33 |
+
+---
+
 # SkillMarket v1.3.32 更新日志
 
 **日期**: 2026-06-01

@@ -1,0 +1,20 @@
+{
+  "id": "gui-upload-test",
+  "displayName": "GUI上传测试",
+  "description": "用于测试 GUI Upload 功能的 skill，覆盖上传、解析、发布、安装全流程",
+  "version": "1.0.0",
+  "author": "SkillMarket",
+  "platforms": [
+    "opencode",
+    "cursor",
+    "vscode",
+    "claude",
+    "codex",
+    "antigravity"
+  ],
+  "tags": [
+    "test",
+    "upload",
+    "gui"
+  ]
+}
