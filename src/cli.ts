@@ -128,6 +128,7 @@ Commands:
                             --limit <n>    Items per page (default: 20)
                             -s, --search   Search by keyword
   search <keyword>        Search skills from npm registry
+                            -l, --limit    Max results (default: 20)
   info <skill>            Display skill information
   install <skill>         Install a skill from npm or GitHub
                             @<version>    Install specific version
@@ -149,6 +150,7 @@ Commands:
   platforms               Show available platforms
   gui [port]              Start SkillMarket GUI web interface
   config                  View and manage configuration
+    config [ls]             List all configuration values
     config get <key>        Get a config value
     config set <key> <val>  Set a config value
     config reset [key]      Reset config to defaults
@@ -170,6 +172,7 @@ Examples:
   skm ls --installed               Show installed skills
   skm ls -s brain                  Search skills by keyword
   skm search test                  Search from registry
+  skm search test --limit 10       Search with result limit
   skm info brainstorming           View skill details
   skm install brainstorming        Install to all detected platforms
   skm install brainstorming@1.0.0  Install specific version
@@ -195,6 +198,7 @@ Examples:
   skm config reset npmScope        Reset config to default
   skm config reset --all           Reset all config
   skm admin ls                     List all published skills
+  skm admin stats                  Publishing statistics
   skm admin deprecate my-skill --message "Use v2"  Deprecate a skill
        `);
       process.exit(0);

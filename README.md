@@ -1,6 +1,6 @@
 # SkillMarket
 
-> **v1.3.29** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
+> **v1.3.35** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
 
 ## Installation
 
@@ -16,11 +16,11 @@ npx itismyskillmarket --help
 
 ## Download Standalone .exe (Windows)
 
-Download the **standalone Windows executable** (~86 MB) — no Node.js installation required:
+Download the **standalone Windows executable** (~70 MB) — no Node.js installation required:
 
 ```bash
 # Download from GitHub Releases
-# https://github.com/wxc2004/market/releases/download/v1.3.29/skillmarket.exe
+# https://github.com/wxc2004/market/releases/download/v1.3.35/skillmarket.exe
 
 # Double-click the exe to start GUI + open browser automatically
 # Or run from terminal:
@@ -44,6 +44,10 @@ skm ls --limit 10         # Show 10 items per page
 # Show installed skills (with pagination)
 skm ls --installed
 skm ls --installed --page 2
+
+# Search skills from npm registry
+skm search <keyword>
+skm search test --limit 10
 
 # View skill information
 skm info brainstorming
@@ -90,6 +94,8 @@ skm uninstall brainstorming --platform opencode
 
 # Uninstall all skills
 skm uninstall --all
+skm uninstall --all --yes      # Skip confirmation
+skm uninstall --dry-run         # Preview without deleting
 
 # Publish a skill to npm
 skm publish <skill-name>
@@ -296,7 +302,7 @@ npm link
 # Build standalone .exe (Windows)
 # Requires: Node.js 20+, esbuild, postject
 node scripts/build-exe.mjs
-# Output: dist/skillmarket.exe (~86 MB)
+# Output: dist/skillmarket.exe (~70 MB)
 ```
 
 ## Architecture

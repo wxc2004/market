@@ -24,6 +24,8 @@ import {
   fetchNpmPackage             // 获取单个包的详细信息
 } from './npm.js';
 
+import type { InstalledSkill } from '../types.js';
+
 // -----------------------------------------------------------------------------
 // 类型定义
 // -----------------------------------------------------------------------------
@@ -46,6 +48,26 @@ interface LsOptions {
   
   /** 搜索关键字（支持 id, displayName, description） */
   search?: string;
+}
+
+// -----------------------------------------------------------------------------
+// 日期格式化工具
+// -----------------------------------------------------------------------------
+
+/**
+ * 将 ISO 日期字符串格式化为可读的本地日期时间
+ * @param isoString - ISO 8601 格式的日期字符串
+ * @returns 格式化的日期字符串（如 "2026-06-04 10:21"）
+ */
+function formatDate(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  } catch {
+    return isoString;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -81,12 +103,10 @@ interface LsOptions {
  * @param keyword - 搜索关键字
  * @returns 过滤后的 skills 列表
  */
-function filterInstalledSkills(skills: any[], keyword: string): any[] {
+function filterInstalledSkills(skills: InstalledSkill[], keyword: string): InstalledSkill[] {
   const lower = keyword.toLowerCase();
   return skills.filter(s => 
-    s.id.toLowerCase().includes(lower) ||
-    (s.displayName && s.displayName.toLowerCase().includes(lower)) ||
-    (s.description && s.description.toLowerCase().includes(lower))
+    s.id.toLowerCase().includes(lower)
   );
 }
 
@@ -193,10 +213,11 @@ export async function listSkills(options: LsOptions): Promise<void> {
       console.log(`  ${skill.id}@${skill.version}`);
       
       // 支持的平台列表
-      console.log(`    Platforms: ${skill.platforms.join(', ')}`);
+      const platforms = skill.platforms?.join(', ') || 'N/A';
+      console.log(`    Platforms: ${platforms}`);
       
-      // 安装时间
-      console.log(`    Installed: ${skill.installedAt}`);
+      // 安装时间（格式化为可读日期）
+      console.log(`    Installed: ${formatDate(skill.installedAt)}`);
       
       // 空行分隔
       console.log();
@@ -271,6 +292,9 @@ export async function listSkills(options: LsOptions): Promise<void> {
         // 获取 skillmarket 元数据
         const skillMeta = pkg?.skillmarket;
         
+        // 计算版本数量
+        const versionCount = info.versions ? Object.keys(info.versions).length : 0;
+        
         // 打印包名和版本
         console.log(`📦 ${info.name}@${latestVersion}`);
         
@@ -285,9 +309,8 @@ export async function listSkills(options: LsOptions): Promise<void> {
         const platforms = skillMeta?.platforms || [];
         console.log(`   平台: ${platforms.length > 0 ? platforms.join(', ') : 'N/A'}`);
         
-        // 打印 npm 链接
-        const npmLink = pkg?.links?.npm || `https://www.npmjs.com/package/${info.name}`;
-        console.log(`   链接: ${npmLink}`);
+        // 打印版本数和 npm 链接
+        console.log(`   版本: ${versionCount} | 链接: ${pkg?.links?.npm || `https://www.npmjs.com/package/${info.name}`}`);
         
         // 空行分隔
         console.log();
