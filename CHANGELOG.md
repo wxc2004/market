@@ -1,7 +1,44 @@
-# SkillMarket v1.3.34 更新日志
+# SkillMarket v1.3.36 更新日志
+
+**日期**: 2026-06-05
+**版本**: 1.3.36
+
+---
+
+## 🐛 修复：发布时自动标准化 npm scope，支持环境变量配置优先
+
+**问题**: 从 GUI 上传 zip 发布 skill 时，若 package.json 中的 npm scope（如 `@itismyskillmarket`）在 npm 上不存在，发布失败返回 404。用户需手动登录 npm 网站创建组织才能使用。
+
+**修复**: `publishSkill()` 在发布前自动读取 package.json，提取 base name，使用配置的 npm scope（**环境变量 `SKM_NPM_SCOPE` 优先 → 配置文件 → 默认值**）重写 package name。如果主 scope 发布失败（404），自动遍历备用 scope 重试：
+
+```typescript
+const scopesToTry = [NPM_SCOPE, ...SKILL_SCOPES.filter(s => s !== NPM_SCOPE)];
+
+for (const scope of scopesToTry) {
+  pkg.name = `${scope}/${baseName}`;
+  await execAsync('npm publish --access=public', { cwd: skillDir });
+  // 404 → 重试下一个 scope，其他错误 → 停止
+}
+```
+
+**效果**: 无论 zip 中 package.json 的 scope 是什么，都自动使用正确的 scope 发布。用户可通过 `$env:SKM_NPM_SCOPE='@wanxuchen'` 指定目标 scope，无须登录 npm 网站。
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/publish.ts` | 发布前新增 package name 标准化 + scope 失效自动重试逻辑 |
+| `CHANGELOG.md` | v1.3.36 更新日志 |
+| `package.json` | 版本升至 1.3.36 |
+
+---
+
+# SkillMarket v1.3.35 更新日志
 
 **日期**: 2026-06-03
-**版本**: 1.3.34
+**版本**: 1.3.35
+
+---
 
 ---
 

@@ -23,11 +23,11 @@
 // -----------------------------------------------------------------------------
 
 import { execSync, exec } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
-import { SKM_URL } from '../config.js';
+import { NPM_SCOPE, SKILL_SCOPES } from '../config.js';
 
 const execAsync = promisify(exec);
 
@@ -103,20 +103,77 @@ export async function publishSkill(
   }
   
   // ==========================================================================
-  // 步骤 4: 发布到 npm
+  // 步骤 4: 标准化 package name 并发布到 npm
+  // ==========================================================================
+  //
+  // 自动从 package.json 提取 base name，使用配置的 scope（环境变量优先）。
+  // 如果 scope 不存在（npm 404），自动遍历备用 scope 重试。
+  //
+  // 环境变量 SKM_NPM_SCOPE 可控制目标 scope:
+  //   $env:SKM_NPM_SCOPE='@wanxuchen'
   // ==========================================================================
   
-  console.log('Publishing to npm...');
-  try {
-    await execAsync('npm publish --access=public', { cwd: skillDir });
-  } catch (err) {
-    throw new Error(`Failed to publish: ${err}`);
+  // 4a. 读取 package.json，提取 base name（去除 @scope/ 前缀）
+  const pkgJsonPath = join(skillDir, 'package.json');
+  let baseName = skillName;
+  
+  if (existsSync(pkgJsonPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+      if (pkg.name) {
+        baseName = pkg.name.includes('/') ? pkg.name.split('/')[1] : pkg.name;
+      }
+    } catch {
+      // 解析失败时使用 skillName 作为 base name
+    }
+  }
+  
+  // 4b. 构建 scope 尝试列表：主 scope → 去重备用 scope
+  const scopesToTry = [
+    NPM_SCOPE,
+    ...SKILL_SCOPES.filter(s => s !== NPM_SCOPE),
+  ];
+  
+  // 4c. 逐个 scope 尝试发布
+  let lastError: Error | null = null;
+  let publishedName = '';
+  
+  for (const scope of scopesToTry) {
+    const targetName = `${scope}/${baseName}`;
+    
+    // 重写 package.json name 为目标 scope
+    if (existsSync(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+        pkg.name = targetName;
+        writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+      } catch { /* skip if unreadable */ }
+    }
+    
+    console.log(`Publishing as ${targetName}...`);
+    try {
+      await execAsync('npm publish --access=public', { cwd: skillDir });
+      publishedName = targetName;
+      break;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const errMsg = String(err);
+      // 只有 404（scope/org 不存在）才重试下一个 scope
+      if (!errMsg.includes('404')) {
+        break;
+      }
+      console.log(`   Scope ${scope} not available, trying next...`);
+    }
   }
   
   // ==========================================================================
   // 完成
   // ==========================================================================
   
-  console.log(`\n✅ ${skillName} published successfully!`);
-  console.log(`   View at: ${SKM_URL}/${skillName}`);
+  if (!publishedName) {
+    throw lastError || new Error('Failed to publish to npm');
+  }
+  
+  console.log(`\n✅ ${skillName} published successfully as ${publishedName}!`);
+  console.log(`   View at: https://www.npmjs.com/package/${publishedName}`);
 }
