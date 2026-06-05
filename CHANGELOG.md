@@ -1,3 +1,23 @@
+# SkillMarket v1.3.37 更新日志
+
+**日期**: 2026-06-05
+**版本**: 1.3.37
+
+---
+
+## ✅ 验证：scope 自动标准化 + fallback 端到端通过
+
+**验证内容**: 完整测试了 GUI 上传 → scope 自动切换 → npm publish 全流程。
+
+- 上传 `gui-upload-test` zip → API 正常解析预览
+- `@itismyskillmarket` scope 404 → 自动回退到 `@wanxuchen` scope
+- 成功发布 `@wanxuchen/gui-upload-test@1.0.0` 至 npm registry
+- `npm view` 确认包可见，maintainer: `wanxuchen`
+
+**变更文件**: 无代码变更（v1.3.36 代码已验证通过，本次仅更新版本号）
+
+---
+
 # SkillMarket v1.3.36 更新日志
 
 **日期**: 2026-06-05
