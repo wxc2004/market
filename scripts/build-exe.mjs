@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync, unlinkSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
@@ -131,6 +131,56 @@ code = code.replace(fnMatch[0], newFn);
 writeFileSync(ENTRY, code, 'utf-8');
 
 console.log('  OK  GUI files embedded, serveStaticFile patched');
+
+// ---------------------------------------------------------------------------
+// Step 3.5: Embed version & fix filesystem-dependent paths
+// ---------------------------------------------------------------------------
+console.log('Embedding package.json version & fixing paths for portability...');
+
+const pkgVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')).version;
+console.log(`  Version: ${pkgVersion}`);
+
+// (A) Patch readFileSync calls that read project's own package.json
+// esbuild CJS output patterns:
+//   Pattern A (cli.ts): var packageJson = JSON.parse((0, import_fs8.readFileSync)((0, import_path20.resolve)(__dirname3, "../package.json"), "utf-8"));
+//   Pattern B (ui.ts):  const pkgPath = (0, import_path18.join)(__dirname2, "..", "package.json");
+//                       const pkg = JSON.parse((0, import_fs8.readFileSync)(pkgPath, "utf-8"));
+const versionJson = JSON.stringify({ version: pkgVersion });
+
+// Pattern A: inline resolve path — replace entire (0, import_fs.readFileSync)((0, import_path.resolve)(__dirnameN, "../package.json"), "utf-8")
+// Use JSON.stringify() to wrap in quotes so it becomes a string for JSON.parse()
+code = code.replace(
+  /\(0,\s*import_fs\d+\.readFileSync\)\(\(0,\s*import_path\d+\.resolve\)\(__dirname\d+,\s*"\.\.\/package\.json"\),\s*"utf-8"\)/g,
+  `"${versionJson.replace(/"/g, '\\"')}"`
+);
+
+// Pattern B: variable join path — replace const pkgPath = ...; ... readFileSync(pkgPath, ...)
+// Step 1: Kill the pkgPath variable assignment (the path is wrong anyway)
+code = code.replace(
+  /const\s+pkgPath\s*=\s*\(0,\s*import_path\d+\.join\)\(__dirname\d+,\s*"\.\.",\s*"package\.json"\);/g,
+  'const pkgPath = null;'
+);
+// Step 2: Replace readFileSync(pkgPath, ...) with embedded version string
+code = code.replace(
+  /\(0,\s*import_fs\d+\.readFileSync\)\(pkgPath,\s*"utf-8"\)/g,
+  `"${versionJson.replace(/"/g, '\\"')}"`
+);
+
+// (B) Patch fileURLToPath + import_meta.url → __filename patterns used in publish.ts
+// publish.ts uses: fileURLToPath(new URL('.', import.meta.url))
+// After import_meta patch, this becomes: fileURLToPath(new URL('.', import_meta.url))
+// That gives us the .exe dir, which is fine for __dirname.
+
+// (C) Patch PROJECT_ROOT / projectRoot to use a writable data directory
+// These are used for the skills/ temp extraction directory in GUI upload flow.
+// esbuild output: (0, import_pathN.join)(__dirnameN, "..")
+const portableRoot = `typeof process !== "undefined" && process.env.LOCALAPPDATA ? require("path").join(process.env.LOCALAPPDATA, "SkillMarket", "tmp") : require("path").join(require("os").homedir(), ".skillmarket", "tmp")`;
+code = code.replace(
+  /(?:const|var)\s+(PROJECT_ROOT|projectRoot)\s*=\s*\(0,\s*import_path\d+\.join\)\(__dirname\d+,\s*"\.\."\)/g,
+  (match, varName) => `var ${varName} = ${portableRoot}`
+);
+writeFileSync(ENTRY, code, 'utf-8');
+console.log('  OK  Version embedded, filesystem paths fixed for portability');
 
 // ---------------------------------------------------------------------------
 // Step 4: SEA config

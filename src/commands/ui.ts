@@ -941,10 +941,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
  *
  * @param port - 监听端口（默认 18770）
  */
-export function startGuiServer(port: number = 18770): void {
+export function startGuiServer(port: number = 18770): import('http').Server {
   const server = createServer(handleRequest);
 
-  server.listen(port, () => {
+  server.listen(port, '127.0.0.1', () => {
     console.log(`\n🚀 SkillMarket GUI started!`);
     console.log(`   Local: http://localhost:${port}`);
     console.log(`\nPress Ctrl+C to stop\n`);
@@ -958,4 +958,6 @@ export function startGuiServer(port: number = 18770): void {
     }
     process.exit(1);
   });
+
+  return server;
 }

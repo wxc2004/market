@@ -6,11 +6,18 @@
   "bin": {
     "skm": "dist/index.js"
   },
+  "main": "electron/main.mjs",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "build:exe": "node scripts/build-exe.mjs"
+    "build:exe": "node scripts/build-exe.mjs",
+    "build:installer": "npm run build:exe && ISCC scripts/skillmarket.iss",
+    "build:installer:ps": "npm run build:exe && powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Silent",
+    "install:local": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
+    "uninstall:local": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Uninstall",
+    "electron:dev": "npm run build && npx electron electron/main.mjs",
+    "electron:build": "npm run build && npx electron-builder build --win"
   },
   "dependencies": {
     "adm-zip": "^0.5.17",
@@ -19,15 +26,65 @@
     "tar": "^7.5.15"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/fs-extra": "^11.0.4",
     "@yao-pkg/pkg": "^6.19.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
     "postject": "^1.0.0-alpha.6",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
     "vitest": "^1.2.0"
   },
+  "build": {
+    "appId": "com.skillmarket.app",
+    "productName": "SkillMarket",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "gui/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SkillMarket",
+      "uninstallDisplayName": "SkillMarket",
+      "installerIcon": "electron/icon.png",
+      "uninstallerIcon": "electron/icon.png"
+    },
+    "extraResources": [
+      {
+        "from": "scripts",
+        "to": "scripts",
+        "filter": [
+          "*.ps1",
+          "*.iss"
+        ]
+      }
+    ],
+    "asar": true,
+    "compression": "maximum"
+  },
   "files": [
     "dist",
-    "gui"
+    "gui",
+    "electron"
   ]
 }

@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/electron-entry.ts'],
   format: ['esm'],
   dts: true,
   banner: {
@@ -15,4 +15,8 @@ export default defineConfig({
     'adm-zip',
     'tar',
   ],
+  // electron-entry.ts 不需要 dts 和 banner
+  onSuccess: async () => {
+    // noop
+  },
 });

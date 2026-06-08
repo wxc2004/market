@@ -1,4 +1,4 @@
-name: Build and Release .exe
+name: Build and Release
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Git tag to build from (e.g., v1.3.27)'
+        description: 'Git tag to build from (e.g., v1.3.37)'
         required: true
         type: string
 
@@ -15,6 +15,9 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      CSC_LINK: ''
+      CSC_KEY_PASSWORD: ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,11 +33,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build (tsup)
+        run: npm run build
+
+      # ----------------------------------------------------------------
+      # 1. Build SEA standalone .exe (CLI without Node.js dependency)
+      # ----------------------------------------------------------------
       - name: Build .exe (Node.js SEA)
         run: node scripts/build-exe.mjs
         shell: pwsh
 
-      - name: Verify .exe
+      - name: Verify SEA .exe
         run: |
           if (-not (Test-Path "dist/skillmarket.exe")) {
             Write-Error "skillmarket.exe not found!"
@@ -51,9 +60,32 @@ jobs:
             exit 1
           }
 
-      - name: Upload .exe to Release
+      # ----------------------------------------------------------------
+      # 2. Build Electron desktop app (NSIS installer)
+      # ----------------------------------------------------------------
+      - name: Build Electron app
+        run: npx electron-builder build --win --publish=never
+        shell: pwsh
+
+      - name: Verify Electron installer
+        run: |
+          $installers = Get-ChildItem -Path "release" -Filter "*.exe" -ErrorAction SilentlyContinue
+          if (-not $installers) {
+            Write-Error "No installer found in release/"
+            exit 1
+          }
+          foreach ($f in $installers) {
+            Write-Output "Installer: $($f.Name) — $([math]::Round($f.Length / 1MB, 1)) MB"
+          }
+
+      # ----------------------------------------------------------------
+      # 3. Upload both artifacts to the Release
+      # ----------------------------------------------------------------
+      - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name || github.event.inputs.tag_name }}
-          files: dist/skillmarket.exe
+          files: |
+            dist/skillmarket.exe
+            release/*.exe
           fail_on_unmatched_files: false
