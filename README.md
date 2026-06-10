@@ -1,6 +1,6 @@
 # SkillMarket
 
-> **v1.3.37** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent).
+> **v1.3.37** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent, Saitec TUI).
 
 ## Installation
 
@@ -285,6 +285,7 @@ Claude Code     ✅  Available (1 skills installed)
 VSCode          ✅  Available (0 skills installed)
 OpenClaw        ✅  Available (0 skills installed)
 Hermes Agent    ✅  Available (0 skills installed)
+Saitec TUI      ✅  Available (0 skills installed)
 ```
 
 ## Development
@@ -338,6 +339,7 @@ Skills are installed to `~/.skillmarket/` with the following structure:
 - Antigravity
 - OpenClaw
 - Hermes Agent
+- Saitec TUI
 
 ## License
 

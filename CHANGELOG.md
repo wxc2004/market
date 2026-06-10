@@ -1,7 +1,26 @@
 # SkillMarket v1.3.37 更新日志
 
-**日期**: 2026-06-05
+**日期**: 2026-06-10
 **版本**: 1.3.37
+
+---
+
+## ✨ 新增：Saitec TUI 平台适配器
+
+为自定义 AI 平台 **Saitec TUI** 添加官方支持，安装 skill 到 `~/.saitec_tui/skills/`。
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/adapters/saitec.ts` | 新增 Saitec TUI 适配器，检测 `~/.saitec_tui/` 目录 |
+| `src/adapters/saitec.test.ts` | 适配器单元测试（6个） |
+| `src/constants.ts` | `PLATFORMS` 列表添加 `'saitec'` |
+| `src/adapters/index.ts` | 导出 `SaitecAdapter` |
+| `src/adapters/registry.ts` | 注册适配器 + idMap 映射 |
+| `src/adapters/registry.test.ts` | mock + 测试用例更新 |
+| `src/constants.test.ts` | 验证 `PLATFORMS` 包含 `saitec` |
+| `src/utils/platform.test.ts` | `isValidPlatform('saitec')` 测试 |
 
 ---
 
