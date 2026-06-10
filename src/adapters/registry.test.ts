@@ -81,21 +81,34 @@ vi.mock('./hermes.js', () => ({
   },
 }));
 
+vi.mock('./saitec.js', () => ({
+  SaitecAdapter: class {
+    id = 'saitec';
+    name = 'Saitec TUI';
+    skillDir = '/mock/saitec/skills';
+    isAvailable = () => Promise.resolve(!!mockAvailability['saitec']);
+    isInstalled = () => Promise.resolve(false);
+    install = () => Promise.resolve();
+    uninstall = () => Promise.resolve();
+    listInstalled = () => Promise.resolve([]);
+  },
+}));
+
 import { detectPlatforms, getPlatformAdapter, getAllAdapters, getAdapterByPlatform } from './registry.js';
 
 // ---------------------------------------------------------------------------
 // getAllAdapters
 // ---------------------------------------------------------------------------
 describe('getAllAdapters', () => {
-  it('should return all 5 registered adapters', () => {
+  it('should return all 6 registered adapters', () => {
     const adapters = getAllAdapters();
-    expect(adapters).toHaveLength(5);
+    expect(adapters).toHaveLength(6);
   });
 
   it('should include all expected adapter IDs', () => {
     const adapters = getAllAdapters();
     const ids = adapters.map(a => a.id).sort();
-    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'vscode']);
+    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
   });
 });
 
@@ -131,6 +144,12 @@ describe('getPlatformAdapter', () => {
     const adapter = getPlatformAdapter('hermes');
     expect(adapter).toBeDefined();
     expect(adapter!.id).toBe('hermes');
+  });
+
+  it('should return saitec adapter for "saitec"', () => {
+    const adapter = getPlatformAdapter('saitec');
+    expect(adapter).toBeDefined();
+    expect(adapter!.id).toBe('saitec');
   });
 
   it('should return undefined for unknown platform id', () => {
@@ -198,6 +217,13 @@ describe('getAdapterByPlatform', () => {
     expect(adapter!.name).toBe('Hermes Agent');
   });
 
+  it('should return saitec adapter for "saitec"', () => {
+    const adapter = getAdapterByPlatform('saitec');
+    expect(adapter).toBeDefined();
+    expect(adapter!.id).toBe('saitec');
+    expect(adapter!.name).toBe('Saitec TUI');
+  });
+
   it('should return undefined for unknown platform', () => {
     const adapter = getAdapterByPlatform('unknown' as any);
     expect(adapter).toBeUndefined();
@@ -261,10 +287,11 @@ describe('detectPlatforms', () => {
     mockAvailability['vscode'] = true;
     mockAvailability['openclaw'] = true;
     mockAvailability['hermes'] = true;
+    mockAvailability['saitec'] = true;
     const available = await detectPlatforms();
-    expect(available).toHaveLength(5);
+    expect(available).toHaveLength(6);
     const ids = available.map(a => a.id).sort();
-    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'vscode']);
+    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
   });
 
   it('should not include adapters whose availability returns false', async () => {
@@ -273,6 +300,7 @@ describe('detectPlatforms', () => {
     mockAvailability['vscode'] = false;
     mockAvailability['openclaw'] = true;
     mockAvailability['hermes'] = false;
+    mockAvailability['saitec'] = false;
     const available = await detectPlatforms();
     expect(available).toHaveLength(2);
     const ids = available.map(a => a.id).sort();

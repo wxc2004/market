@@ -10,6 +10,10 @@ describe('PLATFORMS', () => {
     expect(PLATFORMS).toContain('hermes');
   });
 
+  it('should include saitec', () => {
+    expect(PLATFORMS).toContain('saitec');
+  });
+
   it('should maintain existing platforms', () => {
     expect(PLATFORMS).toContain('opencode');
     expect(PLATFORMS).toContain('claude');

@@ -98,6 +98,10 @@ describe('isValidPlatform', () => {
     expect(isValidPlatform('hermes')).toBe(true);
   });
 
+  it('returns true for "saitec"', () => {
+    expect(isValidPlatform('saitec')).toBe(true);
+  });
+
   it('returns false for empty string', () => {
     expect(isValidPlatform('')).toBe(false);
   });

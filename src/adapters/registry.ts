@@ -12,6 +12,7 @@ import { ClaudeAdapter } from './claude.js';
 import { VSCodeAdapter } from './vscode.js';
 import { OpenClawAdapter } from './openclaw.js';
 import { HermesAdapter } from './hermes.js';
+import { SaitecAdapter } from './saitec.js';
 import type { PlatformAdapter } from '../types.js';
 import type { Platform } from '../constants.js';
 
@@ -26,12 +27,14 @@ function registerAdapters(): void {
   const vscode = new VSCodeAdapter();
   const openclaw = new OpenClawAdapter();
   const hermes = new HermesAdapter();
+  const saitec = new SaitecAdapter();
   
   adapters.set(opencode.id, opencode);
   adapters.set(claude.id, claude);
   adapters.set(vscode.id, vscode);
   adapters.set(openclaw.id, openclaw);
   adapters.set(hermes.id, hermes);
+  adapters.set(saitec.id, saitec);
 }
 
 // Register adapters on module load
@@ -79,6 +82,7 @@ export function getAdapterByPlatform(platform: Platform): PlatformAdapter | unde
     antigravity: 'opencode',  // Antigravity uses OpenCode-compatible structure
     openclaw: 'openclaw',
     hermes: 'hermes',
+    saitec: 'saitec',
   };
   
   return adapters.get(idMap[platform]);

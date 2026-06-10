@@ -84,6 +84,7 @@ export const PLATFORMS = [
   'antigravity',  // Antigravity - AI 编程助手
   'openclaw',    // OpenClaw - AgentSkills compatible agent
   'hermes',      // Hermes Agent - NousResearch agent framework
+  'saitec',      // Saitec TUI - Custom AI coding platform
 ] as const;
 
 /**
