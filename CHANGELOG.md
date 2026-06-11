@@ -1,3 +1,39 @@
+# SkillMarket v1.3.38 更新日志
+
+**日期**: 2026-06-11
+**版本**: 1.3.38
+
+---
+
+## 🐛 修复：桌面快捷方式启动 Electron 失败（CMD 一闪而过）
+
+**问题**: 双击 `electron/启动桌面应用.bat` 时 CMD 窗口一闪而过，但 Electron 桌面窗口未弹出。
+
+**根因**: 批处理脚本第 9 行使用 `npx electron` 在隐藏 PowerShell 中启动 Electron。`npx` 本身是 `npx.cmd`（批处理文件），在隐藏 PowerShell 中执行另一个 `.cmd` 文件不可靠，导致 Electron 静默启动失败。同时脚本依赖 `netstat` 端口检测做 fallback，逻辑过于迂回。
+
+**修复**: 去掉所有中间环节，直接用本地已安装的 `electron.exe` 绝对路径启动：
+
+```bat
+:: 之前（3 层间接：start → 隐藏 PowerShell → npx.cmd → electron）
+start "" /B powershell -WindowStyle Hidden -Command "npx electron electron/main.mjs"
+
+:: 之后（直接调用本地 electron.exe）
+start "" "node_modules\electron\dist\electron.exe" "electron/main.mjs"
+```
+
+同时移除全部中文注释，避免 GBK/UTF-8 编码错乱导致整行命令被吞掉。
+
+**效果**: 双击批处理文件后 Electron 桌面窗口正常弹出（有系统托盘、原生菜单栏），不再一闪而过。
+
+### 变更文件
+
+| 文件 | 变更 |
+|------|------|
+| `electron/启动桌面应用.bat` | 替换 `npx` 为本地 `electron.exe` 路径；移除中文注释防编码问题；简化为 3 行 |
+| `package.json` | 版本升至 1.3.38 |
+
+---
+
 # SkillMarket v1.3.37 更新日志
 
 **日期**: 2026-06-10
