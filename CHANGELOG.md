@@ -1,3 +1,101 @@
+# SkillMarket v1.3.39 更新日志
+
+**日期**: 2026-06-12
+**版本**: 1.3.39
+
+---
+
+## 🐛 修复：GUI Upload 多项 Bug 修复
+
+### Bug 1/2：上传 Skill 安装失败（npm 找不到包 + 发布/安装竞态）
+
+**问题**: GUI 上传 Skill 后，点击 "Install Locally" 或 "Both" 时，后端尝试通过 `npm pack` 从 registry 重新下载刚发布的包。由于 npm 索引更新有延迟（秒级），经常报 `Package not found` 错误；即使找到包，发布→安装也存在竞态条件。
+
+**修复**: `installSkill` 新增 `sourceDir` 选项。上传安装时直接从本地解压目录安装，不再走 npm fetch：
+
+```typescript
+// 之前：从 npm registry 重新下载
+await installSkill(skillName, undefined, { force: true });
+
+// 之后：从本地临时目录直接安装
+await installSkill(skillName, undefined, { force: true, sourceDir: tempDir });
+```
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/install.ts` | `InstallOptions` 新增 `sourceDir`；本地模式跳过 npm fetch，直接从目录读取 version 和文件 |
+
+### Bug 3：双击文件对话框（Dropzone 区域点击触发两次文件选择）
+
+**问题**: Upload 页面的 dropzone 和内部的 "Choose File" 按钮各自绑定了 `click → fileInput.click()`，点击按钮时事件冒泡到 dropzone，导致文件对话框弹出两次。
+
+**修复**: 
+
+```js
+// 按钮点击：阻止冒泡
+selectBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fileInput.click();
+});
+
+// dropzone 点击：跳过按钮区域
+dropzone.addEventListener('click', (e) => {
+  if (e.target.closest('button')) return;
+  fileInput.click();
+});
+```
+
+| 文件 | 变更 |
+|------|------|
+| `gui/app.js` | `selectBtn` 加 `stopPropagation`；`dropzone` 用 `e.target.closest('button')` 跳过按钮区域 |
+
+### Bug 4：上传文件大小校验缺失
+
+**问题**: 上传 50 MB+ 的大文件时，前端和后端均无校验，大文件直接解析会导致内存溢出或超时。
+
+**修复**: 前后端双端校验，上限 **50 MB**：
+
+- **前端**：`file.size > MAX_UPLOAD_SIZE` 校验在 3 个入口点（input change、拖拽 drop、submit 按钮）
+- **后端**：`buffer.length > MAX_UPLOAD_SIZE` 校验在 decode 之后、解压之前
+
+超出限制时返回友好错误提示。
+
+| 文件 | 变更 |
+|------|------|
+| `gui/app.js` | 添加 `MAX_UPLOAD_SIZE`；3 处入口做文件大小校验 |
+| `src/commands/ui.ts` | 添加 `MAX_UPLOAD_SIZE`；服务端 buffer 长度校验 |
+
+### Bug 5：硬编码 PROJECT_ROOT 导致跨环境失败
+
+**问题**: 上传 ZIP 解压路径硬编码为 `PROJECT_ROOT/skills/<skillName>`，依赖项目目录结构。当 SkillMarket 安装在全局（npm global、npx、SEA exe 等）时，`PROJECT_ROOT` 指向错误位置，上传完全不可用。
+
+**修复**: 改为使用系统临时目录 `os.tmpdir()/skm-upload-<randomID>/`，与项目安装位置解耦：
+
+- 移除 `PROJECT_ROOT` 常量
+- `publishSkill` 接受 `skillDir` 选项覆盖默认路径
+- `installSkill` 接受 `sourceDir` 选项使用本地目录
+- 上传 action 完成后清理临时目录
+- `tempDir` 通过 API 返回给前端，前端在 action 请求中原样传回
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/ui.ts` | 移除 `PROJECT_ROOT`；使用 `os.tmpdir()` 创建临时目录；返回 `tempDir`；action 完成后清理 |
+| `src/commands/publish.ts` | `PublishOptions` 新增 `skillDir`，覆盖默认 `skills/<name>` 路径 |
+| `gui/app.js` | 保存 `tempDir` 并在 action 请求中发送 |
+
+### 变更文件汇总
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/install.ts` | 新增 `sourceDir` 选项，本地模式跳过 npm fetch |
+| `src/commands/publish.ts` | 新增 `skillDir` 选项，覆盖默认 publish 路径 |
+| `src/commands/ui.ts` | 移除 `PROJECT_ROOT`，改用 `os.tmpdir()`；添加 50 MB 大小校验；返回 `tempDir` |
+| `gui/app.js` | 修复双击对话框；3 处前端大小校验；保存/发送 `tempDir` |
+| `skills/gui-upload-test/package.json` | scope 切换为 `@wanxuchen` |
+| `package.json` | 版本升至 1.3.39 |
+
+---
+
 # SkillMarket v1.3.38 更新日志
 
 **日期**: 2026-06-11

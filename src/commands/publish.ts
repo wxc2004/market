@@ -54,6 +54,8 @@ export interface PublishOptions {
   version?: string;
   /** 跳过 npm install */
   skipInstall?: boolean;
+  /** 强制的 skill 源码目录（默认: <project>/skills/<skillName>） */
+  skillDir?: string;
 }
 
 export async function publishSkill(
@@ -64,9 +66,14 @@ export async function publishSkill(
   // 步骤 1: 验证 skill 目录
   // ==========================================================================
   
-  const __dirname = fileURLToPath(new URL('.', import.meta.url));
-  const projectRoot = join(__dirname, '..');
-  const skillDir = join(projectRoot, 'skills', skillName);
+  let skillDir: string;
+  if (options?.skillDir) {
+    skillDir = options.skillDir;
+  } else {
+    const __dirname = fileURLToPath(new URL('.', import.meta.url));
+    const projectRoot = join(__dirname, '..');
+    skillDir = join(projectRoot, 'skills', skillName);
+  }
   
   console.log(`Publishing ${skillName}...`);
   

@@ -1933,7 +1933,11 @@ const uploadState = {
   skillName: '',
   file: null,
   data: null, // Parsed result from backend
+  tempDir: '', // Temporary directory path from server
 };
+
+/** 上传文件大小限制：50 MB */
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
 /** 初始化 Upload 控件 */
 function initializeUploadControls() {
@@ -1946,16 +1950,30 @@ function initializeUploadControls() {
   if (!dropzone) return;
 
   // 文件选择
-  selectBtn.addEventListener('click', () => fileInput.click());
+  selectBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // 防止冒泡到 dropzone 的 click 事件
+    fileInput.click();
+  });
   fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
-      uploadState.file = e.target.files[0];
+      const file = e.target.files[0];
+      if (file.size > MAX_UPLOAD_SIZE) {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        showToast(`File too large (${sizeMB} MB). Maximum is 50 MB.`, 'error');
+        e.target.value = '';
+        return;
+      }
+      uploadState.file = file;
       submitBtn.disabled = false;
     }
   });
 
-  // 拖拽上传
-  dropzone.addEventListener('click', () => fileInput.click());
+  // 拖拽上传 — 仅处理拖拽事件，点击由 Choose File 按钮或单独点击处理
+  dropzone.addEventListener('click', (e) => {
+    // 如果点击的是内部按钮，不重复触发文件选择（由按钮的 stopPropagation 处理）
+    if (e.target.closest('button')) return;
+    fileInput.click();
+  });
 
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -1970,7 +1988,13 @@ function initializeUploadControls() {
     e.preventDefault();
     dropzone.classList.remove('drag-over');
     if (e.dataTransfer.files.length > 0) {
-      uploadState.file = e.dataTransfer.files[0];
+      const file = e.dataTransfer.files[0];
+      if (file.size > MAX_UPLOAD_SIZE) {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        showToast(`File too large (${sizeMB} MB). Maximum is 50 MB.`, 'error');
+        return;
+      }
+      uploadState.file = file;
       submitBtn.disabled = false;
     }
   });
@@ -1979,6 +2003,12 @@ function initializeUploadControls() {
   submitBtn.addEventListener('click', () => {
     if (!uploadState.file) {
       showToast(t('upload.errorNoFile'), 'error');
+      return;
+    }
+    // 文件大小校验
+    if (uploadState.file.size > MAX_UPLOAD_SIZE) {
+      const sizeMB = (uploadState.file.size / 1024 / 1024).toFixed(1);
+      showToast(`File too large (${sizeMB} MB). Maximum is 50 MB.`, 'error');
       return;
     }
     // Use skill name override if provided
@@ -2007,6 +2037,7 @@ function resetUploadView() {
   uploadState.file = null;
   uploadState.data = null;
   uploadState.skillName = '';
+  uploadState.tempDir = '';
   document.getElementById('upload-phase1').classList.remove('hidden');
   document.getElementById('upload-phase2').classList.add('hidden');
   document.getElementById('upload-submit-btn').disabled = true;
@@ -2068,6 +2099,7 @@ async function handleUpload(file, skillNameOverride) {
 
     uploadState.data = result;
     uploadState.skillName = skillNameOverride || result.skillName;
+    uploadState.tempDir = result.tempDir || '';
 
     // Switch to preview phase
     setTimeout(() => {
@@ -2151,6 +2183,7 @@ async function executeUploadAction(action) {
       body: JSON.stringify({
         skillName: uploadState.skillName,
         action: action,
+        tempDir: uploadState.tempDir,
       }),
     });
 

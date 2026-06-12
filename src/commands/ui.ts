@@ -26,7 +26,11 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync
 import { join, extname, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { tmpdir } from 'os';
 import AdmZip from 'adm-zip';
+
+/** 上传文件大小限制：50 MB */
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
 // 数据层函数（直接返回数据，无 console.log 副作用）
 import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
@@ -678,12 +682,6 @@ API_ROUTES.POST['/api/update'] = async (req, res, _url) => {
   }
 };
 
-// -----------------------------------------------------------------------------
-// Project root path (for skills/ directory)
-// -----------------------------------------------------------------------------
-
-const PROJECT_ROOT = join(__dirname, '..');
-
 // ---- POST /api/upload ----
 
 API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
@@ -702,6 +700,13 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
     const buffer = Buffer.from(fileData, 'base64');
     if (buffer.length === 0) {
       jsonResponse(res, 400, { error: 'Empty file data' });
+      return;
+    }
+
+    // Size validation
+    if (buffer.length > MAX_UPLOAD_SIZE) {
+      const sizeMB = (buffer.length / 1024 / 1024).toFixed(1);
+      jsonResponse(res, 400, { error: `File too large (${sizeMB} MB). Maximum is 50 MB.` });
       return;
     }
 
@@ -747,36 +752,38 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
     skillName = skillName.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
     if (!skillName) skillName = 'untitled-skill';
 
+    // 使用系统临时目录，不依赖 PROJECT_ROOT
+    const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const tempDir = join(tmpdir(), `skm-upload-${uploadId}`);
+
     // Ensure target directory is clean
-    const skillDir = join(PROJECT_ROOT, 'skills', skillName);
-    if (existsSync(skillDir)) {
-      rmSync(skillDir, { recursive: true, force: true });
+    if (existsSync(tempDir)) {
+      rmSync(tempDir, { recursive: true, force: true });
     }
-    mkdirSync(skillDir, { recursive: true });
+    mkdirSync(tempDir, { recursive: true });
 
     // Extract all entries
-    zip.extractAllTo(skillDir, true);
+    zip.extractAllTo(tempDir, true);
 
     // Flatten: 如果解压后只有一个子目录（常见于文件夹压缩的 ZIP），将其内容提到根目录
-    // 这样 publishSkill / installSkill 才能正确找到 package.json
-    const extractedItems = readdirSync(skillDir, { withFileTypes: true });
+    // 这样 publish / install 才能正确找到 package.json / SKILL.md
+    const extractedItems = readdirSync(tempDir, { withFileTypes: true });
     const subDirs = extractedItems.filter(i => i.isDirectory());
     const files = extractedItems.filter(i => !i.isDirectory());
     if (subDirs.length === 1 && files.length === 0) {
-      const subDirPath = join(skillDir, subDirs[0].name);
+      const subDirPath = join(tempDir, subDirs[0].name);
       const subItems = readdirSync(subDirPath, { withFileTypes: true });
       for (const item of subItems) {
-        renameSync(join(subDirPath, item.name), join(skillDir, item.name));
+        renameSync(join(subDirPath, item.name), join(tempDir, item.name));
       }
       rmSync(subDirPath, { recursive: true, force: true });
     }
 
     // 解压后从磁盘递归搜索 SKILL.md 和 package.json
-    // 不依赖 zip entry path 猜测，兼容各种 zip 结构
-    const skillMdPath = findFileSync(skillDir, 'SKILL.md');
+    const skillMdPath = findFileSync(tempDir, 'SKILL.md');
     const skillMdExists = skillMdPath !== null;
 
-    const pkgJsonPath = findFileSync(skillDir, 'package.json') || join(skillDir, 'package.json');
+    const pkgJsonPath = findFileSync(tempDir, 'package.json') || join(tempDir, 'package.json');
 
     if (existsSync(pkgJsonPath)) {
       try {
@@ -795,6 +802,7 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
       hasPackageJson: existsSync(pkgJsonPath),
       hasSkillMd: skillMdExists,
       fileCount: entries.length,
+      tempDir, // 返回临时目录路径，供后续 action 使用
     };
 
     jsonResponse(res, 200, result);
@@ -810,6 +818,7 @@ API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
     const body = await parseBody(req);
     const skillName = String(body.skillName || '');
     const action = String(body.action || ''); // 'publish' | 'install' | 'both'
+    const tempDir = body.tempDir ? String(body.tempDir) : '';
 
     if (!skillName) {
       jsonResponse(res, 400, { error: 'Missing skillName' });
@@ -820,9 +829,8 @@ API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
       return;
     }
 
-    const skillDir = join(PROJECT_ROOT, 'skills', skillName);
-    if (!existsSync(skillDir)) {
-      jsonResponse(res, 404, { error: `Skill "${skillName}" not found in skills/ directory. Upload first.` });
+    if (!tempDir || !existsSync(tempDir)) {
+      jsonResponse(res, 404, { error: 'Upload session expired or not found. Please upload again.' });
       return;
     }
 
@@ -830,7 +838,7 @@ API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
 
     if (action === 'publish' || action === 'both') {
       try {
-        await publishSkill(skillName);
+        await publishSkill(skillName, { skillDir: tempDir });
         results.publish = { success: true, message: `${skillName} published to npm` };
       } catch (err) {
         results.publish = { success: false, message: String(err) };
@@ -839,12 +847,18 @@ API_ROUTES.POST['/api/upload/action'] = async (req, res, _url) => {
 
     if (action === 'install' || action === 'both') {
       try {
-        await installSkill(skillName, undefined, { force: true });
+        // 使用本地安装模式，从 tempDir 安装，不走 npm
+        await installSkill(skillName, undefined, { force: true, sourceDir: tempDir });
         results.install = { success: true, message: `${skillName} installed locally` };
       } catch (err) {
         results.install = { success: false, message: String(err) };
       }
     }
+
+    // 清理临时目录
+    try {
+      rmSync(tempDir, { recursive: true, force: true });
+    } catch { /* ignore cleanup errors */ }
 
     jsonResponse(res, 200, { success: true, skillName, action, results });
   } catch (err) {

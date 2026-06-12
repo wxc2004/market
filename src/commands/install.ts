@@ -62,6 +62,8 @@ export interface InstallOptions {
   platforms?: string[];
   /** 强制覆盖已安装的 skill */
   force?: boolean;
+  /** 本地源码目录（从本地路径安装，跳过 npm fetch） */
+  sourceDir?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -101,84 +103,79 @@ export async function installSkill(
   // 确保所有必要的目录都已创建
   await ensureMarketDirs();
   
-  console.log(`Installing ${skillId}${version ? `@${version}` : ''}...`);
-  
   // ==========================================================================
-  // 步骤 1: 获取包信息
+  // 步骤 1: 确定版本和源码来源（本地目录 or npm）
   // ==========================================================================
   
-  // 从 npm 查询包的元信息（自动尝试多个可能的 scope）
-  const pkgInfo = await fetchSkillPackage(skillId);
-  if (!pkgInfo) {
-    throw new Error(`Package ${skillId} not found`);
-  }
+  let targetVersion: string;
+  let pkgRoot: string; // 包含 SKILL.md / metadata.json 的源码目录
   
-  // 获取实际找到的包名
-  const packageName = pkgInfo.name;
-  
-  // 确定要安装的版本（用户指定版本 > 最新版本）
-  const targetVersion = version || pkgInfo['dist-tags']?.latest;
-  if (!targetVersion) {
-    throw new Error(`No version found for ${packageName}`);
-  }
-  
-  // ==========================================================================
-  // 步骤 2: 下载包到缓存
-  // ==========================================================================
-  
-  const cacheDir = getCacheDir();
-  
-  // 计算目标缓存目录路径
-  // 例如: ~/.skillmarket/cache/@skillmarket%2Fbrainstorming@1.0.0/
-  const targetDir = path.join(cacheDir, `${packageName}@${targetVersion}`);
-  
-  // 如果缓存已存在，跳过下载
-  if (!(await fs.pathExists(targetDir))) {
-    console.log('Downloading package...');
-    await fs.ensureDir(cacheDir);
+  if (options?.sourceDir) {
+    // ---- 本地安装模式：从 sourceDir 读取 version ----
+    console.log(`Installing ${skillId} from local source...`);
+    pkgRoot = options.sourceDir;
     
-    try {
-      // 使用 npm pack 下载包 — stdout 返回 tarball 路径
-      const { stdout } = await execAsync(
-        `npm pack ${packageName}@${targetVersion} --pack-destination "${cacheDir}"`
-      );
-      const tarballName = stdout.trim();
-      const tarballPath = path.join(cacheDir, tarballName);
-      
-      if (await fs.pathExists(tarballPath)) {
-        // 使用 cross-platform tar 库解压
-        await tar.extract({
-          file: tarballPath,
-          cwd: cacheDir,
-        });
-        
-        // 删除 tarball
-        await fs.remove(tarballPath);
-        
-        // npm pack 解压后目录名固定为 'package'
-        await fs.move(path.join(cacheDir, 'package'), targetDir, { overwrite: true });
-      }
-    } catch (err) {
-      throw new Error(`Failed to download package: ${err}`);
+    const pkgJsonPath = path.join(pkgRoot, 'package.json');
+    targetVersion = version || '0.0.0';
+    if (await fs.pathExists(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(await fs.readFile(pkgJsonPath, 'utf-8'));
+        if (pkg.version) targetVersion = pkg.version;
+      } catch { /* ignore */ }
     }
+  } else {
+    // ---- npm 模式：从 registry 获取包信息并下载 ----
+    console.log(`Installing ${skillId}${version ? `@${version}` : ''}...`);
+    
+    const pkgInfo = await fetchSkillPackage(skillId);
+    if (!pkgInfo) {
+      throw new Error(`Package ${skillId} not found`);
+    }
+    
+    const packageName = pkgInfo.name;
+    targetVersion = version || pkgInfo['dist-tags']?.latest;
+    if (!targetVersion) {
+      throw new Error(`No version found for ${packageName}`);
+    }
+    
+    // 下载包到缓存
+    const cacheDir = getCacheDir();
+    const targetDir = path.join(cacheDir, `${packageName}@${targetVersion}`);
+    
+    if (!(await fs.pathExists(targetDir))) {
+      console.log('Downloading package...');
+      await fs.ensureDir(cacheDir);
+      
+      try {
+        const { stdout } = await execAsync(
+          `npm pack ${packageName}@${targetVersion} --pack-destination "${cacheDir}"`
+        );
+        const tarballName = stdout.trim();
+        const tarballPath = path.join(cacheDir, tarballName);
+        
+        if (await fs.pathExists(tarballPath)) {
+          await tar.extract({ file: tarballPath, cwd: cacheDir });
+          await fs.remove(tarballPath);
+          await fs.move(path.join(cacheDir, 'package'), targetDir, { overwrite: true });
+        }
+      } catch (err) {
+        throw new Error(`Failed to download package: ${err}`);
+      }
+    }
+    
+    pkgRoot = targetDir;
   }
   
   // ==========================================================================
-  // 步骤 3: 复制到 skills 目录
+  // 步骤 2: 复制到 skills 目录
   // ==========================================================================
   
   const skillsDir = getSkillsDir();
-  
-  // 创建版本目录: ~/.skillmarket/skills/<skillId>@<version>/
   const skillVersionDir = path.join(skillsDir, `${skillId}@${targetVersion}`);
   
   console.log('Setting up skill...');
   await fs.ensureDir(skillVersionDir);
   
-  // 从缓存复制必要的文件到 skills 目录
-  const pkgRoot = targetDir;
-  
-  // 复制 SKILL.md（skill 定义文件）
   if (await fs.pathExists(path.join(pkgRoot, 'SKILL.md'))) {
     await fs.copy(
       path.join(pkgRoot, 'SKILL.md'), 
@@ -186,7 +183,6 @@ export async function installSkill(
     );
   }
   
-  // 复制 metadata.json（可选元数据文件）
   if (await fs.pathExists(path.join(pkgRoot, 'metadata.json'))) {
     await fs.copy(
       path.join(pkgRoot, 'metadata.json'), 
@@ -195,36 +191,27 @@ export async function installSkill(
   }
   
   // ==========================================================================
-  // 步骤 4: 创建 latest 软链接
+  // 步骤 3: 创建 latest 软链接
   // ==========================================================================
   
-  // skill 主目录: ~/.skillmarket/skills/<skillId>/
   const skillDir = path.join(skillsDir, skillId);
   await fs.ensureDir(skillDir);
-  
-  // latest 软链接路径: ~/.skillmarket/skills/<skillId>/latest
   const latestLink = path.join(skillDir, LATEST_LINK);
   
   try {
-    // 删除已存在的软链接（如果有）
     await fs.remove(latestLink);
-    
-    // 创建软链接指向版本目录
-    // 'junction' 类型在 Windows 上不需要管理员权限
     await fs.symlink(skillVersionDir, latestLink, 'junction');
   } catch {
-    // Windows 上 junction 可能失败，降级为目录复制
     await fs.copy(skillVersionDir, path.join(skillDir, LATEST_LINK), { overwrite: true });
   }
   
   // ==========================================================================
-  // 步骤 5: 安装到目标平台 (NEW)
+  // 步骤 4: 安装到目标平台
   // ==========================================================================
   
   let targetAdapters: PlatformAdapter[] = [];
   
   if (options?.platforms && options.platforms.length > 0) {
-    // 用户指定了平台
     for (const platformStr of options.platforms) {
       const platform = platformStr as Platform;
       const adapter = getAdapterByPlatform(platform);
@@ -235,7 +222,6 @@ export async function installSkill(
       }
     }
   } else {
-    // 自动检测可用平台
     targetAdapters = await detectPlatforms();
   }
   
@@ -245,7 +231,6 @@ export async function installSkill(
   } else {
     console.log(`\nInstalling to ${targetAdapters.length} platform(s)...\n`);
     
-    // 安装到每个平台
     const results: { name: string; status: 'installed' | 'skipped' | 'failed'; error?: string }[] = [];
     
     for (const adapter of targetAdapters) {
@@ -258,7 +243,6 @@ export async function installSkill(
           continue;
         }
         
-        // 安装 skill 到平台目录
         await adapter.install(skillId, skillVersionDir);
         console.log(`${adapter.name.padEnd(12)} ✅  Installed successfully`);
         results.push({ name: adapter.name, status: 'installed' });
@@ -268,7 +252,6 @@ export async function installSkill(
       }
     }
     
-    // 显示摘要
     const installed = results.filter(r => r.status === 'installed').length;
     const skipped = results.filter(r => r.status === 'skipped').length;
     const failed = results.filter(r => r.status === 'failed').length;
@@ -277,13 +260,12 @@ export async function installSkill(
   }
   
   // ==========================================================================
-  // 步骤 6: 更新注册表
+  // 步骤 5: 更新注册表
   // ==========================================================================
   
   const registry = await loadRegistry();
   const installedPlatforms = targetAdapters.map(a => a.id);
   
-  // 添加/更新注册表中的 skill 记录
   registry.skills[skillId] = {
     id: skillId,
     version: targetVersion,
@@ -291,7 +273,6 @@ export async function installSkill(
     platforms: installedPlatforms
   } as InstalledSkill;
   
-  // 保存注册表
   await saveRegistry(registry);
   
   // ==========================================================================
