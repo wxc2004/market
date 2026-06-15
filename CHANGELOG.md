@@ -1,3 +1,59 @@
+# SkillMarket v1.3.40 更新日志
+
+**日期**: 2026-06-15
+**版本**: 1.3.40
+
+---
+
+## ✨ 新增：demo-upload-test 上传演示技能
+
+新增 `demo-upload-test` 技能，用于演示 SkillMarket GUI **Upload** 的完整流程：
+
+1. **打包** — 将技能目录压缩为 ZIP
+2. **上传** — 通过 GUI Upload 页面拖拽或选择文件
+3. **预览** — 查看解析后的元数据（名称、版本、描述、平台、文件状态）
+4. **操作** — 发布到 npm / 安装到本地 / Both
+
+该技能同时作为教学示例，帮助新用户理解如何通过 GUI 界面上传并发布技能。
+
+**新增文件**:
+| 文件 | 说明 |
+|------|------|
+| `skills/demo-upload-test/package.json` | npm 包配置 + skillmarket 元数据 |
+| `skills/demo-upload-test/SKILL.md` | 技能文档（含完整演示步骤） |
+| `skills/demo-upload-test/metadata.json` | SkillMarket 元数据 |
+| `skills/demo-upload-test/index.js` | 入口文件 |
+
+## 🐛 修复：npm 登录凭证过期，更新 gui-upload-test 版本
+
+### 1. npm auth token 失效修复
+
+**问题**: 上传技能时发现 npm token 已过期（`401 Unauthorized`），导致所有 scope 的 publish 操作均返回 404。
+
+**修复**: 替换为新的有效 token，`npm whoami` 确认登录用户为 `wanxuchen`。
+
+### 2. gui-upload-test 版本更新
+
+将 `gui-upload-test` 从 v1.0.0 升至 **v1.0.1**，避免与已发布版本冲突。
+
+| 文件 | 变更 |
+|------|------|
+| `skills/gui-upload-test/package.json` | version `1.0.0` → `1.0.1` |
+| `skills/gui-upload-test/metadata.json` | version `1.0.0` → `1.0.1` |
+| `skills/gui-upload-test/index.js` | version `1.0.0` → `1.0.1` |
+
+### 变更文件汇总
+
+| 文件 | 变更 |
+|------|------|
+| `skills/demo-upload-test/` | **新建**: 4 个文件，上传演示技能 |
+| `skills/gui-upload-test/package.json` | 版本升至 1.0.1 |
+| `skills/gui-upload-test/metadata.json` | 版本升至 1.0.1 |
+| `skills/gui-upload-test/index.js` | 版本升至 1.0.1 |
+| `package.json` | 版本升至 1.3.40 |
+
+---
+
 # SkillMarket v1.3.39 更新日志
 
 **日期**: 2026-06-12

@@ -1,6 +1,6 @@
 {
   "name": "@wanxuchen/gui-upload-test",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GUI 上传功能测试技能 - 用于验证 GUI Upload 完整流程",
   "type": "module",
   "main": "index.js",

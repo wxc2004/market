@@ -1,0 +1,28 @@
+{
+  "name": "@wanxuchen/demo-upload-test",
+  "version": "1.0.0",
+  "description": "演示上传功能的 Skill - 用于 GUI Upload 完整流程演示",
+  "type": "module",
+  "main": "index.js",
+  "keywords": [
+    "skillmarket",
+    "demo",
+    "upload",
+    "tutorial"
+  ],
+  "author": "SkillMarket",
+  "license": "MIT",
+  "skillmarket": {
+    "id": "demo-upload-test",
+    "displayName": "上传演示技能",
+    "description": "演示 SkillMarket GUI 上传功能的完整流程：打包 → 上传 → 预览 → 发布",
+    "platforms": [
+      "opencode",
+      "cursor",
+      "vscode",
+      "claude",
+      "codex",
+      "antigravity"
+    ]
+  }
+}

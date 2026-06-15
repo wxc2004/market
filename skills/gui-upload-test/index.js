@@ -13,7 +13,7 @@ export default async function GuiUploadTest() {
   return {
     name: "gui-upload-test",
     displayName: "GUI上传测试",
-    version: "1.0.0",
+    version: "1.0.1",
     description: "用于测试 GUI Upload 功能的 skill",
     status: "installed"
   };

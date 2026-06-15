@@ -1,0 +1,20 @@
+{
+  "id": "demo-upload-test",
+  "displayName": "上传演示技能",
+  "description": "演示 SkillMarket GUI 上传功能的完整流程：打包 → 上传 → 预览 → 发布",
+  "version": "1.0.0",
+  "author": "SkillMarket",
+  "platforms": [
+    "opencode",
+    "cursor",
+    "vscode",
+    "claude",
+    "codex",
+    "antigravity"
+  ],
+  "tags": [
+    "demo",
+    "upload",
+    "tutorial"
+  ]
+}
