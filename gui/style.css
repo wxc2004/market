@@ -1171,3 +1171,88 @@ body {
   background: var(--bg-secondary);
   color: var(--text-secondary);
 }
+
+/* -----------------------------------------------------------------------------
+   GitHub Token 管理（Help 视图顶部）
+   ----------------------------------------------------------------------------- */
+
+.help-token-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+.help-token-section h3 {
+  color: var(--accent);
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.help-token-desc {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+}
+
+.help-token-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.token-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.token-indicator.token-unknown { background: var(--text-muted); }
+.token-indicator.token-active  { background: var(--success); }
+.token-indicator.token-none    { background: var(--danger); }
+
+.help-token-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.help-token-input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-family: 'Menlo', 'Consolas', monospace;
+}
+
+.help-token-input-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.help-token-input-row input::placeholder {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-muted);
+}
+
+.help-token-hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 8px;
+}
+
+.help-token-hint code {
+  background: var(--bg-card);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+}

@@ -45,6 +45,9 @@ import { publishSkill } from './publish.js';
 
 // Admin 功能
 import { resolveFullPackageName, npmExec, fetchScopePackages } from './admin.js';
+
+// Config 文件读写（用于 GitHub token 持久化）
+import { readConfigFile, writeConfigFile, removeConfigKeys } from './config.js';
 import {
   NPM_SCOPE,
   NPM_SCOPE_FALLBACK,
@@ -147,6 +150,7 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
 const API_ROUTES: Record<string, Record<string, (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<void>>> = {
   GET: {},
   POST: {},
+  DELETE: {},
 };
 
 // ---- GET /api/skills ----
@@ -398,6 +402,49 @@ API_ROUTES.GET['/api/config'] = async (_req, res, _url) => {
     skmUrl: SKM_URL,
     skillScopes: SKILL_SCOPES,
   });
+};
+
+// ---- GET /api/github-token ----
+
+API_ROUTES.GET['/api/github-token'] = async (_req, res, _url) => {
+  try {
+    const config = await readConfigFile();
+    const token = config.githubToken || '';
+    jsonResponse(res, 200, {
+      hasToken: !!token,
+      tokenPrefix: token ? token.substring(0, 6) + '…' : '',
+    });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- POST /api/github-token ----
+
+API_ROUTES.POST['/api/github-token'] = async (req, res, _url) => {
+  try {
+    const body = await parseBody(req);
+    const token = String(body.token || '').trim();
+    if (!token) {
+      jsonResponse(res, 400, { error: 'Token is required' });
+      return;
+    }
+    await writeConfigFile({ githubToken: token });
+    jsonResponse(res, 200, { success: true, message: 'GitHub token saved successfully' });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
+};
+
+// ---- DELETE /api/github-token ----
+
+API_ROUTES.DELETE['/api/github-token'] = async (_req, res, _url) => {
+  try {
+    await removeConfigKeys(['githubToken']);
+    jsonResponse(res, 200, { success: true, message: 'GitHub token removed successfully' });
+  } catch (err) {
+    jsonResponse(res, 500, { error: String(err) });
+  }
 };
 
 // ---- POST /api/install ----

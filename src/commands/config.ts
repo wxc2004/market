@@ -55,6 +55,7 @@ export interface ConfigFile {
   npmRegistry?: string;
   npmScopes?: string;
   skmUrl?: string;
+  githubToken?: string;
 }
 
 // -----------------------------------------------------------------------------

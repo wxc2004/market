@@ -82,6 +82,21 @@
         <div class="view-header">
           <h2>Help &amp; Configuration</h2>
         </div>
+        <!-- GitHub Token 管理 -->
+        <div class="help-token-section" id="help-token-section">
+          <h3 id="token-section-title">🔑 GitHub Token</h3>
+          <p class="help-token-desc" id="token-section-desc">用于从桌面软件直接创建 GitHub Release 等操作。</p>
+          <div class="help-token-status" id="token-status">
+            <span class="token-indicator token-unknown" id="token-indicator"></span>
+            <span id="token-status-text">检查中...</span>
+          </div>
+          <div class="help-token-input-row">
+            <input type="password" id="token-input" placeholder="输入 GitHub Personal Access Token (ghp_... / gho_...)" spellcheck="false">
+            <button id="token-save-btn" class="btn btn-success"></button>
+            <button id="token-remove-btn" class="btn btn-danger" style="display:none"></button>
+          </div>
+          <p class="help-token-hint"><span id="token-section-hint">Token 保存在</span> <code>~/.skillmarket/config.json</code>。</p>
+        </div>
         <div id="help-content"></div>
       </div>
 

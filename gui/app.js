@@ -248,6 +248,24 @@ const translations = {
 
     // 通用错误
     'error.generic': 'Error',
+
+    // GitHub Token
+    'token.title': '🔑 GitHub Token',
+    'token.desc': 'Used to create GitHub Releases and other operations from the desktop app.',
+    'token.checking': 'Checking...',
+    'token.active': '✅ Token set ({prefix})',
+    'token.inactive': '❌ Token not set',
+    'token.checkFailed': '⚠️ Check failed: {error}',
+    'token.placeholder': 'Enter GitHub Personal Access Token (ghp_... / gho_...)',
+    'token.placeholderOverride': 'Enter new Token to override current value...',
+    'token.save': '💾 Save',
+    'token.remove': '🗑 Remove',
+    'token.hint': 'Token is stored in',
+    'token.saved': '✅ GitHub Token saved',
+    'token.removed': '✅ GitHub Token removed',
+    'token.saveFailed': 'Save failed: {error}',
+    'token.removeFailed': 'Remove failed: {error}',
+    'token.inputRequired': 'Please enter a GitHub Token',
   },
   
   zh: {
@@ -476,6 +494,24 @@ const translations = {
 
     // 通用错误
     'error.generic': '错误',
+
+    // GitHub Token
+    'token.title': '🔑 GitHub Token',
+    'token.desc': '用于从桌面软件直接创建 GitHub Release 等操作。',
+    'token.checking': '检查中...',
+    'token.active': '✅ Token 已设置 ({prefix})',
+    'token.inactive': '❌ 未设置 Token',
+    'token.checkFailed': '⚠️ 检查失败: {error}',
+    'token.placeholder': '输入 GitHub Personal Access Token (ghp_... / gho_...)',
+    'token.placeholderOverride': '输入新 Token 以覆盖当前值...',
+    'token.save': '💾 保存',
+    'token.remove': '🗑 移除',
+    'token.hint': 'Token 保存在',
+    'token.saved': '✅ GitHub Token 已保存',
+    'token.removed': '✅ GitHub Token 已移除',
+    'token.saveFailed': '保存失败: {error}',
+    'token.removeFailed': '移除失败: {error}',
+    'token.inputRequired': '请输入 GitHub Token',
   }
 };
 
@@ -634,6 +670,25 @@ function applyI18nToStaticElements() {
   if (uploadActionBoth) uploadActionBoth.innerHTML = t('upload.actionBoth');
   if (uploadActionDiscard) uploadActionDiscard.innerHTML = t('upload.actionDiscard');
   if (uploadProgressText) uploadProgressText.textContent = t('upload.processing');
+
+  // GitHub Token 静态文本
+  const tokenTitle = document.getElementById('token-section-title');
+  const tokenDesc = document.getElementById('token-section-desc');
+  const tokenHint = document.getElementById('token-section-hint');
+  const tokenSaveBtn = document.getElementById('token-save-btn');
+  const tokenRemoveBtn = document.getElementById('token-remove-btn');
+  const tokenInput = document.getElementById('token-input');
+
+  if (tokenTitle) tokenTitle.textContent = t('token.title');
+  if (tokenDesc) tokenDesc.textContent = t('token.desc');
+  if (tokenHint) tokenHint.textContent = t('token.hint');
+  if (tokenSaveBtn) tokenSaveBtn.textContent = t('token.save');
+  if (tokenRemoveBtn) tokenRemoveBtn.textContent = t('token.remove');
+  if (tokenInput && !tokenInput.value) {
+    // Only update placeholder when input is empty
+    const hasToken = document.getElementById('token-indicator')?.classList.contains('token-active');
+    tokenInput.placeholder = hasToken ? t('token.placeholderOverride') : t('token.placeholder');
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -830,6 +885,23 @@ function initializeControls() {
    if (modalEl) {
      modalEl.addEventListener('click', (e) => {
        if (e.target === modalEl) closeModal();
+     });
+   }
+
+   // GitHub Token 管理
+   const tokenSaveBtn = document.getElementById('token-save-btn');
+   const tokenRemoveBtn = document.getElementById('token-remove-btn');
+   const tokenInput = document.getElementById('token-input');
+
+   if (tokenSaveBtn) {
+     tokenSaveBtn.addEventListener('click', saveGithubToken);
+   }
+   if (tokenRemoveBtn) {
+     tokenRemoveBtn.addEventListener('click', removeGithubToken);
+   }
+   if (tokenInput) {
+     tokenInput.addEventListener('keydown', (e) => {
+       if (e.key === 'Enter') saveGithubToken();
      });
    }
 
@@ -1160,8 +1232,10 @@ async function loadHelp() {
   container.innerHTML = `<div class="loading">${t('loading.generic')}</div>`;
 
   try {
-    const response = await fetch('/api/config');
-    const config = await response.json();
+    const [config] = await Promise.all([
+      fetch('/api/config').then(r => r.json()),
+      checkGithubToken(),
+    ]);
     renderHelp(config, container);
   } catch (err) {
     container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
@@ -1274,6 +1348,87 @@ skm config reset --all         # 全部恢复默认</pre>
       </table>
     </div>
   `;
+}
+
+// -----------------------------------------------------------------------------
+// GitHub Token 管理
+// -----------------------------------------------------------------------------
+
+async function checkGithubToken() {
+  try {
+    const response = await fetch('/api/github-token');
+    const data = await response.json();
+
+    const indicator = document.getElementById('token-indicator');
+    const statusText = document.getElementById('token-status-text');
+    const tokenInput = document.getElementById('token-input');
+    const removeBtn = document.getElementById('token-remove-btn');
+
+    if (data.hasToken) {
+      indicator.className = 'token-indicator token-active';
+      statusText.textContent = t('token.active', { prefix: data.tokenPrefix });
+      if (removeBtn) removeBtn.style.display = '';
+      if (tokenInput) tokenInput.placeholder = t('token.placeholderOverride');
+      // Re-apply i18n for button texts
+      const saveBtn = document.getElementById('token-save-btn');
+      const rmBtn = document.getElementById('token-remove-btn');
+      if (saveBtn) saveBtn.textContent = t('token.save');
+      if (rmBtn) rmBtn.textContent = t('token.remove');
+    } else {
+      indicator.className = 'token-indicator token-none';
+      statusText.textContent = t('token.inactive');
+      if (removeBtn) removeBtn.style.display = 'none';
+      if (tokenInput) tokenInput.placeholder = t('token.placeholder');
+    }
+  } catch (err) {
+    const statusText = document.getElementById('token-status-text');
+    if (statusText) statusText.textContent = t('token.checkFailed', { error: err.message });
+  }
+}
+
+async function saveGithubToken() {
+  const input = document.getElementById('token-input');
+  const token = input ? input.value.trim() : '';
+
+  if (!token) {
+    showToast(t('token.inputRequired'), 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/github-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(t('token.saveFailed', { error: result.error }), 'error');
+    } else {
+      showToast(t('token.saved'), 'success');
+      input.value = '';
+      checkGithubToken();
+    }
+  } catch (err) {
+    showToast(t('token.saveFailed', { error: err.message }), 'error');
+  }
+}
+
+async function removeGithubToken() {
+  try {
+    const response = await fetch('/api/github-token', {
+      method: 'DELETE',
+    });
+    const result = await response.json();
+    if (result.error) {
+      showToast(t('token.removeFailed', { error: result.error }), 'error');
+    } else {
+      showToast(t('token.removed'), 'success');
+      checkGithubToken();
+    }
+  } catch (err) {
+    showToast(t('token.removeFailed', { error: err.message }), 'error');
+  }
 }
 
 async function installSkill(skillId) {

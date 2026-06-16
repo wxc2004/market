@@ -1,3 +1,31 @@
+# SkillMarket v1.3.41 更新日志
+
+**日期**: 2026-06-16
+**版本**: 1.3.41
+
+---
+
+## ✨ 新增：桌面 GUI 管理 GitHub Token
+
+在桌面软件的 **Help** 视图顶部新增 GitHub Token 管理面板：
+
+- 🔑 输入并保存 GitHub Personal Access Token
+- 保存后显示绿色状态 + Token 前缀（如 `gho_6S…`）
+- 支持一键移除 Token
+- Token 持久化存储在 `~/.skillmarket/config.json`
+- 支持中英文双语界面
+
+**修改文件**:
+| 文件 | 说明 |
+|------|------|
+| `gui/index.html` | Help 视图新增 Token 管理面板 |
+| `gui/app.js` | 新增 Token 检查/保存/移除函数 + i18n 翻译 |
+| `gui/style.css` | Token 面板样式 |
+| `src/commands/config.ts` | ConfigFile 新增 `githubToken` 字段 |
+| `src/commands/ui.ts` | 新增 `GET/POST/DELETE /api/github-token` API |
+
+---
+
 # SkillMarket v1.3.40 更新日志
 
 **日期**: 2026-06-15
