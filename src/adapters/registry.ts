@@ -13,6 +13,7 @@ import { VSCodeAdapter } from './vscode.js';
 import { OpenClawAdapter } from './openclaw.js';
 import { HermesAdapter } from './hermes.js';
 import { SaitecAdapter } from './saitec.js';
+import { CodexAdapter } from './codex.js';
 import type { PlatformAdapter } from '../types.js';
 import type { Platform } from '../constants.js';
 
@@ -28,6 +29,7 @@ function registerAdapters(): void {
   const openclaw = new OpenClawAdapter();
   const hermes = new HermesAdapter();
   const saitec = new SaitecAdapter();
+  const codex = new CodexAdapter();
   
   adapters.set(opencode.id, opencode);
   adapters.set(claude.id, claude);
@@ -35,6 +37,7 @@ function registerAdapters(): void {
   adapters.set(openclaw.id, openclaw);
   adapters.set(hermes.id, hermes);
   adapters.set(saitec.id, saitec);
+  adapters.set(codex.id, codex);
 }
 
 // Register adapters on module load
@@ -78,7 +81,7 @@ export function getAdapterByPlatform(platform: Platform): PlatformAdapter | unde
     claude: 'claude',
     vscode: 'vscode',
     cursor: 'opencode',  // Cursor uses OpenCode-compatible structure
-    codex: 'opencode',  // Codex uses OpenCode-compatible structure
+    codex: 'codex',     // Codex has its own adapter
     antigravity: 'opencode',  // Antigravity uses OpenCode-compatible structure
     openclaw: 'openclaw',
     hermes: 'hermes',

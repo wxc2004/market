@@ -94,21 +94,34 @@ vi.mock('./saitec.js', () => ({
   },
 }));
 
+vi.mock('./codex.js', () => ({
+  CodexAdapter: class {
+    id = 'codex';
+    name = 'Codex CLI';
+    skillDir = '/mock/codex/skills';
+    isAvailable = () => Promise.resolve(!!mockAvailability['codex']);
+    isInstalled = () => Promise.resolve(false);
+    install = () => Promise.resolve();
+    uninstall = () => Promise.resolve();
+    listInstalled = () => Promise.resolve([]);
+  },
+}));
+
 import { detectPlatforms, getPlatformAdapter, getAllAdapters, getAdapterByPlatform } from './registry.js';
 
 // ---------------------------------------------------------------------------
 // getAllAdapters
 // ---------------------------------------------------------------------------
 describe('getAllAdapters', () => {
-  it('should return all 6 registered adapters', () => {
+  it('should return all 7 registered adapters', () => {
     const adapters = getAllAdapters();
-    expect(adapters).toHaveLength(6);
+    expect(adapters).toHaveLength(7);
   });
 
   it('should include all expected adapter IDs', () => {
     const adapters = getAllAdapters();
     const ids = adapters.map(a => a.id).sort();
-    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
+    expect(ids).toEqual(['claude', 'codex', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
   });
 });
 
@@ -152,6 +165,13 @@ describe('getPlatformAdapter', () => {
     expect(adapter!.id).toBe('saitec');
   });
 
+  it('should return codex adapter for "codex"', () => {
+    const adapter = getPlatformAdapter('codex');
+    expect(adapter).toBeDefined();
+    expect(adapter!.id).toBe('codex');
+    expect(adapter!.name).toBe('Codex CLI');
+  });
+
   it('should return undefined for unknown platform id', () => {
     const adapter = getPlatformAdapter('unknown-platform');
     expect(adapter).toBeUndefined();
@@ -191,10 +211,11 @@ describe('getAdapterByPlatform', () => {
     expect(adapter!.id).toBe('opencode');
   });
 
-  it('should return opencode adapter for "codex" (compatible structure)', () => {
+  it('should return codex adapter for "codex"', () => {
     const adapter = getAdapterByPlatform('codex');
     expect(adapter).toBeDefined();
-    expect(adapter!.id).toBe('opencode');
+    expect(adapter!.id).toBe('codex');
+    expect(adapter!.name).toBe('Codex CLI');
   });
 
   it('should return opencode adapter for "antigravity" (compatible structure)', () => {
@@ -281,17 +302,18 @@ describe('detectPlatforms', () => {
     expect(ids).toEqual(['claude', 'opencode', 'vscode']);
   });
 
-  it('should return all 5 platforms when all are available', async () => {
+  it('should return all 7 platforms when all are available', async () => {
     mockAvailability['opencode'] = true;
     mockAvailability['claude'] = true;
     mockAvailability['vscode'] = true;
     mockAvailability['openclaw'] = true;
     mockAvailability['hermes'] = true;
     mockAvailability['saitec'] = true;
+    mockAvailability['codex'] = true;
     const available = await detectPlatforms();
-    expect(available).toHaveLength(6);
+    expect(available).toHaveLength(7);
     const ids = available.map(a => a.id).sort();
-    expect(ids).toEqual(['claude', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
+    expect(ids).toEqual(['claude', 'codex', 'hermes', 'openclaw', 'opencode', 'saitec', 'vscode']);
   });
 
   it('should not include adapters whose availability returns false', async () => {
@@ -301,6 +323,7 @@ describe('detectPlatforms', () => {
     mockAvailability['openclaw'] = true;
     mockAvailability['hermes'] = false;
     mockAvailability['saitec'] = false;
+    mockAvailability['codex'] = false;
     const available = await detectPlatforms();
     expect(available).toHaveLength(2);
     const ids = available.map(a => a.id).sort();

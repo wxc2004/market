@@ -53,6 +53,7 @@ export type Platform = typeof PLATFORMS[number];
  * | VSCODE | vscode |
  * | CLAUDE_CODE | claude |
  * | ANTIGRAVITY | antigravity |
+ * | CODEX_CLI | codex |
  * | (默认) | codex |
  * 
  * @returns {Platform} 检测到的平台标识符
@@ -84,6 +85,9 @@ export function detectPlatform(): Platform {
   
   // Antigravity 环境检测
   if (process.env.ANTIGRAVITY) return 'antigravity';
+  
+  // Codex CLI 环境检测
+  if (process.env.CODEX_CLI) return 'codex';
   
   // 默认返回 codex（作为通用 fallback）
   return 'codex';

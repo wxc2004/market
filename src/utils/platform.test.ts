@@ -47,10 +47,17 @@ describe('detectPlatform', () => {
     expect(detectPlatform()).toBe('antigravity');
   });
 
+  it('returns "codex" when CODEX_CLI env var is set', () => {
+    delete process.env.OPENCODE;
+    process.env.CODEX_CLI = '1';
+    expect(detectPlatform()).toBe('codex');
+  });
+
   it('respects priority order (OPENCODE > CURSOR > VSCODE > ...)', () => {
     process.env.OPENCODE = '1';
     process.env.CURSOR = '1';
     process.env.VSCODE = '1';
+    process.env.CODEX_CLI = '1';
     // OPENCODE is checked first
     expect(detectPlatform()).toBe('opencode');
   });
@@ -61,6 +68,7 @@ describe('detectPlatform', () => {
     delete process.env.VSCODE;
     delete process.env.CLAUDE_CODE;
     delete process.env.ANTIGRAVITY;
+    delete process.env.CODEX_CLI;
     expect(detectPlatform()).toBe('codex');
   });
 });

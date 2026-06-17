@@ -1,3 +1,48 @@
+# SkillMarket v1.3.42 更新日志
+
+**日期**: 2026-06-17
+**版本**: 1.3.42
+
+---
+
+## ✨ 新增：Codex CLI 专属平台适配器
+
+为 OpenAI **Codex CLI** 添加独立平台支持，不再回退到 OpenCode 适配器。
+
+### CodexAdapter
+
+- **skill 安装目录**: `~/.codex/skills/`
+- **环境检测**: 检查 `CODEX_CLI` 环境变量或 `~/.codex/` 目录是否存在
+- **安装方式**: 拷贝整个 skill 目录（SKILL.md + 相关文件），与 Hermes/OpenClaw/Saitec 一致
+
+### 改动文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/adapters/codex.ts` | **新建**: CodexAdapter，继承 BaseAdapter |
+| `src/adapters/codex.test.ts` | **新建**: 6 个测试用例 |
+| `src/adapters/index.ts` | 导出 `CodexAdapter` |
+| `src/adapters/registry.ts` | 注册 CodexAdapter；`getAdapterByPlatform('codex')` 映射到自身 |
+| `src/adapters/registry.test.ts` | 新增 codex mock；adapter 总数 6→7；更新所有相关测试 |
+| `src/utils/platform.ts` | `detectPlatform()` 增加 `CODEX_CLI` 环境变量检测 |
+| `src/utils/platform.test.ts` | 新增 `CODEX_CLI` → codex 测试用例 |
+| `CHANGELOG.md` | v1.3.42 更新日志 |
+| `package.json` | 版本升至 1.3.42 |
+
+### 效果
+
+`skm platforms` 现在会显示：
+
+```
+📍 Available Platforms:
+...
+Codex CLI       ✅  Available (0 skills installed)
+```
+
+安装 skill 时指定 `--platform codex` 会正确安装到 `~/.codex/skills/` 目录，不再复用 OpenCode 的路径。
+
+---
+
 # SkillMarket v1.3.41 更新日志
 
 **日期**: 2026-06-16
