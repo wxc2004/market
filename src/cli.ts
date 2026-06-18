@@ -132,7 +132,7 @@ Commands:
   info <skill>            Display skill information
   install <skill>         Install a skill from npm or GitHub
                             @<version>    Install specific version
-                            --platform    Target platforms (opencode,claude,...)
+                            --platform    Target platforms (opencode,claude,vscode,codex,...)
                             --force       Overwrite if already installed
                             -b, --branch  GitHub branch to install from
                             -c, --commit  GitHub commit to install from
@@ -177,7 +177,7 @@ Examples:
   skm install brainstorming        Install to all detected platforms
   skm install brainstorming@1.0.0  Install specific version
   skm install owner/repo           Install from GitHub
-  skm install brainstorming --platform opencode  Install to specific platform
+  skm install brainstorming --platform opencode,codex  Install to specific platforms
   skm uninstall brainstorming      Uninstall skill
   skm uninstall --all              Uninstall all skills
   skm uninstall --all --yes        Force uninstall all without confirmation

@@ -1,6 +1,6 @@
 # SkillMarket
 
-> **v1.3.37** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent, Saitec TUI).
+> **v1.3.42** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex CLI, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent, Saitec TUI).
 
 ## Installation
 
@@ -253,6 +253,10 @@ SkillMarket can install skills directly to your AI coding tool's skill directory
 | OpenCode | `~/.config/opencode/skills/` | ✅ Detected |
 | Claude Code | `~/.claude/skills/` | ✅ Available |
 | VSCode | `~/.copilot/skills/` | ✅ Available |
+| Codex CLI | `~/.codex/skills/` | ✅ Available |
+| OpenClaw | `~/.openclaw/skills/` | ✅ Available |
+| Hermes Agent | `~/.hermes/skills/` | ✅ Available |
+| Saitec TUI | `~/.saitec_tui/skills/` | ✅ Available |
 
 ### Installation Behavior
 
@@ -270,7 +274,7 @@ Use `--platform` to target specific platforms:
 skm install my-skill --platform opencode
 
 # Multiple platforms
-skm install my-skill --platform opencode,claude,vscode
+skm install my-skill --platform opencode,claude,vscode,codex
 ```
 
 Use `skm platforms` to see which platforms are available on your system:
@@ -283,6 +287,7 @@ $ skm platforms
 OpenCode        ✅  Available (2 skills installed)
 Claude Code     ✅  Available (1 skills installed)
 VSCode          ✅  Available (0 skills installed)
+Codex CLI       ✅  Available (0 skills installed)
 OpenClaw        ✅  Available (0 skills installed)
 Hermes Agent    ✅  Available (0 skills installed)
 Saitec TUI      ✅  Available (0 skills installed)
@@ -327,13 +332,14 @@ Skills are installed to `~/.skillmarket/` with the following structure:
 ~/.config/opencode/skills/<skill-name>/SKILL.md
 ~/.claude/skills/<skill-name>/SKILL.md
 ~/.copilot/skills/<skill-name>/SKILL.md
+~/.codex/skills/<skill-name>/SKILL.md
 ```
 
 ## Supported Platforms
 
 - Cursor
 - VSCode
-- Codex
+- Codex CLI
 - OpenCode
 - Claude Code
 - Antigravity
