@@ -938,6 +938,27 @@ body {
   background: var(--bg-secondary);
 }
 
+.upload-dropzone.selected {
+  border-color: var(--success);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.upload-file-info {
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid var(--success);
+  border-radius: 6px;
+  color: var(--success);
+  font-size: 0.85rem;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.upload-file-info.hidden {
+  display: none;
+}
+
 .upload-dropzone:hover,
 .upload-dropzone.drag-over {
   border-color: var(--accent);

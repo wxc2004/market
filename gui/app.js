@@ -241,6 +241,7 @@ const translations = {
     'upload.installSuccess': '{skillName} installed locally!',
     'upload.bothSuccess': '{skillName} published & installed!',
     'upload.discarded': 'Upload discarded',
+    'upload.fileSelected': 'Selected: {name} ({size})',
     'upload.errorInvalidZip': 'Invalid or empty zip file',
     'upload.errorNoFile': 'Please select a zip file first',
     'upload.uploadError': 'Upload failed: {error}',
@@ -487,6 +488,7 @@ const translations = {
     'upload.installSuccess': '{skillName} 已安装到本地！',
     'upload.bothSuccess': '{skillName} 已发布并安装！',
     'upload.discarded': '上传已丢弃',
+    'upload.fileSelected': '已选择: {name} ({size})',
     'upload.errorInvalidZip': '无效或空的 zip 文件',
     'upload.errorNoFile': '请先选择一个 zip 文件',
     'upload.uploadError': '上传失败：{error}',
@@ -2094,6 +2096,40 @@ const uploadState = {
 /** 上传文件大小限制：50 MB */
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
+/** 格式化文件大小 */
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+/** 更新 dropzone 显示已选文件信息 */
+function showUploadFileInfo(file) {
+  const info = document.getElementById('upload-file-info');
+  const dropzone = document.getElementById('upload-dropzone');
+  if (!info || !dropzone) return;
+  
+  const sizeStr = formatFileSize(file.size);
+  const fileName = file.name;
+  
+  info.textContent = t('upload.fileSelected', { name: fileName, size: sizeStr });
+  info.classList.remove('hidden');
+  dropzone.classList.add('selected');
+}
+
+/** 清除 dropzone 已选文件信息 */
+function clearUploadFileInfo() {
+  const info = document.getElementById('upload-file-info');
+  const dropzone = document.getElementById('upload-dropzone');
+  if (info) {
+    info.classList.add('hidden');
+    info.textContent = '';
+  }
+  if (dropzone) {
+    dropzone.classList.remove('selected');
+  }
+}
+
 /** 初始化 Upload 控件 */
 function initializeUploadControls() {
   const dropzone = document.getElementById('upload-dropzone');
@@ -2120,6 +2156,7 @@ function initializeUploadControls() {
       }
       uploadState.file = file;
       submitBtn.disabled = false;
+      showUploadFileInfo(file);
     }
   });
 
@@ -2151,6 +2188,7 @@ function initializeUploadControls() {
       }
       uploadState.file = file;
       submitBtn.disabled = false;
+      showUploadFileInfo(file);
     }
   });
 
@@ -2199,6 +2237,7 @@ function resetUploadView() {
   document.getElementById('upload-progress').classList.add('hidden');
   document.getElementById('upload-file-input').value = '';
   document.getElementById('upload-skill-name').value = '';
+  clearUploadFileInfo();
 }
 
 /** 上传 zip 到后端 */
