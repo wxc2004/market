@@ -2,7 +2,13 @@
    SkillMarket GUI - Styles
    ============================================================================= */
 
-:root {
+/* =============================================================================
+   主题系统 - 通过 body.theme-xxx 切换
+   ============================================================================= */
+
+/* 海洋蓝（默认） */
+:root,
+body.theme-ocean {
   --bg-primary: #1a1a2e;
   --bg-secondary: #16213e;
   --bg-card: #0f3460;
@@ -17,6 +23,125 @@
   --warning: #ff9800;
   --danger: #f44336;
   --topbar-height: 52px;
+}
+
+/* 深空紫 */
+body.theme-purple {
+  --bg-primary: #1a0a2e;
+  --bg-secondary: #2d1b4e;
+  --bg-card: #3d2a6a;
+  --bg-hover: #4d3a7a;
+  --text-primary: #d4a5ff;
+  --text-secondary: #ffffff;
+  --text-muted: #a080b0;
+  --border-color: #3d2a6a;
+  --accent: #b388ff;
+  --accent-hover: #c9a8ff;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+}
+
+/* 森林绿 */
+body.theme-forest {
+  --bg-primary: #0d2818;
+  --bg-secondary: #1a3d2a;
+  --bg-card: #2d5a3a;
+  --bg-hover: #3a7a4a;
+  --text-primary: #8bc34a;
+  --text-secondary: #ffffff;
+  --text-muted: #8a9a8a;
+  --border-color: #2d5a3a;
+  --accent: #66bb6a;
+  --accent-hover: #81c784;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+}
+
+/* 暖琥珀 */
+body.theme-amber {
+  --bg-primary: #2a1f0a;
+  --bg-secondary: #3d301a;
+  --bg-card: #5a452a;
+  --bg-hover: #7a5a3a;
+  --text-primary: #ffb74d;
+  --text-secondary: #ffffff;
+  --text-muted: #b0a080;
+  --border-color: #5a452a;
+  --accent: #ffa726;
+  --accent-hover: #ffb74d;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+}
+
+/* 暖棕 - 仿纸质感，低蓝光护眼 */
+body.theme-sepia {
+  --bg-primary: #2d2416;
+  --bg-secondary: #352b1c;
+  --bg-card: #3d3223;
+  --bg-hover: #4a3d2c;
+  --text-primary: #e6c9a8;
+  --text-secondary: #f5ede0;
+  --text-muted: #a09080;
+  --border-color: #4a3d2c;
+  --accent: #d4a76a;
+  --accent-hover: #e0b87a;
+  --success: #6b8e23;
+  --warning: #cd853f;
+  --danger: #b55343;
+}
+
+/* 柔灰 - 极简低对比 */
+body.theme-gray {
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #262626;
+  --bg-card: #2d2d2d;
+  --bg-hover: #383838;
+  --text-primary: #c0c0c0;
+  --text-secondary: #e0e0e0;
+  --text-muted: #808080;
+  --border-color: #383838;
+  --accent: #a0a0a0;
+  --accent-hover: #b0b0b0;
+  --success: #5a8a5a;
+  --warning: #a09040;
+  --danger: #8a4a4a;
+}
+
+/* 墨青 - 舒缓蓝绿 */
+body.theme-teal {
+  --bg-primary: #0d2b2e;
+  --bg-secondary: #123538;
+  --bg-card: #1a3f42;
+  --bg-hover: #224f52;
+  --text-primary: #8ed1cc;
+  --text-secondary: #d4ecea;
+  --text-muted: #609090;
+  --border-color: #224f52;
+  --accent: #5bc0be;
+  --accent-hover: #6cd4d2;
+  --success: #4a8a5a;
+  --warning: #b0a040;
+  --danger: #b55343;
+}
+
+/* 暮紫 - 柔和紫灰 */
+body.theme-dusk {
+  --bg-primary: #1a1423;
+  --bg-secondary: #221a2e;
+  --bg-card: #2a1f33;
+  --bg-hover: #352840;
+  --text-primary: #d4c0e8;
+  --text-secondary: #ede0f5;
+  --text-muted: #9080a0;
+  --border-color: #352840;
+  --accent: #c4a7d1;
+  --accent-hover: #d4b8e0;
+  --success: #6b8a6b;
+  --warning: #a09060;
+  --danger: #b55373;
 }
 
 * {
@@ -1156,11 +1281,41 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
-   语言切换
+   主题切换 & 语言切换
    ----------------------------------------------------------------------------- */
 
+.theme-switch {
+  display: flex;
+  align-items: center;
+}
+
+#theme-select {
+  padding: 6px 28px 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+#theme-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#theme-select option {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
 .lang-switch {
-  margin-left: auto;
   display: flex;
   align-items: center;
   padding-left: 8px;

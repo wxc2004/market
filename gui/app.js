@@ -694,6 +694,34 @@ function applyI18nToStaticElements() {
 }
 
 // -----------------------------------------------------------------------------
+// 主题切换
+// -----------------------------------------------------------------------------
+
+const THEMES = ['ocean', 'purple', 'forest', 'amber', 'sepia', 'gray', 'teal', 'dusk'];
+
+function detectTheme() {
+  const saved = localStorage.getItem('skm-theme');
+  if (saved && THEMES.includes(saved)) return saved;
+  return 'ocean';
+}
+
+function applyTheme(theme) {
+  // Remove all theme classes from body
+  THEMES.forEach(t => document.body.classList.remove(`theme-${t}`));
+  // Add the selected theme class
+  document.body.classList.add(`theme-${theme}`);
+}
+
+function setTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  applyTheme(theme);
+  localStorage.setItem('skm-theme', theme);
+
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) themeSelect.value = theme;
+}
+
+// -----------------------------------------------------------------------------
 // 版本号加载
 // -----------------------------------------------------------------------------
 
@@ -748,6 +776,12 @@ function reRenderCurrentView() {
 // -----------------------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 初始化主题
+  const initialTheme = detectTheme();
+  applyTheme(initialTheme);
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) themeSelect.value = initialTheme;
+
   initializeNavigation();
   initializeControls();
   initializeCollapsibleSections();
@@ -904,6 +938,14 @@ function initializeControls() {
    if (tokenInput) {
      tokenInput.addEventListener('keydown', (e) => {
        if (e.key === 'Enter') saveGithubToken();
+     });
+   }
+
+   // 主题切换
+   const themeSelect = document.getElementById('theme-select');
+   if (themeSelect) {
+     themeSelect.addEventListener('change', () => {
+       setTheme(themeSelect.value);
      });
    }
 
