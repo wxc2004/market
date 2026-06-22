@@ -121,6 +121,10 @@ export async function readConfigFile(): Promise<ConfigFile> {
           (valid as any)[def.key] = String(data[def.key]);
         }
       }
+      // 额外读取 githubToken（不在 CONFIG_DEFINITIONS 中，避免暴露在 skm config 列表里）
+      if (data.githubToken !== undefined) {
+        valid.githubToken = String(data.githubToken);
+      }
       return valid;
     }
   } catch {

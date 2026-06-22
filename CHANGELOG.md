@@ -1,3 +1,34 @@
+# SkillMarket v1.3.44 更新日志
+
+**日期**: 2026-06-22
+**版本**: 1.3.44
+
+---
+
+## 🐛 修复：GUI 保存 GitHub Token 后仍显示"未设置 Token"
+
+**问题**: 在 Help 视图输入 GitHub Token 并点击保存后，Token 实际已写入 `~/.skillmarket/config.json`，但页面仍然显示"❌ 未设置 Token"。
+
+**根因**: `readConfigFile()` 函数在读取配置文件时，只提取 `CONFIG_DEFINITIONS` 中声明的键（`npmScope`, `npmRegistry` 等 5 个配置项）。`githubToken` 字段虽然已正确定义在 `ConfigFile` 接口中，但不在 `CONFIG_DEFINITIONS` 列表里——因为不想让它暴露在 `skm config` 命令的输出中。结果就是每次读取配置文件时 `githubToken` 都被静默丢弃，`GET /api/github-token` 永远返回 `hasToken: false`。
+
+**修复**: 在 `readConfigFile()` 中，遍历 `CONFIG_DEFINITIONS` 过滤合法配置键之后，单独读取 `githubToken` 字段，确保它不被过滤掉：
+
+```typescript
+// 额外读取 githubToken（不在 CONFIG_DEFINITIONS 中，避免暴露在 skm config 列表里）
+if (data.githubToken !== undefined) {
+  valid.githubToken = String(data.githubToken);
+}
+```
+
+### 改动文件
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/config.ts` | `readConfigFile()` 新增 `githubToken` 字段显式读取 |
+| `package.json` | 版本升至 1.3.44 |
+
+---
+
 # SkillMarket v1.3.43 更新日志
 
 **日期**: 2026-06-18
