@@ -697,7 +697,7 @@ function applyI18nToStaticElements() {
 // 主题切换
 // -----------------------------------------------------------------------------
 
-const THEMES = ['ocean', 'purple', 'forest', 'amber', 'sepia', 'gray', 'teal', 'dusk'];
+const THEMES = ['ocean', 'purple', 'forest', 'amber', 'sepia', 'gray', 'teal', 'dusk', 'light'];
 
 function detectTheme() {
   const saved = localStorage.getItem('skm-theme');
