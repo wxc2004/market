@@ -34,6 +34,7 @@ const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 
 // 数据层函数（直接返回数据，无 console.log 副作用）
 import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
+import type { NpmRegistryResponse } from './npm.js';
 import { getInstalledSkills } from './registry.js';
 import { detectPlatforms, getAllAdapters } from '../adapters/index.js';
 
@@ -71,19 +72,69 @@ const guiDir = join(__dirname, '..', 'gui');
 // 缓存 & 限流
 // -----------------------------------------------------------------------------
 
-/** 简单内存缓存 */
-const cache = new Map<string, { data: unknown; expiry: number }>();
-function getCached<T>(key: string): T | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiry) { cache.delete(key); return null; }
-  return entry.data as T;
-}
-function setCache(key: string, data: unknown, ttlMs = 60_000): void {
-  cache.set(key, { data, expiry: Date.now() + ttlMs });
+import { TtlCache } from '../utils/cache.js';
+
+/** UI 专用的缓存实例（默认 TTL 60 秒，与 npm 缓存的 30 秒区分） */
+const uiCache = new TtlCache();
+
+// -----------------------------------------------------------------------------
+// 本地类型定义
+// -----------------------------------------------------------------------------
+
+/** 前端 skill 列表中的单个 skill 详情 */
+interface SkillDetail {
+  id: string;
+  name: string;
+  displayName: string;
+  version: string;
+  description: string;
+  platforms: string[];
+  author: string;
+  homepage: string;
+  repository: string;
+  updated: string;
 }
 
-/** 限制并发数的 map helper（每个 npm 请求间隔至少 200ms） */
+/** 上传解析的 package.json 信息 */
+interface UploadPkgInfo {
+  name?: string;
+  version?: string;
+  description?: string;
+  displayName?: string;
+  skillmarket?: {
+    id?: string;
+    platforms?: string[];
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// -----------------------------------------------------------------------------
+// npm registry 响应类型辅助函数
+// -----------------------------------------------------------------------------
+
+/**
+ * 从 npm registry 的 author 字段中提取作者名称。
+ * npm 的 author 可以是字符串 "name <email>" 或对象 { name, email, url }。
+ */
+function getAuthorName(author: string | { name?: string } | undefined): string {
+  if (!author) return '';
+  if (typeof author === 'string') return author.replace(/<[^>]*>/g, '').trim();
+  return author.name || '';
+}
+
+/**
+ * 从 npm registry 的 repository 字段中提取仓库 URL。
+ * repository 可以是字符串或对象 { type, url, directory }。
+ */
+function getRepoUrl(repo: string | { url?: string } | undefined): string {
+  if (!repo) return '';
+  if (typeof repo === 'string') return repo;
+  return repo.url || '';
+}
+
+/**
+ * 限制并发数的 map helper（每个 npm 请求间隔至少 200ms） */
 async function throttledMap<T, R>(
   items: T[],
   fn: (item: T, index: number) => Promise<R>,
@@ -166,7 +217,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const cacheKey = `search:${search}:limit:${limit}`;
 
     // 先从缓存获取搜索结果
-    let searchResult = getCached<{ packages: string[]; total: number }>(cacheKey);
+    let searchResult = uiCache.get<{ packages: string[]; total: number }>(cacheKey);
     if (!searchResult) {
       searchResult = await searchSkillmarketPackages({
         from: 0,
@@ -174,7 +225,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
         keyword: search || undefined,
       });
       // 缓存 30 秒减少 registry 压力
-      setCache(cacheKey, searchResult, 30_000);
+      uiCache.set(cacheKey, searchResult, 30_000);
     }
 
     const { packages, total } = searchResult;
@@ -184,10 +235,10 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
     const skillDetails = await throttledMap(packages, async (pkgName) => {
       try {
         const pkgCacheKey = `pkg:${pkgName}`;
-        let info = getCached<any>(pkgCacheKey);
+        let info = uiCache.get<NpmRegistryResponse>(pkgCacheKey);
         if (!info) {
           info = await fetchNpmPackage(pkgName);
-          if (info) setCache(pkgCacheKey, info, 30_000);
+          if (info) uiCache.set(pkgCacheKey, info, 30_000);
         }
         if (!info) { fetchErrors++; return null; }
         const latestVersion = info['dist-tags']?.latest || 'unknown';
@@ -200,9 +251,9 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
           version: latestVersion,
           description: pkg?.description || '',
           platforms: meta?.platforms || [],
-          author: info.author?.name || pkg?.author?.name || '',
+          author: getAuthorName(info.author) || getAuthorName(pkg?.author),
           homepage: pkg?.homepage || '',
-          repository: pkg?.repository?.url || '',
+          repository: getRepoUrl(pkg?.repository),
           updated: info.time?.[latestVersion] || info.time?.modified || '',
         };
       } catch {
@@ -211,7 +262,7 @@ API_ROUTES.GET['/api/skills'] = async (_req, res, url) => {
       }
     }, 3);
 
-    let skills = skillDetails.filter(Boolean) as any[];
+    let skills: SkillDetail[] = skillDetails.filter(Boolean) as SkillDetail[];
 
     // 按平台过滤
     if (platform) {
@@ -345,10 +396,10 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
     }
 
     const cacheKey = `skill-info:${skillName}`;
-    let info = getCached<any>(cacheKey);
+    let info = uiCache.get<NpmRegistryResponse>(cacheKey);
     if (!info) {
       info = await fetchSkillPackage(skillName);
-      if (info) setCache(cacheKey, info, 30_000);
+      if (info) uiCache.set(cacheKey, info, 30_000);
     }
     if (!info) {
       jsonResponse(res, 404, { error: `Skill "${skillName}" not found` });
@@ -369,10 +420,10 @@ API_ROUTES.GET['/api/skill-info'] = async (_req, res, url) => {
       version: latestVersion,
       platforms: meta?.platforms || [],
       versions: recentVersions,
-      author: info.author?.name || pkg?.author?.name || '',
+      author: getAuthorName(info.author) || getAuthorName(pkg?.author),
       license: info.license || '',
       homepage: pkg?.homepage || '',
-      repository: pkg?.repository?.url || '',
+      repository: getRepoUrl(pkg?.repository),
       readme: info.readme || '',
     });
   } catch (err) {
@@ -511,7 +562,7 @@ API_ROUTES.GET['/api/admin/stats'] = async (_req, res, _url) => {
           } catch { return null; }
         }),
       )
-    ).filter(Boolean) as { name: string; info: any }[];
+    ).filter((item): item is { name: string; info: NpmRegistryResponse } => item !== null);
 
     let totalVersions = 0;
     let totalSize = 0;
@@ -526,7 +577,7 @@ API_ROUTES.GET['/api/admin/stats'] = async (_req, res, _url) => {
       const meta = latestPkg?.skillmarket;
       if (meta) {
         withMetadata++;
-        if (meta.platforms) meta.platforms.forEach((p: string) => platformSet.add(p));
+        if (meta.platforms) meta.platforms.forEach(p => platformSet.add(p));
       }
       if (latestPkg?.dist?.unpackedSize) totalSize += latestPkg.dist.unpackedSize;
     }
@@ -775,7 +826,7 @@ API_ROUTES.POST['/api/upload'] = async (req, res, _url) => {
       return normalized === 'package.json' || normalized.endsWith('/package.json');
     });
     let skillName = '';
-    let pkgInfo: any = {};
+    let pkgInfo: UploadPkgInfo = {};
 
     if (pkgEntry) {
       try {

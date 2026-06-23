@@ -10,10 +10,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getSkillsDir, getRegistryPath } from '../utils/dirs.js';
 
 /**
  * 验证 skill 完整性
@@ -31,7 +28,7 @@ export async function verifySkill(skillName: string): Promise<void> {
     console.log(`\n🔍 Verifying skill: ${skillName}\n`);
 
     // 1. 查找 skill 安装位置
-    const skillDir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.skillmarket', 'skills', skillName);
+    const skillDir = path.join(getSkillsDir(), skillName);
 
     if (!await fs.pathExists(skillDir)) {
       console.error(`❌ Skill "${skillName}" not found locally.`);
@@ -91,7 +88,7 @@ export async function verifySkill(skillName: string): Promise<void> {
     }
 
     // 4. 检查 registry
-    const registryPath = path.join(process.env.HOME || process.env.USERPROFILE || '', '.skillmarket', 'registry.json');
+    const registryPath = getRegistryPath();
     if (await fs.pathExists(registryPath)) {
       try {
         const registry = await fs.readJson(registryPath);

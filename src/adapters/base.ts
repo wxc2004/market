@@ -32,8 +32,7 @@ export abstract class BaseAdapter implements PlatformAdapter {
   
   async isAvailable(): Promise<boolean> {
     try {
-      await fs.ensureDir(this.skillDir);
-      return true;
+      return fs.pathExists(this.skillDir);
     } catch {
       return false;
     }

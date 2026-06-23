@@ -54,11 +54,9 @@ describe('BaseAdapter', () => {
   });
 
   describe('isAvailable', () => {
-    it('returns true when skillDir can be created', async () => {
+    it('returns false when skillDir does not exist', async () => {
       const result = await adapter.isAvailable();
-      expect(result).toBe(true);
-      // Should have created the directory
-      expect(await fs.pathExists(adapter.skillDir)).toBe(true);
+      expect(result).toBe(false);
     });
 
     it('returns true when skillDir already exists', async () => {

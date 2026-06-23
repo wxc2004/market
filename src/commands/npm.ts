@@ -27,9 +27,10 @@ import { SKILL_SCOPES } from '../config.js';
 // -----------------------------------------------------------------------------
 
 /**
- * npm 包版本信息
+ * npm 包版本信息（package.json 中的字段）
  * 
- * 定义从 npm registry 返回的单个版本对象的结构
+ * 定义从 npm registry 返回的单个版本对象的结构，
+ * 包含标准 package.json 字段和 SkillMarket 自定义字段。
  */
 interface NpmPackage {
   /** 包名称 */
@@ -47,6 +48,28 @@ interface NpmPackage {
     homepage?: string;
     repository?: string;
     bugs?: string;
+  };
+  
+  /** 包作者（可以是字符串 "name <email>" 或对象） */
+  author?: string | { name?: string; email?: string; url?: string };
+  
+  /** 包主页 */
+  homepage?: string;
+  
+  /** 包仓库信息 */
+  repository?: string | { type?: string; url?: string; directory?: string };
+  
+  /** 包许可证 */
+  license?: string;
+  
+  /** 发布文件信息（包含解压后大小） */
+  dist?: {
+    unpackedSize?: number;
+    /** SHA-1 校验和 */
+    shasum?: string;
+    /** tarball URL */
+    tarball?: string;
+    [key: string]: unknown;
   };
   
   /**
@@ -78,7 +101,7 @@ interface NpmPackage {
  * 
  * 对应 npm registry 的完整包信息响应
  */
-interface NpmRegistryResponse {
+export interface NpmRegistryResponse {
   /** 包名称 */
   name: string;
   
@@ -87,6 +110,37 @@ interface NpmRegistryResponse {
   
   /** 发行标签，如 { latest: "1.0.0", beta: "1.1.0-beta.1" } */
   'dist-tags': Record<string, string>;
+  
+  /** 包作者 */
+  author?: string | { name?: string; email?: string; url?: string };
+  
+  /** 包许可证 */
+  license?: string;
+  
+  /** README 内容 */
+  readme?: string;
+  
+  /** 版本发布时间映射 */
+  time?: {
+    /** 包创建时间 */
+    created?: string;
+    /** 包最后修改时间 */
+    modified?: string;
+    /** 特定版本的发布时间 */
+    [version: string]: string | undefined;
+  };
+  
+  /** 包描述 */
+  description?: string;
+  
+  /** 包主页 */
+  homepage?: string;
+  
+  /** 包仓库 */
+  repository?: string | { type?: string; url?: string };
+  
+  /** 关键字 */
+  keywords?: string[];
 }
 
 /**
@@ -103,28 +157,7 @@ interface SearchPackage {
 // 内存缓存（减少 npm registry 请求）
 // -----------------------------------------------------------------------------
 
-/** 缓存条目 */
-interface CacheEntry<T> {
-  data: T;
-  expiry: number;
-}
-
-/** 简单内存缓存，默认 TTL 30 秒 */
-const npmCache = new Map<string, CacheEntry<any>>();
-
-function getCached<T>(key: string): T | null {
-  const entry = npmCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiry) {
-    npmCache.delete(key);
-    return null;
-  }
-  return entry.data as T;
-}
-
-function setCache(key: string, data: unknown, ttlMs = 30_000): void {
-  npmCache.set(key, { data, expiry: Date.now() + ttlMs });
-}
+import { cache } from '../utils/cache.js';
 
 // -----------------------------------------------------------------------------
 // 获取包信息
@@ -156,7 +189,7 @@ function setCache(key: string, data: unknown, ttlMs = 30_000): void {
 export async function fetchNpmPackage(packageName: string, retries = 1): Promise<NpmRegistryResponse | null> {
   // 先查缓存
   const cacheKey = `pkg:${packageName}`;
-  const cached = getCached<NpmRegistryResponse>(cacheKey);
+  const cached = cache.get<NpmRegistryResponse>(cacheKey);
   if (cached) return cached;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -164,7 +197,7 @@ export async function fetchNpmPackage(packageName: string, retries = 1): Promise
       const result = await fetchNpmPackageOnce(packageName);
       if (result !== null) {
         // 写入缓存
-        setCache(cacheKey, result);
+        cache.set(cacheKey, result);
         return result;
       }
     } catch {

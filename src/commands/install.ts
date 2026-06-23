@@ -70,6 +70,81 @@ export interface InstallOptions {
 // 安装函数
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// 缓存清理
+// -----------------------------------------------------------------------------
+
+/**
+ * 缓存最大条目数（超过此数量则清理最旧的）
+ */
+const CACHE_MAX_ENTRIES = 50;
+
+/**
+ * 缓存条目的最大生存时间（毫秒），默认 7 天
+ */
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 清理本地缓存目录，移除过期和过多的缓存条目
+ *
+ * 策略:
+ * 1. 移除超过 CACHE_MAX_AGE_MS 未使用的缓存
+ * 2. 如果仍超过 CACHE_MAX_ENTRIES，保留最近的 N 个
+ */
+async function cleanupCache(): Promise<void> {
+  try {
+    const cacheDir = getCacheDir();
+    if (!(await fs.pathExists(cacheDir))) return;
+
+    const entries = await fs.readdir(cacheDir, { withFileTypes: true });
+    const dirs = entries
+      .filter(e => e.isDirectory())
+      .map(e => ({ name: e.name, path: path.join(cacheDir, e.name) }));
+
+    if (dirs.length <= CACHE_MAX_ENTRIES) {
+      // 虽然数量未超限，但清理过期条目
+      const now = Date.now();
+      let removed = 0;
+      for (const dir of dirs) {
+        try {
+          const stat = await fs.stat(dir.path);
+          if (now - stat.mtimeMs > CACHE_MAX_AGE_MS) {
+            await fs.remove(dir.path);
+            removed++;
+          }
+        } catch { /* skip if stat fails */ }
+      }
+      if (removed > 0) {
+        console.log(`  Cache cleanup: removed ${removed} expired entr${removed > 1 ? 'ies' : 'y'}`);
+      }
+      return;
+    }
+
+    // 超过最大数量，按 mtime 排序，保留最新的
+    const withMtime = await Promise.all(
+      dirs.map(async (dir) => {
+        try {
+          const stat = await fs.stat(dir.path);
+          return { ...dir, mtime: stat.mtimeMs };
+        } catch {
+          return { ...dir, mtime: 0 };
+        }
+      })
+    );
+
+    withMtime.sort((a, b) => b.mtime - a.mtime); // 最新的在前
+    const toRemove = withMtime.slice(CACHE_MAX_ENTRIES);
+
+    for (const dir of toRemove) {
+      try {
+        await fs.remove(dir.path);
+      } catch { /* ignore removal errors */ }
+    }
+
+    console.log(`  Cache cleanup: removed ${toRemove.length} old entr${toRemove.length > 1 ? 'ies' : 'y'}`);
+  } catch { /* ignore cleanup errors */ }
+}
+
 /**
  * 安装指定的 skill
  * 
@@ -161,6 +236,9 @@ export async function installSkill(
       } catch (err) {
         throw new Error(`Failed to download package: ${err}`);
       }
+
+      // 下载成功，触发缓存清理
+      await cleanupCache();
     }
     
     pkgRoot = targetDir;

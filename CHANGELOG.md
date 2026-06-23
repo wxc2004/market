@@ -1,3 +1,70 @@
+# SkillMarket v1.3.46 更新日志
+
+**日期**: 2026-06-23
+**版本**: 1.3.46
+
+---
+
+## 🛠 维护：高优先级代码质量修复
+
+集中修复代码审查中发现的高优先级问题，提升代码质量与可维护性。
+
+### 缓存系统重构
+
+将 `npm.ts` 和 `ui.ts` **两个独立的 TTL 缓存** 合并为统一的 `TtlCache` 类，消除冗余实现。
+
+| 改动 | 说明 |
+|------|------|
+| `src/utils/cache.ts` | **新建** 通用 `TtlCache` 类，支持泛型、可配置 TTL、惰性过期 |
+| `src/commands/npm.ts` | 移除本地 `npmCache`/`getCached`/`setCache`，改用共享 `cache` 实例 |
+| `src/commands/ui.ts` | 移除本地 `cache`/`getCached`/`setCache`，改用专用 `uiCache` 实例（TTL=60s） |
+
+### 消除 `any` 类型
+
+`ui.ts` 全线移除 `any` 类型，替换为精确的 TypeScript 接口：
+
+- `NpmRegistryResponse`：扩展了 `author`/`license`/`readme`/`time` 等 npm registry 字段
+- `NpmPackage`：扩展了 `author`/`homepage`/`repository`/`dist`/`license` 字段
+- `SkillDetail`：前端 skill 列表项的完整类型
+- `UploadPkgInfo`：上传解析的 package.json 类型
+- 辅助函数 `getAuthorName()`、`getRepoUrl()` 安全处理 npm 的 string|object 联合类型
+
+### 路径硬编码修复
+
+`verify.ts` 不再硬编码 `~/.skillmarket/skills/` 路径，改用 `getSkillsDir()` / `getRegistryPath()` 工具函数。
+
+| 改动前 | 改动后 |
+|--------|--------|
+| `path.join(process.env.HOME..., '.skillmarket', 'skills', name)` | `path.join(getSkillsDir(), name)` |
+| `process.env.HOME..., '.skillmarket', 'registry.json'` | `getRegistryPath()` |
+
+### BaseAdapter.isAvailable() 副作用修复
+
+`base.ts` 中 `isAvailable()` 方法不再在检测时创建目录，仅做存在性检查。目录创建由 `install()` 方法按需完成。
+
+**关联测试更新**: `base.test.ts` 的 `isAvailable` 测试用例同步适配新语义：`false` = 目录不存在，`true` = 目录已存在。
+
+### 缓存淘汰机制
+
+`install.ts` 新增 `cleanupCache()` 函数，在每次下载 npm 包到缓存后自动清理：
+
+- **过期清理**：超过 7 天未使用的缓存条目自动移除
+- **数量限制**：缓存条目超过 50 个时，保留最近的 50 个
+
+### 改动文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `src/utils/cache.ts` | **新建** 通用 TTL 缓存模块 |
+| `src/commands/npm.ts` | 使用共享缓存；导出 `NpmRegistryResponse`；扩展类型定义 |
+| `src/commands/ui.ts` | 使用 `TtlCache`；移除 37 处 `any`；添加 3 个接口 + 2 个辅助函数 |
+| `src/commands/verify.ts` | 路径硬编码替换为工具函数；移除死代码 |
+| `src/adapters/base.ts` | `isAvailable()` 改为无副作用的纯检测 |
+| `src/commands/install.ts` | 新增 `cleanupCache()` 缓存清理 |
+| `src/adapters/base.test.ts` | 测试用例适配新语义 |
+
+---
+
 # SkillMarket v1.3.45 更新日志
 
 **日期**: 2026-06-22
