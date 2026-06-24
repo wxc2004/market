@@ -126,11 +126,16 @@ export async function syncPlatformLinks(): Promise<void> {
             await fs.symlink(targetPlatformDir, platformSkillDir, 'junction');
             
             console.log(`  Linked: ${platform}/${skillId}`);
-          } catch {
-            // Windows 上软链接失败时的降级处理
-            // 改为复制目录而非创建链接
-            await fs.copy(targetPlatformDir, platformSkillDir, { overwrite: true });
-            console.log(`  Copied: ${platform}/${skillId}`);
+          } catch (err: unknown) {
+            // Windows 上软链接失败（EPERM 等权限类错误）时降级为复制
+            // 非权限类错误（如磁盘空间不足、路径不存在）向上传播
+            const nodeErr = err as NodeJS.ErrnoException;
+            if (nodeErr.code === 'EPERM' || nodeErr.code === 'EACCES' || nodeErr.code === 'ENOTSUP') {
+              await fs.copy(targetPlatformDir, platformSkillDir, { overwrite: true });
+              console.log(`  Copied: ${platform}/${skillId}`);
+            } else {
+              throw err;
+            }
           }
         }
       }

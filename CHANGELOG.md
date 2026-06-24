@@ -1,3 +1,31 @@
+# SkillMarket v1.3.47 更新日志
+
+**日期**: 2026-06-24
+**版本**: 1.3.47
+
+---
+
+## 🛠 代码质量：消除 process.exit(1) + 增强错误处理
+
+### CLI 错误处理重构
+
+`src/cli.ts` — 移除全部 21 处 `process.exit(1)`，改为：
+- `throw Error()` 替代 `console.error + process.exit(1)`，让错误沿调用栈向上传播
+- `program.exitOverride()` 拦截 Commander 的默认 `process.exit`
+- `await program.parseAsync()` 统一在顶层 `catch` 中处理所有错误
+
+### 并发限流提取
+
+`src/commands/ui.ts`、`src/commands/admin.ts` — 将 `throttledMap` 抽取到 `src/utils/concurrency.ts` 共享模块，`admin.ts` ls/stats 命令改用限流并发避免 npm 429。
+
+### Symlink 错误精细处理
+
+`src/commands/sync.ts` — 区分 symlink 错误：
+- `EPERM`/`EACCES`/`ENOTSUP` → 降级为 copy（保持兼容性）
+- 其余错误 → 向上传播（不静默吞没）
+
+---
+
 # SkillMarket v1.3.46 更新日志
 
 **日期**: 2026-06-23

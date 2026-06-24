@@ -133,24 +133,7 @@ function getRepoUrl(repo: string | { url?: string } | undefined): string {
   return repo.url || '';
 }
 
-/**
- * 限制并发数的 map helper（每个 npm 请求间隔至少 200ms） */
-async function throttledMap<T, R>(
-  items: T[],
-  fn: (item: T, index: number) => Promise<R>,
-  concurrency = 3,
-): Promise<R[]> {
-  const results: R[] = [];
-  for (let i = 0; i < items.length; i += concurrency) {
-    const batch = items.slice(i, i + concurrency);
-    const batchResults = await Promise.all(batch.map((item, idx) => fn(item, i + idx)));
-    results.push(...batchResults);
-    if (i + concurrency < items.length) {
-      await new Promise(r => setTimeout(r, 200)); // 批次间延迟
-    }
-  }
-  return results;
-}
+import { throttledMap } from '../utils/concurrency.js';
 
 // -----------------------------------------------------------------------------
 // MIME 类型映射

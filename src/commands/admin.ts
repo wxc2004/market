@@ -32,6 +32,7 @@ import { execSync } from 'child_process';
 import { searchSkillmarketPackages, fetchNpmPackage, fetchSkillPackage } from './npm.js';
 import { NPM_SCOPE, SKILL_SCOPES, NPM_REGISTRY } from '../config.js';
 import { PLATFORMS } from '../constants.js';
+import { throttledMap } from '../utils/concurrency.js';
 
 // -----------------------------------------------------------------------------
 // 类型
@@ -82,9 +83,10 @@ export async function adminList(): Promise<void> {
     return;
   }
 
-  // 获取每个包的详细信息（并行）
-  const details = await Promise.all(
-    packages.map(async (pkg) => {
+  // 获取每个包的详细信息（限流，避免 npm 429）
+  const details = await throttledMap(
+    packages,
+    async (pkg) => {
       try {
         const info = await fetchNpmPackage(pkg);
         if (!info) return null;
@@ -101,7 +103,9 @@ export async function adminList(): Promise<void> {
       } catch {
         return null;
       }
-    }),
+    },
+    3, // 并发 3
+    200, // 批次间 200ms
   );
 
   const valid = details.filter(Boolean) as NonNullable<typeof details[0]>[];
@@ -264,17 +268,20 @@ export async function adminStats(): Promise<void> {
     return;
   }
 
-  // 获取所有包详情（并行）
+  // 获取所有包详情（限流，避免 npm 429）
   const infos = (
-    await Promise.all(
-      packages.map(async (pkg) => {
+    await throttledMap(
+      packages,
+      async (pkg) => {
         try {
           const info = await fetchNpmPackage(pkg);
           return info ? { name: pkg, info } : null;
         } catch {
           return null;
         }
-      }),
+      },
+      3, // 并发 3
+      200, // 批次间 200ms
     )
   ).filter(Boolean) as { name: string; info: NonNullable<Awaited<ReturnType<typeof fetchNpmPackage>>> }[];
 

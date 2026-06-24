@@ -104,67 +104,10 @@ program
   .version(VERSION);
 
 // -----------------------------------------------------------------------------
-// 帮助命令 (-h, --help)
+// 帮助命令 - 在 Commander 自动生成的帮助后追加示例
 // -----------------------------------------------------------------------------
 
-/**
- * 自定义帮助命令
- * 
- * 显示详细的使用说明和命令示例
- */
-program
-  .hook('preAction', (thisCommand) => {
-    if (thisCommand.opts().help) {
-  console.log(`
-SkillMarket CLI
-
-Usage: skm <command> [options]
-
-Commands:
-  ls [options]            List available skills
-                            --installed    Show only installed skills
-                            --updates      Check for updates
-                            --page <n>     Page number (default: 1)
-                            --limit <n>    Items per page (default: 20)
-                            -s, --search   Search by keyword
-  search <keyword>        Search skills from npm registry
-                            -l, --limit    Max results (default: 20)
-  info <skill>            Display skill information
-  install <skill>         Install a skill from npm or GitHub
-                            @<version>    Install specific version
-                            --platform    Target platforms (opencode,claude,vscode,codex,...)
-                            --force       Overwrite if already installed
-                            -b, --branch  GitHub branch to install from
-                            -c, --commit  GitHub commit to install from
-  uninstall <skill>       Remove an installed skill
-                            --platform    Target platforms
-                            --all         Uninstall ALL installed skills
-                            --dry-run     Preview without deleting
-                            -y, --yes     Skip confirmation
-  update [skill]          Update installed skills (all if no skill specified)
-                            --all         Update all skills
-  publish <skill>         Publish a skill to npm
-                            -v, --version Specify version
-  verify <skill>          Verify skill integrity and format
-  sync [skill]            Synchronize platform links (or sync a skill to latest)
-  platforms               Show available platforms
-  gui [port]              Start SkillMarket GUI web interface
-  config                  View and manage configuration
-    config [ls]             List all configuration values
-    config get <key>        Get a config value
-    config set <key> <val>  Set a config value
-    config reset [key]      Reset config to defaults
-  admin                   Admin: manage published skills
-    admin ls                List all published skills
-    admin info <skill>      Show detailed info for a published skill
-    admin search <keyword>  Search published skills
-    admin stats             Publishing statistics
-    admin verify <skill>    Verify a published skill
-    admin deprecate <skill> Deprecate a skill (--version, --message)
-    admin unpublish <skill> Unpublish a skill (--version, --force)
-    admin tag set/tag rm/tag ls  Manage dist-tags
-    admin owner add/rm      Manage package maintainers
-    admin access <skill>    Set package access (public|restricted)
+program.addHelpText('afterAll', `
 
 Examples:
   skm ls                           List available skills
@@ -199,11 +142,7 @@ Examples:
   skm config reset --all           Reset all config
   skm admin ls                     List all published skills
   skm admin stats                  Publishing statistics
-  skm admin deprecate my-skill --message "Use v2"  Deprecate a skill
-       `);
-      process.exit(0);
-    }
-  });
+  skm admin deprecate my-skill --message "Use v2"  Deprecate a skill`);
 
 // -----------------------------------------------------------------------------
 // 列表命令 (skm ls)
@@ -311,32 +250,27 @@ installCmd
   .option('-b, --branch <branch>', 'GitHub branch to install from')
   .option('-c, --commit <commit>', 'GitHub commit hash to install from')
   .action(async (skill, opts) => {
-    try {
-      const platforms = opts.platform 
-        ? opts.platform.split(',').map((p: string) => p.trim())
-        : undefined;
-      
-      // 检测是否为 GitHub URL 或 owner/repo 格式
-      const githubSource = parseGitHubUrl(skill);
-      
-      if (githubSource) {
-        // GitHub 安装
-        await installFromGitHub(skill, {
-          platforms,
-          force: opts.force,
-          branch: opts.branch,
-          commit: opts.commit
-        });
-      } else {
-        // npm 安装
-        await installSkill(skill, opts.version, {
-          platforms,
-          force: opts.force
-        });
-      }
-    } catch (err) {
-      console.error('Installation failed:', err);
-      process.exit(1);
+    const platforms = opts.platform 
+      ? opts.platform.split(',').map((p: string) => p.trim())
+      : undefined;
+    
+    // 检测是否为 GitHub URL 或 owner/repo 格式
+    const githubSource = parseGitHubUrl(skill);
+    
+    if (githubSource) {
+      // GitHub 安装
+      await installFromGitHub(skill, {
+        platforms,
+        force: opts.force,
+        branch: opts.branch,
+        commit: opts.commit
+      });
+    } else {
+      // npm 安装
+      await installSkill(skill, opts.version, {
+        platforms,
+        force: opts.force
+      });
     }
   });
 
@@ -375,36 +309,30 @@ uninstallCmd
   .option('-d, --dry-run', 'Preview what would be uninstalled without actually deleting')
   .option('-y, --yes', 'Skip confirmation prompts')
   .action(async (skill, opts) => {
-    try {
-      const platforms = opts.platform 
-        ? opts.platform.split(',').map((p: string) => p.trim())
-        : undefined;
-      
-      // 处理 --all 选项
-      if (opts.all) {
-        await uninstallAll({
-          platforms,
-          dryRun: opts.dryRun,
-          yes: opts.yes
-        });
-        return;
-      }
-      
-      // skill 参数是必需的（除非使用 --all）
-      if (!skill) {
-        console.error('Error: Skill ID is required (or use --all to uninstall all)');
-        process.exit(1);
-      }
-      
-      await uninstallSkill(skill, {
+    const platforms = opts.platform 
+      ? opts.platform.split(',').map((p: string) => p.trim())
+      : undefined;
+    
+    // 处理 --all 选项
+    if (opts.all) {
+      await uninstallAll({
         platforms,
         dryRun: opts.dryRun,
         yes: opts.yes
       });
-    } catch (err) {
-      console.error('Uninstall failed:', err);
-      process.exit(1);
+      return;
     }
+    
+    // skill 参数是必需的（除非使用 --all）
+    if (!skill) {
+      throw new Error('Skill ID is required (or use --all to uninstall all)');
+    }
+    
+    await uninstallSkill(skill, {
+      platforms,
+      dryRun: opts.dryRun,
+      yes: opts.yes
+    });
   });
 
 // -----------------------------------------------------------------------------
@@ -430,16 +358,10 @@ updateCmd
   .argument('[skill]', 'Skill ID to update (optional, updates all if not specified)')
   .option('--all', 'Update all skills')
   .action(async (skill, opts) => {
-    try {
-      // 根据参数决定更新单个还是全部
-      if (opts.all || !skill) {
-        await updateSkill();
-      } else {
-        await updateSkill(skill);
-      }
-    } catch (err) {
-      console.error('Update failed:', err);
-      process.exit(1);
+    if (opts.all || !skill) {
+      await updateSkill();
+    } else {
+      await updateSkill(skill);
     }
   });
 
@@ -461,17 +383,10 @@ program
   .command('sync [skill]')
   .description('Synchronize platform links or sync skill to latest version')
   .action(async (skill) => {
-    try {
-      if (skill) {
-        // 同步指定 skill 到最新版本
-        await syncSkill(skill);
-      } else {
-        // 同步平台软链接
-        await syncPlatformLinks();
-      }
-    } catch (err) {
-      console.error('Sync failed:', err);
-      process.exit(1);
+    if (skill) {
+      await syncSkill(skill);
+    } else {
+      await syncPlatformLinks();
     }
   });
 
@@ -489,28 +404,23 @@ program
 const platformsCmd = program.command('platforms').description('Show available platforms');
 platformsCmd
   .action(async () => {
-    try {
-      const available = await detectPlatforms();
-      const allAdapters = getAllAdapters();
+    const available = await detectPlatforms();
+    const allAdapters = getAllAdapters();
+    
+    console.log('\n📍 Available Platforms:\n');
+    
+    for (const adapter of allAdapters) {
+      const isAvailable = available.find(a => a.id === adapter.id);
+      const installed = await adapter.listInstalled();
       
-      console.log('\n📍 Available Platforms:\n');
-      
-      for (const adapter of allAdapters) {
-        const isAvailable = available.find(a => a.id === adapter.id);
-        const installed = await adapter.listInstalled();
-        
-        if (isAvailable) {
-          console.log(`${adapter.name.padEnd(15)} ✅  Available (${installed.length} skills installed)`);
-        } else {
-          console.log(`${adapter.name.padEnd(15)} ❌  Not detected`);
-        }
+      if (isAvailable) {
+        console.log(`${adapter.name.padEnd(15)} ✅  Available (${installed.length} skills installed)`);
+      } else {
+        console.log(`${adapter.name.padEnd(15)} ❌  Not detected`);
       }
-      
-      console.log('');
-    } catch (err) {
-      console.error('Failed to list platforms:', err);
-      process.exit(1);
     }
+    
+    console.log('');
   });
 
 // -----------------------------------------------------------------------------
@@ -548,12 +458,7 @@ program
   .description('Publish a skill to npm')
   .option('-v, --version <version>', 'Specify version (optional, auto-increment patch if not specified)')
   .action(async (skill, options) => {
-    try {
-      await publishSkill(skill, options.version ? { version: options.version } : undefined);
-    } catch (err) {
-      console.error('Publish failed:', err);
-      process.exit(1);
-    }
+    await publishSkill(skill, options.version ? { version: options.version } : undefined);
   });
 
 // -----------------------------------------------------------------------------
@@ -571,12 +476,7 @@ program
   .command('verify <skill>')
   .description('Verify skill integrity and format')
   .action(async (skill) => {
-    try {
-      await verifySkill(skill);
-    } catch (err) {
-      console.error('Verify failed:', err);
-      process.exit(1);
-    }
+    await verifySkill(skill);
   });
 
 // -----------------------------------------------------------------------------
@@ -631,24 +531,14 @@ admin
   .command('ls')
   .description('List all published skills')
   .action(async () => {
-    try {
-      await adminList();
-    } catch (err) {
-      console.error('Admin ls failed:', err);
-      process.exit(1);
-    }
+    await adminList();
   });
 
 admin
   .command('info <skill>')
   .description('Show detailed info for a published skill')
   .action(async (skill) => {
-    try {
-      await adminInfo(skill);
-    } catch (err) {
-      console.error('Admin info failed:', err);
-      process.exit(1);
-    }
+    await adminInfo(skill);
   });
 
 admin
@@ -656,36 +546,21 @@ admin
   .description('Search across published skills')
   .option('-l, --limit <number>', 'Max results (default: 20)', parseInt)
   .action(async (keyword, opts) => {
-    try {
-      await adminSearch(keyword, opts.limit ?? 20);
-    } catch (err) {
-      console.error('Admin search failed:', err);
-      process.exit(1);
-    }
+    await adminSearch(keyword, opts.limit ?? 20);
   });
 
 admin
   .command('stats')
   .description('Show publishing statistics')
   .action(async () => {
-    try {
-      await adminStats();
-    } catch (err) {
-      console.error('Admin stats failed:', err);
-      process.exit(1);
-    }
+    await adminStats();
   });
 
 admin
   .command('verify <skill>')
   .description('Verify a published skill structure and metadata')
   .action(async (skill) => {
-    try {
-      await adminVerify(skill);
-    } catch (err) {
-      console.error('Admin verify failed:', err);
-      process.exit(1);
-    }
+    await adminVerify(skill);
   });
 
 // ---- skm admin deprecate ----
@@ -696,15 +571,10 @@ admin
   .option('-v, --version <version>', 'Deprecate a specific version only')
   .option('-m, --message <message>', 'Deprecation message')
   .action(async (skill, opts) => {
-    try {
-      await adminDeprecate(skill, {
-        version: opts.version,
-        message: opts.message,
-      });
-    } catch (err) {
-      console.error('Admin deprecate failed:', err);
-      process.exit(1);
-    }
+    await adminDeprecate(skill, {
+      version: opts.version,
+      message: opts.message,
+    });
   });
 
 // ---- skm admin unpublish ----
@@ -715,15 +585,10 @@ admin
   .option('-v, --version <version>', 'Unpublish a specific version only')
   .option('-f, --force', 'Force unpublish entire package')
   .action(async (skill, opts) => {
-    try {
-      await adminUnpublish(skill, {
-        version: opts.version,
-        force: opts.force,
-      });
-    } catch (err) {
-      console.error('Admin unpublish failed:', err);
-      process.exit(1);
-    }
+    await adminUnpublish(skill, {
+      version: opts.version,
+      force: opts.force,
+    });
   });
 
 // ---- skm admin tag ----
@@ -734,36 +599,21 @@ adminTag
   .command('set <skill> <tag> <version>')
   .description('Set a dist-tag for a specific version')
   .action(async (skill, tag, version) => {
-    try {
-      await adminTagSet(skill, tag, version);
-    } catch (err) {
-      console.error('Admin tag set failed:', err);
-      process.exit(1);
-    }
+    await adminTagSet(skill, tag, version);
   });
 
 adminTag
   .command('rm <skill> <tag>')
   .description('Remove a dist-tag')
   .action(async (skill, tag) => {
-    try {
-      await adminTagRemove(skill, tag);
-    } catch (err) {
-      console.error('Admin tag rm failed:', err);
-      process.exit(1);
-    }
+    await adminTagRemove(skill, tag);
   });
 
 adminTag
   .command('ls <skill>')
   .description('List all dist-tags for a skill')
   .action(async (skill) => {
-    try {
-      await adminTagList(skill);
-    } catch (err) {
-      console.error('Admin tag ls failed:', err);
-      process.exit(1);
-    }
+    await adminTagList(skill);
   });
 
 // ---- skm admin owner ----
@@ -774,24 +624,14 @@ adminOwner
   .command('add <skill> <user>')
   .description('Add an owner to a skill package')
   .action(async (skill, user) => {
-    try {
-      await adminOwnerAdd(skill, user);
-    } catch (err) {
-      console.error('Admin owner add failed:', err);
-      process.exit(1);
-    }
+    await adminOwnerAdd(skill, user);
   });
 
 adminOwner
   .command('rm <skill> <user>')
   .description('Remove an owner from a skill package')
   .action(async (skill, user) => {
-    try {
-      await adminOwnerRemove(skill, user);
-    } catch (err) {
-      console.error('Admin owner rm failed:', err);
-      process.exit(1);
-    }
+    await adminOwnerRemove(skill, user);
   });
 
 // ---- skm admin access ----
@@ -800,16 +640,10 @@ admin
   .command('access <skill> <level>')
   .description('Set package access (public|restricted)')
   .action(async (skill, level) => {
-    try {
-      if (level !== 'public' && level !== 'restricted') {
-        console.error('❌ Access level must be "public" or "restricted"');
-        process.exit(1);
-      }
-      await adminAccess(skill, level);
-    } catch (err) {
-      console.error('Admin access failed:', err);
-      process.exit(1);
+    if (level !== 'public' && level !== 'restricted') {
+      throw new Error('Access level must be "public" or "restricted"');
     }
+    await adminAccess(skill, level);
   });
 
 // -----------------------------------------------------------------------------
@@ -823,6 +657,9 @@ admin
  * 这是为了提供类似 Codex CLI 的体验：
  * 双击即可使用图形界面。
  */
+// 拦截 Commander 的 process.exit，由本模块统一处理错误退出
+program.exitOverride();
+
 const hasArgs = process.argv.slice(2).length > 0;
 
 if (!hasArgs) {
@@ -840,17 +677,11 @@ if (!hasArgs) {
 
   startGuiServer(port);
 } else {
-  // ---------------------------------------------------------------------------
-  // 解析命令行参数
-  // ---------------------------------------------------------------------------
-
-  /**
-   * 解析 process.argv 中的命令行参数
-   * 
-   * Commander.js 会根据配置自动:
-   * 1. 匹配命令和选项
-   * 2. 验证必需参数
-   * 3. 调用对应的 action 处理函数
-   */
-  program.parse();
+  // 解析命令行参数，所有 action 的错误会统一在这里处理
+  try {
+    await program.parseAsync();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
 }
