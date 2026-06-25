@@ -45,7 +45,7 @@ import { updateSkill } from './update.js';
 import { publishSkill } from './publish.js';
 
 // Admin 功能
-import { resolveFullPackageName, npmExec, fetchScopePackages } from './admin.js';
+import { resolveFullPackageName, npmExec, getPublishingStats } from './admin.js';
 
 // Config 文件读写（用于 GitHub token 持久化）
 import { readConfigFile, writeConfigFile, removeConfigKeys } from './config.js';
@@ -534,46 +534,8 @@ API_ROUTES.POST['/api/uninstall'] = async (req, res, _url) => {
 
 API_ROUTES.GET['/api/admin/stats'] = async (_req, res, _url) => {
   try {
-    const packages = await fetchScopePackages();
-
-    const infos = (
-      await Promise.all(
-        packages.map(async (pkg) => {
-          try {
-            const info = await fetchNpmPackage(pkg);
-            return info ? { name: pkg, info } : null;
-          } catch { return null; }
-        }),
-      )
-    ).filter((item): item is { name: string; info: NpmRegistryResponse } => item !== null);
-
-    let totalVersions = 0;
-    let totalSize = 0;
-    const platformSet = new Set<string>();
-    let withMetadata = 0;
-
-    for (const { info } of infos) {
-      const versions = Object.keys(info.versions || {});
-      totalVersions += versions.length;
-      const latestVer = info['dist-tags']?.latest;
-      const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
-      const meta = latestPkg?.skillmarket;
-      if (meta) {
-        withMetadata++;
-        if (meta.platforms) meta.platforms.forEach(p => platformSet.add(p));
-      }
-      if (latestPkg?.dist?.unpackedSize) totalSize += latestPkg.dist.unpackedSize;
-    }
-
-    jsonResponse(res, 200, {
-      totalSkills: infos.length,
-      totalVersions,
-      averageVersions: infos.length > 0 ? (totalVersions / infos.length).toFixed(1) : '0',
-      withMetadata,
-      totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
-      platformCount: platformSet.size,
-      platforms: [...platformSet],
-    });
+    const stats = await getPublishingStats();
+    jsonResponse(res, 200, stats);
   } catch (err) {
     jsonResponse(res, 500, { error: String(err) });
   }

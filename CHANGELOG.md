@@ -1,3 +1,57 @@
+# SkillMarket v1.3.48 更新日志
+
+**日期**: 2026-06-25
+**版本**: 1.3.48
+
+---
+
+## 🛠 代码质量：消除遗留 process.exit(1) + admin.ts 业务逻辑解耦
+
+### 遗留 process.exit(1) 清理
+
+`src/commands/admin.ts`（2 处）和 `src/commands/config.ts`（3 处）剩余 `process.exit(1)` 全部替换为 `throw Error()`，统一走 Commander 顶层错误处理（`program.exitOverride()` + `program.parseAsync().catch()`）。
+
+| 命令 | 改动 |
+|------|------|
+| `skm admin info` | 404 时 `throw` 而非 `process.exit(1)` |
+| `skm admin search` | 无结果时 `throw` 而非 `process.exit(1)` |
+| `skm config get` | 缺键时 `throw` 而非 `process.exit(1)` |
+| `skm config set` | 无效键时 `throw` 而非 `process.exit(1)` |
+| `skm config reset` | 未指定 key 时 `throw` 而非 `process.exit(1)` |
+
+### admin.ts 业务逻辑与 CLI 输出解耦
+
+为 GUI 可复用代码路径，将 admin 命令的数据逻辑提取为纯函数，CLI 包装器只做格式化输出：
+
+- **`fetchScopePackageDetails()`** — 返回 `PackageDetail[]`，从 `ls` 命令提取
+- **`getPublishingStats()`** — 返回 `StatsData`，从 `stats` 命令提取（含 `mostVersions`、`mostRecent`、`registry`、`scopes` 字段）
+- **`verifySkillData(skillId)`** — 返回 `VerificationResult`，从 `verify` 命令提取
+- **`adminList()`、`adminStats()`、`adminVerify()`** — 重写为 CLI 格式化包装器，仅负责 `console.log`
+
+```typescript
+// 新增接口
+export interface PackageDetail { name: string; version: string; description: string; ... }
+export interface StatsData { totalSkills: number; totalVersions: number; ...; mostVersions: {...}; mostRecent: {...} }
+export interface VerificationCheck { label: string; message: string; status: 'pass' | 'fail' | 'warn' | 'info' }
+export interface VerificationResult { valid: boolean; checks: VerificationCheck[]; passed: number; ... }
+```
+
+### ui.ts 消除重复
+
+`/api/admin/stats` 处理器从 53 行缩减为 8 行：直接调用 `getPublishingStats()` 替代原地的 `fetchScopePackages()` + `Promise.all(fetchNpmPackage)` + 手动聚合统计。同时修复了 GUI stats 使用无限流 `Promise.all` 可能触发 npm 429 的问题。
+
+### 改动文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `src/commands/admin.ts` | 移除 2 处 `process.exit(1)`；提取 3 个纯数据函数 + 4 个新接口；重写 3 个 CLI 包装器 |
+| `src/commands/config.ts` | 移除 3 处 `process.exit(1)` |
+| `src/commands/ui.ts` | `/api/admin/stats` 改用 `getPublishingStats()`；移除不再使用的 `fetchScopePackages` 导入 |
+| `CHANGELOG.md` | v1.3.48 更新日志 |
+| `package.json` | 版本升至 1.3.48 |
+
+---
+
 # SkillMarket v1.3.47 更新日志
 
 **日期**: 2026-06-24

@@ -1,6 +1,6 @@
 # SkillMarket
 
-> **v1.3.42** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex CLI, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent, Saitec TUI).
+> **v1.3.48** — Cross-platform skill manager for AI coding tools (Cursor, VSCode, Codex CLI, OpenCode, Claude Code, Antigravity, OpenClaw, Hermes Agent, Saitec TUI).
 
 ## Installation
 

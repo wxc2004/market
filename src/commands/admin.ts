@@ -52,7 +52,53 @@ interface VersionInfo {
 }
 
 // -----------------------------------------------------------------------------
-// 辅助函数
+// 导出类型（供纯数据函数使用）
+// -----------------------------------------------------------------------------
+
+/** Scope 包详细信息（用于 admin ls / GUI 列表） */
+export interface PackageDetail {
+  name: string;
+  version: string;
+  description: string;
+  hasSkillmarket: boolean;
+  platforms: string;
+  updated: string;
+}
+
+/** 发布统计数据结构（用于 admin stats / GUI admin stats） */
+export interface StatsData {
+  totalSkills: number;
+  totalVersions: number;
+  averageVersions: string;
+  withMetadata: number;
+  totalSizeMB: string;
+  platformCount: number;
+  platforms: string[];
+  mostVersions: { name: string; count: number };
+  mostRecent: { name: string; date: string };
+  registry: string;
+  scopes: string[];
+}
+
+/** 单个校验结果条目 */
+export interface VerificationCheck {
+  label: string;
+  status: 'pass' | 'fail' | 'warn' | 'info';
+  message: string;
+}
+
+/** 校验完整结果 */
+export interface VerificationResult {
+  skillId: string;
+  valid: boolean;
+  passed: number;
+  failed: number;
+  warnings: number;
+  checks: VerificationCheck[];
+}
+
+// -----------------------------------------------------------------------------
+// 纯数据函数（无 console.log 副作用，可被 CLI 和 GUI 共用）
 // -----------------------------------------------------------------------------
 
 /** 用 scope 搜索包名 */
@@ -69,21 +115,14 @@ export async function fetchScopePackages(): Promise<string[]> {
   return [...all].sort();
 }
 
-// -----------------------------------------------------------------------------
-// Admin: ls — 列出所有已发布的 skills
-// -----------------------------------------------------------------------------
-
-export async function adminList(): Promise<void> {
-  console.log('\n🔍 Fetching all published skills...\n');
-
+/**
+ * 获取所有 scope 包的详细信息（纯数据，无 console.log 副作用）
+ * 使用 throttledMap 限流以避免 npm 429
+ */
+export async function fetchScopePackageDetails(): Promise<PackageDetail[]> {
   const packages = await fetchScopePackages();
+  if (packages.length === 0) return [];
 
-  if (packages.length === 0) {
-    console.log('No published skills found.');
-    return;
-  }
-
-  // 获取每个包的详细信息（限流，避免 npm 429）
   const details = await throttledMap(
     packages,
     async (pkg) => {
@@ -104,24 +143,232 @@ export async function adminList(): Promise<void> {
         return null;
       }
     },
-    3, // 并发 3
-    200, // 批次间 200ms
+    3,
+    200,
   );
 
-  const valid = details.filter(Boolean) as NonNullable<typeof details[0]>[];
-
-  console.log(`📦 ${valid.length} published skill(s):\n`);
-
-  // 按名称排序
+  const valid = details.filter(Boolean) as PackageDetail[];
   valid.sort((a, b) => a.name.localeCompare(b.name));
+  return valid;
+}
 
+/**
+ * 获取发布统计数据（纯数据，无 console.log 副作用）
+ * 可供 CLI adminStats 和 GUI /api/admin/stats 共用
+ */
+export async function getPublishingStats(): Promise<StatsData> {
+  const packages = await fetchScopePackages();
+  if (packages.length === 0) {
+    return {
+      totalSkills: 0, totalVersions: 0, averageVersions: '0',
+      withMetadata: 0, totalSizeMB: '0', platformCount: 0, platforms: [],
+    };
+  }
+
+  const infos = (
+    await throttledMap(
+      packages,
+      async (pkg) => {
+        try {
+          const info = await fetchNpmPackage(pkg);
+          return info ? { name: pkg, info } : null;
+        } catch {
+          return null;
+        }
+      },
+      3,
+      200,
+    )
+  ).filter((item): item is { name: string; info: NonNullable<Awaited<ReturnType<typeof fetchNpmPackage>>> } => item !== null);
+
+  let totalVersions = 0;
+  let totalSize = 0;
+  const platformSet = new Set<string>();
+  let withMetadata = 0;
+  let mostVersions = { name: '', count: 0 };
+  let mostRecent = { name: '', date: '' };
+
+  for (const { name, info } of infos) {
+    const versions = Object.keys(info.versions || {});
+    totalVersions += versions.length;
+
+    if (versions.length > mostVersions.count) {
+      mostVersions = { name, count: versions.length };
+    }
+
+    const latestVer = info['dist-tags']?.latest;
+    const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
+    const meta = latestPkg?.skillmarket;
+    if (meta) {
+      withMetadata++;
+      if (meta.platforms) meta.platforms.forEach(p => platformSet.add(p));
+    }
+    if (latestPkg?.dist?.unpackedSize) totalSize += latestPkg.dist.unpackedSize;
+
+    const modTime = info.time?.modified || '';
+    if (modTime && modTime > mostRecent.date) {
+      mostRecent = { name, date: modTime };
+    }
+  }
+
+  return {
+    totalSkills: infos.length,
+    totalVersions,
+    averageVersions: infos.length > 0 ? (totalVersions / infos.length).toFixed(1) : '0',
+    withMetadata,
+    totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
+    platformCount: platformSet.size,
+    platforms: [...platformSet],
+    mostVersions,
+    mostRecent,
+    registry: NPM_REGISTRY,
+    scopes: [...SKILL_SCOPES],
+  };
+}
+
+/**
+ * 校验已发布 skill 的结构（纯数据，无 console.log 副作用）
+ */
+export async function verifySkillData(skillId: string): Promise<VerificationResult | null> {
+  const info = await fetchSkillPackage(skillId);
+  if (!info) return null;
+
+  const checks: VerificationCheck[] = [];
+  let passed = 0;
+  let failed = 0;
+  let warnings = 0;
+
+  // 1. 包名格式
+  const nameValid = /^@[^/]+\/[^/]+$/.test(info.name);
+  if (nameValid) {
+    checks.push({ label: 'Package name format', status: 'pass', message: info.name });
+    passed++;
+  } else {
+    checks.push({ label: 'Package name format', status: 'warn', message: `Unusual: ${info.name}` });
+    warnings++;
+  }
+
+  // 2. dist-tags.latest
+  const tags = info['dist-tags'] || {};
+  if (tags.latest) {
+    checks.push({ label: 'dist-tags.latest', status: 'pass', message: tags.latest });
+    passed++;
+  } else {
+    checks.push({ label: 'dist-tags.latest', status: 'fail', message: 'Missing' });
+    failed++;
+  }
+
+  // 3. Latest version exists
+  const latestVer = tags.latest;
+  const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
+  if (latestPkg) {
+    checks.push({ label: 'Latest version exists', status: 'pass', message: `${latestVer} exists in versions` });
+    passed++;
+  } else {
+    checks.push({ label: 'Latest version exists', status: 'fail', message: `${latestVer} not found in versions` });
+    failed++;
+  }
+
+  // 4. skillmarket metadata
+  const meta = latestPkg?.skillmarket;
+  if (meta) {
+    checks.push({ label: 'skillmarket metadata', status: 'pass', message: 'Present' });
+    passed++;
+
+    const subChecks = [
+      { label: 'skillmarket.id', ok: !!meta.id },
+      { label: 'skillmarket.displayName', ok: !!meta.displayName },
+      { label: 'skillmarket.platforms', ok: Array.isArray(meta.platforms) && meta.platforms.length > 0 },
+    ];
+    for (const c of subChecks) {
+      if (c.ok) {
+        checks.push({ label: c.label, status: 'pass', message: 'Present' });
+        passed++;
+      } else {
+        checks.push({ label: c.label, status: 'warn', message: 'Missing or empty' });
+        warnings++;
+      }
+    }
+
+    if (meta.platforms) {
+      const unknown = meta.platforms.filter(p => !(PLATFORMS as readonly string[]).includes(p));
+      if (unknown.length > 0) {
+        checks.push({ label: 'Platforms recognized', status: 'warn', message: `Unknown: ${unknown.join(', ')}` });
+        warnings++;
+      } else {
+        checks.push({ label: 'Platforms recognized', status: 'pass', message: 'All recognized' });
+        passed++;
+      }
+    }
+  } else {
+    checks.push({ label: 'skillmarket metadata', status: 'warn', message: 'Not a skillmarket-formatted skill' });
+    warnings++;
+  }
+
+  // 5. description
+  if (latestPkg?.description) {
+    checks.push({ label: 'Description', status: 'pass', message: `${latestPkg.description.length} chars` });
+    passed++;
+  } else {
+    checks.push({ label: 'Description', status: 'warn', message: 'Missing' });
+    warnings++;
+  }
+
+  // 6. license
+  if (info.license || latestPkg?.license) {
+    checks.push({ label: 'License', status: 'pass', message: info.license || latestPkg?.license || '' });
+    passed++;
+  } else {
+    checks.push({ label: 'License', status: 'warn', message: 'Missing' });
+    warnings++;
+  }
+
+  // 7. package size
+  if (latestPkg?.dist?.unpackedSize) {
+    const sizeKB = (latestPkg.dist.unpackedSize / 1024).toFixed(1);
+    checks.push({ label: 'Package size', status: 'pass', message: `${sizeKB} KB (unpacked)` });
+    passed++;
+  }
+
+  // 8. total versions
+  const versionCount = Object.keys(info.versions || {}).length;
+  checks.push({ label: 'Total versions', status: 'info', message: String(versionCount) });
+
+  return {
+    skillId,
+    valid: failed === 0,
+    passed,
+    failed,
+    warnings,
+    checks,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Admin: ls — 列出所有已发布的 skills
+// -----------------------------------------------------------------------------
+
+export async function adminList(): Promise<void> {
+  console.log('\n🔍 Fetching all published skills...\n');
+
+  const valid = await fetchScopePackageDetails();
+
+  if (valid.length === 0) {
+    console.log('No published skills found.');
+    return;
+  }
+
+  let hasSkillmarketCount = 0;
   for (const d of valid) {
+    if (d.hasSkillmarket) hasSkillmarketCount++;
     const flag = d.hasSkillmarket ? '✅' : '📦';
     console.log(`  ${flag}  ${d.name}@${d.version}`);
     if (d.description) console.log(`       ${d.description.slice(0, 80)}`);
     if (d.platforms) console.log(`       Platforms: ${d.platforms}`);
     console.log();
   }
+  
+  console.log(`📦 ${valid.length} published skill(s) （${hasSkillmarketCount} with skillmarket metadata）\n`);
 }
 
 // -----------------------------------------------------------------------------
@@ -133,9 +380,10 @@ export async function adminInfo(skillId: string): Promise<void> {
 
   const info = await fetchSkillPackage(skillId);
   if (!info) {
-    console.error(`❌ Skill "${skillId}" not found in any configured scope.`);
-    console.log(`   Scopes checked: ${SKILL_SCOPES.join(', ')}`);
-    process.exit(1);
+    throw new Error(
+      `Skill "${skillId}" not found in any configured scope.\n` +
+      `   Scopes checked: ${SKILL_SCOPES.join(', ')}`
+    );
   }
 
   const latestVer = info['dist-tags']?.latest || 'unknown';
@@ -261,81 +509,25 @@ export async function adminSearch(keyword: string, limit = 20): Promise<void> {
 export async function adminStats(): Promise<void> {
   console.log('\n📊 SkillMarket Publishing Statistics\n');
 
-  const packages = await fetchScopePackages();
+  const stats = await getPublishingStats();
 
-  if (packages.length === 0) {
+  if (stats.totalSkills === 0) {
     console.log('No published skills found.');
     return;
   }
 
-  // 获取所有包详情（限流，避免 npm 429）
-  const infos = (
-    await throttledMap(
-      packages,
-      async (pkg) => {
-        try {
-          const info = await fetchNpmPackage(pkg);
-          return info ? { name: pkg, info } : null;
-        } catch {
-          return null;
-        }
-      },
-      3, // 并发 3
-      200, // 批次间 200ms
-    )
-  ).filter(Boolean) as { name: string; info: NonNullable<Awaited<ReturnType<typeof fetchNpmPackage>>> }[];
-
-  // 统计
-  const totalSkills = infos.length;
-  let totalVersions = 0;
-  let totalSize = 0;
-  const platformSet = new Set<string>();
-  let withMetadata = 0;
-  let mostVersions = { name: '', count: 0 };
-  let mostRecent = { name: '', date: '' };
-
-  for (const { name, info } of infos) {
-    const versions = Object.keys(info.versions || {});
-    totalVersions += versions.length;
-
-    if (versions.length > mostVersions.count) {
-      mostVersions = { name, count: versions.length };
-    }
-
-    const latestVer = info['dist-tags']?.latest;
-    const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
-    const meta = latestPkg?.skillmarket;
-
-    if (meta) {
-      withMetadata++;
-      if (meta.platforms) {
-        for (const p of meta.platforms) platformSet.add(p);
-      }
-    }
-
-    if (latestPkg?.dist?.unpackedSize) {
-      totalSize += latestPkg.dist.unpackedSize;
-    }
-
-    const modTime = info.time?.modified || '';
-    if (modTime && modTime > mostRecent.date) {
-      mostRecent = { name, date: modTime };
-    }
+  console.log(`📦 Total published skills: ${stats.totalSkills}`);
+  console.log(`📝 Total versions: ${stats.totalVersions}`);
+  console.log(`   Avg versions/skill: ${stats.averageVersions}`);
+  console.log(`📋 Skills with skillmarket metadata: ${stats.withMetadata}/${stats.totalSkills}`);
+  console.log(`💾 Total unpacked size: ${stats.totalSizeMB} MB`);
+  console.log(`🔧 Platforms covered: ${stats.platformCount} (${stats.platforms.join(', ')})`);
+  console.log(`🏆 Most versions: ${stats.mostVersions.name} (${stats.mostVersions.count})`);
+  if (stats.mostRecent.date) {
+    console.log(`🕐 Most recent update: ${stats.mostRecent.name} (${new Date(stats.mostRecent.date).toLocaleDateString()})`);
   }
-
-  // 输出
-  console.log(`📦 Total published skills: ${totalSkills}`);
-  console.log(`📝 Total versions: ${totalVersions}`);
-  console.log(`   Avg versions/skill: ${(totalVersions / totalSkills).toFixed(1)}`);
-  console.log(`📋 Skills with skillmarket metadata: ${withMetadata}/${totalSkills}`);
-  console.log(`💾 Total unpacked size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`🔧 Platforms covered: ${platformSet.size} (${[...platformSet].join(', ')})`);
-  console.log(`🏆 Most versions: ${mostVersions.name} (${mostVersions.count})`);
-  if (mostRecent.date) {
-    console.log(`🕐 Most recent update: ${mostRecent.name} (${new Date(mostRecent.date).toLocaleDateString()})`);
-  }
-  console.log(`🔗 Registry: ${NPM_REGISTRY}`);
-  console.log(`\nConfigured scopes: ${SKILL_SCOPES.join(', ')}`);
+  console.log(`🔗 Registry: ${stats.registry}`);
+  console.log(`\nConfigured scopes: ${stats.scopes.join(', ')}`);
   console.log();
 }
 
@@ -346,123 +538,22 @@ export async function adminStats(): Promise<void> {
 export async function adminVerify(skillId: string): Promise<void> {
   console.log(`\n🔍 Verifying published skill "${skillId}"...\n`);
 
-  const info = await fetchSkillPackage(skillId);
-  if (!info) {
-    console.error(`❌ Skill "${skillId}" not found.`);
-    process.exit(1);
+  const result = await verifySkillData(skillId);
+  if (!result) {
+    throw new Error(`Skill "${skillId}" not found.`);
   }
 
-  let passed = 0;
-  let failed = 0;
-  let warnings = 0;
-
-  // 1. 包名检查
-  const nameValid = /^@[^/]+\/[^/]+$/.test(info.name);
-  if (nameValid) {
-    console.log(`✅ Package name format: ${info.name}`);
-    passed++;
-  } else {
-    console.log(`⚠️  Package name format unusual: ${info.name}`);
-    warnings++;
+  for (const check of result.checks) {
+    const icon = check.status === 'pass' ? '✅' : check.status === 'fail' ? '❌' : check.status === 'warn' ? '⚠️' : 'ℹ️';
+    console.log(`  ${icon}  ${check.label}: ${check.message}`);
   }
 
-  // 2. dist-tags 检查
-  const tags = info['dist-tags'] || {};
-  if (tags.latest) {
-    console.log(`✅ dist-tags.latest: ${tags.latest}`);
-    passed++;
-  } else {
-    console.log(`❌ dist-tags.latest missing`);
-    failed++;
-  }
-
-  // 3. latest 版本存在
-  const latestVer = tags.latest;
-  const latestPkg = latestVer ? info.versions?.[latestVer] : undefined;
-  if (latestPkg) {
-    console.log(`✅ Latest version ${latestVer} exists in versions`);
-    passed++;
-  } else {
-    console.log(`❌ Latest version ${latestVer} not found in versions object`);
-    failed++;
-  }
-
-  // 4. skillmarket 元数据
-  const meta = latestPkg?.skillmarket;
-  if (meta) {
-    console.log(`✅ Has skillmarket metadata`);
-
-    const checks = [
-      { name: 'id', ok: !!meta.id },
-      { name: 'displayName', ok: !!meta.displayName },
-      { name: 'platforms (array)', ok: Array.isArray(meta.platforms) && meta.platforms.length > 0 },
-    ];
-
-    for (const c of checks) {
-      if (c.ok) {
-        console.log(`   ✅ skillmarket.${c.name}`);
-        passed++;
-      } else {
-        console.log(`   ⚠️  skillmarket.${c.name} missing or empty`);
-        warnings++;
-      }
-    }
-
-    // 验证平台是否在已知列表中
-    if (meta.platforms) {
-      const unknown = meta.platforms.filter(
-        p => !(PLATFORMS as readonly string[]).includes(p),
-      );
-      if (unknown.length > 0) {
-        console.log(`   ⚠️  Unknown platforms: ${unknown.join(', ')}`);
-        warnings++;
-      } else {
-        console.log(`   ✅ All platforms recognized`);
-        passed++;
-      }
-    }
-  } else {
-    console.log(`⚠️  No skillmarket metadata (not a skillmarket-formatted skill)`);
-    warnings++;
-  }
-
-  // 5. description 检查
-  if (latestPkg?.description) {
-    console.log(`✅ Has description (${latestPkg.description.length} chars)`);
-    passed++;
-  } else {
-    console.log(`⚠️  No description`);
-    warnings++;
-  }
-
-  // 6. 许可证
-  if (info.license || latestPkg?.license) {
-    console.log(`✅ License: ${info.license || latestPkg?.license}`);
-    passed++;
-  } else {
-    console.log(`⚠️  No license specified`);
-    warnings++;
-  }
-
-  // 7. 包大小
-  if (latestPkg?.dist?.unpackedSize) {
-    const sizeKB = (latestPkg.dist.unpackedSize / 1024).toFixed(1);
-    console.log(`✅ Package size: ${sizeKB} KB (unpacked)`);
-    passed++;
-  }
-
-  // 8. 版本数量
-  const versionCount = Object.keys(info.versions || {}).length;
-  console.log(`ℹ️  Total versions: ${versionCount}`);
-
-  // 总结
-  const total = passed + failed;
   console.log(`\n📊 Verification Result:`);
-  console.log(`   ✅ Passed: ${passed}`);
-  console.log(`   ⚠️  Warnings: ${warnings}`);
-  console.log(`   ❌ Failed: ${failed}`);
+  console.log(`   ✅ Passed: ${result.passed}`);
+  console.log(`   ⚠️  Warnings: ${result.warnings}`);
+  console.log(`   ❌ Failed: ${result.failed}`);
 
-  if (failed === 0) {
+  if (result.valid) {
     console.log(`\n✅ Skill "${skillId}" is valid!\n`);
   } else {
     console.log(`\n⚠️  Skill "${skillId}" has issues that need attention.\n`);

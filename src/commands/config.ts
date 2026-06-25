@@ -287,9 +287,10 @@ function getSourceBadge(source: ConfigSource): string {
 export async function getConfigValue(key: string): Promise<void> {
   const entry = await getConfig(key);
   if (!entry) {
-    console.error(`❌ Unknown config key: "${key}"`);
-    console.log(`   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`);
-    process.exit(1);
+    throw new Error(
+      `Unknown config key: "${key}"\n` +
+      `   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`
+    );
   }
 
   console.log(`\n🔧 ${entry.key}`);
@@ -307,9 +308,10 @@ export async function getConfigValue(key: string): Promise<void> {
 export async function setConfigValue(key: string, value: string): Promise<void> {
   const def = CONFIG_DEFINITIONS.find(d => d.key === key);
   if (!def) {
-    console.error(`❌ Unknown config key: "${key}"`);
-    console.log(`   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`);
-    process.exit(1);
+    throw new Error(
+      `Unknown config key: "${key}"\n` +
+      `   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`
+    );
   }
 
   await writeConfigFile({ [key]: value } as ConfigFile);
@@ -341,9 +343,10 @@ export async function resetConfig(key?: string, all = false): Promise<void> {
   if (key) {
     const def = CONFIG_DEFINITIONS.find(d => d.key === key);
     if (!def) {
-      console.error(`❌ Unknown config key: "${key}"`);
-      console.log(`   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`);
-      process.exit(1);
+      throw new Error(
+        `Unknown config key: "${key}"\n` +
+        `   Valid keys: ${CONFIG_DEFINITIONS.map(d => d.key).join(', ')}`
+      );
     }
 
     await removeConfigKeys([key as keyof ConfigFile]);
